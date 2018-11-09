@@ -1,0 +1,14 @@
+[X2Ability_SpookAbilitySet]
+ShadowFriendlyName="Shadow"
+ShadowHelpText="Remains concealed when next to high cover and interactable objects."
+OpportunistFriendlyName="Opportunist"
+
+[SpookDetectionManager]
+StealthKilledFriendlyName="Stealth Kill"
+
+[X2Effect_SpookBleeding]
+BleedingFriendlyName="Bleeding"
+BleedingHelpText="Bleeding units take damage over time."
+BleedingEffectAcquired="<XGParam:StrValue0/!UnitName/> is bleeding."
+BleedingEffectTicked="<XGParam:StrValue0/!UnitName/> is still bleeding."
+BleedingEffectLost="<XGParam:StrValue0/!UnitName/> is no longer bleeding."

@@ -1,0 +1,55 @@
+`define SPOOKLOG(msg) `LOG("Spook: " @ Self @ ": " @ `msg);
+`define SPOOKSLOG(msg) `LOG("Spook: " @ `msg);
+
+// BPE_xxx are flags for BuildPersistentEffect.
+//
+// Persistent effects tick only when told to tick.
+//
+// This can be one of:
+//	At the start of the tactical battle (i.e. practically never)
+//	At the start/end of the unit (on which they're applied) turn
+//  At the start/end of any turn, whether player or AI
+//
+// They can either:
+//  Last for n turns (really this is TICKS, not turns! Awful, awful naming.)
+//  Last forever
+//
+// That turn counter, if not infinite, decrements ONLY when the unit ticks.
+// (In fact, fractionally before the unit is going to tick, but it'll still tick regardless.)
+// After ticking, if the counter is zero, the effect is removed.
+//
+// Example 1:
+//
+// You're applying an effect to an AI unit during the player's turn.
+// That effect is set to tick at the start of 1 unit turn.
+// It won't tick on the player's turn you apply it, since the unit is an enemy.
+// At the start of the AI turn, it ticks and is removed.
+//
+// Example 2:
+// You're applying an effect to a player's unit during their own turn.
+// That effect is set to tick at the end of 2 unit turns.
+// It will tick at the end of the turn you apply it, since that's the unit's turn too.
+// It won't tick on the AI turn.
+// It will tick at the end of the player's next turn, and be removed.
+//
+// Example 3:
+// You're applying an effect to an enemy unit during the players turn.
+// It's set to tick at the start of any 2 turns.
+// It won't tick on the player's turn you apply it, since that turn started before it was applied.
+// It will tick at the start of the AI turn.
+// It will tick again at the start of the player's turn, and be removed.
+//
+
+`define BPE_TickAtStartOfNUnitTurns(n) `n, false, false, false, eGameRule_PlayerTurnBegin
+`define BPE_TickAtEndOfNUnitTurns(n) `n, false, false, false, eGameRule_PlayerTurnEnd
+
+`define BPE_TickAtStartOfNAnyTurns(n) `n, false, false, true, eGameRule_PlayerTurnBegin
+`define BPE_TickAtEndOfNAnyTurns(n) `n, false, false, true, eGameRule_PlayerTurnEnd
+
+`define BPE_TickNever_LastForever 1, true, false, false, eGameRule_TacticalGameStart
+
+`define BPE_TickAtStartOfInfiniteUnitTurns 1, true, false, false, eGameRule_PlayerTurnBegin
+`define BPE_TickAtEndOfInfiniteUnitTurns 1, true, false, false, eGameRule_PlayerTurnEnd
+
+`define BPE_TickAtStartOfInfiniteAnyTurns 1, true, false, true, eGameRule_PlayerTurnBegin
+`define BPE_TickAtEndOfInfiniteAnyTurns 1, true, false, true, eGameRule_PlayerTurnEnd

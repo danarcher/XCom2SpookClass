@@ -1,0 +1,327 @@
+[Spook X2SoldierClassTemplate]
++DisplayName="Spooks"
+ClassSummary="Spooks conduct black bag operations in enemy territory."
+LeftAbilityTreeTitle="Footpad"
+RightAbilityTreeTitle="Diplomat"
+
+[Spook_Exeunt X2AbilityTemplate]
+LocFriendlyName="Exeunt"
+LocLongDescription="Evac times are reduced by 1 turn for each Spook on a mission, to a minimum of 1 turn. If only Spooks are on a mission, evac is 1 turn."
+LocHelpText=""
+LocFlyOverText="Exeunt"
+LocPromotionPopupText="<Bullet/> Passive effect."
+
+[Spook_Veil X2AbilityTemplate]
+LocFriendlyName="Veil"
+LocFlyOverText="Veil"
+LocLongDescription="Enemies have 50% or less detection range against you, depending on your rank. Retain concealment next to high cover and interactable objects."
+LocHelpText="Enemies have greatly reduced detection range against you."
+LocPromotionPopupText="<Bullet/> Enemies have 50% or less detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence.<br/><Bullet/> This ability also grants a small reduction in this soldier's impact on infiltration times.<br/><Bullet/> The detection range reduction does not apply to ADVENT security towers.<br/><Bullet/> When in high cover, or next to an interactable object, your concealment cannot be broken from any angle, even by enemies in close proximity."
+
+[Spook_Opportunist X2AbilityTemplate]
+LocFriendlyName="Opportunist"
+LocFlyOverText="Opportunist"
+LocLongDescription="Sap passing enemies with your baton, rendering them unconscious."
+LocHelpText="Sap passing enemies with your baton, rendering them unconscious."
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Requires, and does not break, concealment.<br/><Bullet/> Sapped enemies who remain unconscious do not grant corpses or loot."
+
+[Spook_BattleHardened X2AbilityTemplate]
+LocFriendlyName="Battle Hardened"
+LocLongDescription="Grants immunity to stun and unconsciousness."
+LocHelpText="Immune to stun and unconsciousness."
+LocFlyOverText="Battle Hardened"
+LocPromotionPopupText="<Bullet/> Passive effect."
+
+[Spook_Cosh X2AbilityTemplate]
+LocFriendlyName="Cosh"
+LocLongDescription="Attack an enemy within movement range with your baton, dealing full damage and disorienting them for 1 turn. Grants a free movement action."
+LocHelpText=""
+LocFlyOverText="Cosh"
+LocPromotionPopupText="<Bullet/> Unlike Sap, Cosh will break concealment.<br/><Bullet/> Robotic enemies are only damaged, not disoriented."
+
+[Spook_Sap X2AbilityTemplate]
+LocFriendlyName="Sap"
+LocLongDescription="Attack an enemy within movement range with your baton, dealing minimal damage and stunning them. Critical hits will render them unconscious. Grants a free movement action. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Sap"
+LocPromotionPopupText="<Bullet/> Sap does not break concealment even if moving through detection range, although ending your turn in a vulnerable location may cause enemies to detect the solder as usual.<br/><Bullet/> Robotic enemies are only damaged, not stunned or rendered unconscious.<br/><Bullet/> Sapped enemies who remain unconscious do not grant corpses or loot."
+
+[Spook_BatonRound X2AbilityTemplate]
+LocFriendlyName="Baton Round"
+LocLongDescription="Use your baton to fire a silent shot which generates a small noise some distance away. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Baton Round"
+LocPromotionPopupText="<Bullet/> 1 turn cooldown."
+
+[Spook_Eclipse X2AbilityTemplate]
+LocFriendlyName="Eclipse"
+LocLongDescription="Render an adjacent ally (soldier or civilian) unconscious and carryable. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Eclipse"
+LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include scientists and engineers, as well as potential and former soldiers."
+
+[Spook_Farsight X2AbilityTemplate]
+LocFriendlyName="Farsight"
+LocLongDescription="Dramatically increases vision range."
+LocHelpText="Dramatically increased vision range."
+LocFlyOverText="Farsight"
+LocPromotionPopupText="<Bullet/> Passive effect."
+
+[Spook_Blackjack X2AbilityTemplate]
+LocFriendlyName="Blackjack"
+LocLongDescription="Attack an enemy within movement range with your baton, dealing minimal damage and rendering them unconscious. Grants a free movement action. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Blackjack"
+LocPromotionPopupText="<Bullet/> Like Sap, Blackjack does not break concealment even if moving through detection range, although ending your turn in a vulnerable location may cause enemies to detect the solder as usual.<br/><Bullet/> Robotic enemies are only damaged, not rendered unconscious.<br/><Bullet/> 2 turn cooldown.<br/><Bullet/> Blackjacked enemies who remain unconcious do not grant corpses or loot."
+
+[Spook_Operator X2AbilityTemplate]
+LocFriendlyName="Operator"
+LocLongDescription="Some tactical environmental actions will not consume an action, break concealment or end your turn."
+LocHelpText="Some tactical environmental actions will not consume an action, break concealment or end your turn."
+LocFlyOverText="Operator"
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Affects planting X4 charges, opening loot boxes, punching out VIPs, Eclipse, and picking up and putting down bodies."
+
+[Spook_Shroud X2AbilityTemplate]
+LocFriendlyName="Shroud"
+LocLongDescription="Enemies have an additional 25% smaller detection radius against you."
+LocHelpText="Enemies have an additional 25% smaller detection radius against you."
+LocFlyOverText="Shroud"
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Stacks with Covert and Ghostwalker."
+
+[Spook_Eidolon X2AbilityTemplate]
+LocFriendlyName="Eidolon"
+LocLongDescription="The soldier, and all allies with Phantom, gain concealment."
+LocHelpText=""
+LocFlyOverText="Eidolon"
+LocPromotionPopupText="<Bullet/> Does not consume an action.<br/><Bullet/> 1 use per mission."
+
+[Spook_Puncture X2AbilityTemplate]
+LocFriendlyName="Puncture"
+LocLongDescription="Fire a shot which always hits and deals minimal damage. Does not break concealment nor end your turn."
+LocHelpText=""
+LocFlyOverText="Puncture"
+LocPromotionPopupText="<Bullet/> Does not gain bonuses from Pinpoint."
+
+[Spook_Takedown X2AbilityTemplate]
+LocFriendlyName="Takedown"
+LocLongDescription="Fire a standard shot from concealment with a +20% crit chance. If the target dies, retain concealment."
+LocHelpText=""
+LocFlyOverText="Takedown"
+LocPromotionPopupText="<Bullet/> Requires concealment to use.<br/><Bullet/> Enemies killed with Takedown do not grant corpses or loot."
+
+[Spook_Cocoon X2AbilityTemplate]
+LocFriendlyName="Cocoon"
+LocLongDescription="Place the soldier in stasis for one enemy turn."
+LocHelpText=""
+LocFlyOverText="Cocoon"
+LocPromotionPopupText="<Bullet/> 3 turn cooldown."
+
+[Spook_Pinpoint X2AbilityTemplate]
+LocFriendlyName="Pinpoint"
+LocLongDescription="Gain 10% aim, 8% crit and 5 damage versus the targetted enemy. Repeatable and does not break concealment."
+LocHelpText=""
+LocFlyOverText="Pinpoint"
+LocPromotionPopupText="<Bullet/> Using Pinpoint on an enemy cancels the soldier's previous Pinpoint bonuses on other enemies.<br/><Bullet/> Effects apply to all standard shots, including Takedown but not Puncture.<br/>"
+
+[Spook_Exfil X2AbilityTemplate]
+LocFriendlyName="Exfil"
+LocLongDescription="Release a smoke cloud and immediately exit the AO."
+LocHelpText=""
+LocFlyOverText="Exfil"
+LocPromotionPopupText="<Bullet/> The soldier returns to the Avenger without requiring an Evac."
+
+[Spook_Thunderflash X2AbilityTemplate]
+LocFriendlyName="Thunderflash"
+LocLongDescription="Your flashbangs now stun and blind enemies for 2 turns, and do not break concealment."
+LocHelpText="Your flashbangs now stun and blind enemies for 2 turns, and do not break concealment."
+LocFlyOverText="Thunderflash"
+LocPromotionPopupText="<Bullet/> Affected enemies' vision and detection ranges will be reduced to zero.<br/><Bullet/> Other enemies may still be attracted to the vicinity."
+
+[Spook_Vanish X2AbilityTemplate]
+LocFriendlyName="Vanish"
+LocLongDescription="Release a smoke cloud, consume remaining actions, gain a free move action and then gain concealment if possible in the new location."
+LocHelpText=""
+LocFlyOverText="Vanish"
+LocPromotionPopupText="<Bullet/> 3 turn cooldown.<br/><Bullet/> 2 uses per mission."
+
+[Spook_SatchelCharge X2AbilityTemplate]
+LocFriendlyName="Satchel Charge"
+LocLongDescription="Place a remotely detonated environmental charge which heavily damages or destroys cover in a small radius. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Satchel Charge"
+LocPromotionPopupText="<Bullet/> Requires and consumes 1 frag grenade.<br/><Bullet/> 2 turn cooldown."
+
+[Spook_Mini4 X2AbilityTemplate]
+LocFriendlyName="Mini4"
+LocLongDescription="Attach a remotely detonated explosive charge to an enemy. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Mini4"
+LocPromotionPopupText="<Bullet/> Requires and consumes 1 frag grenade."
+
+[Spook_Shrapnel X2AbilityTemplate]
+LocFriendlyName="Shrapnel"
+LocLongDescription="Mini4 charges gain +5 damage, +3 radius and have a 50% chance to crit for +2 damage. In addition, the soldier's grenades and standard rockets can 30% crit for +2 damage."
+LocHelpText=""
+LocFlyOverText="Shrapnel"
+LocPromotionPopupText="<Bullet/> Passive effect."
+
+[Spook_Pyrotechnics X2AbilityTemplate]
+LocFriendlyName="Pyrotechnics"
+LocLongDescription="Utilise incendiary grenades for Mini4 and Satchel Charge. In addition, whilst carrying an incendiary grenade, standard shots gain +1 damage and may set enemies on fire."
+LocHelpText="Incendiary munitions."
+LocFlyOverText="Pyrotechnics"
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Given the Mini4 ability, gain the Flaming Mini4 ability.<br/><Bullet/> Given the Satchel Charge ability, gain the Flaming Satchel Charge ability.<br/><Bullet/> These Flaming abilities require and consumes 1 incendiary grenade instead of a frag grenade.<br/><Bullet/> They deal 4-9 damage to enemies in a larger radius and may set them on fire."
+
+[Spook_MadBomber X2AbilityTemplate]
+LocFriendlyName="Mad Bomber"
+LocLongDescription="Take both actions to construct a frag grenade and an incendiary grenade. Does not break concealment."
+LocHelpText=""
+LocFlyOverText="Mad Bomber"
+LocPromotionPopupText="<Bullet/> Requires both actions.<br/><Bullet/> 3 turn cooldown.<br/><Bullet/> 3 uses per mission.<br/><Bullet/> Such jury-rigged grenades last only for the duration of the current mission.<br/><br/><Bullet/> Can be used whether or not it is midnight.<br/><Bullet/> \"Yeah baby! Yeah!\""
+
+[Spook_Dummy0 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy1 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy2 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy3 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy4 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy5 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy6 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy7 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy8 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy9 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy10 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy11 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy12 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy13 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy14 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy15 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy16 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy17 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy18 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy19 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[Spook_Dummy20 X2AbilityTemplate]
+LocFriendlyName="Unknown"
+LocFlyOverText="Unknown"
+LocLongDescription="No effect. Reserved for future use."
+LocHelpText="No effect. Reserved for future use."
+LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
