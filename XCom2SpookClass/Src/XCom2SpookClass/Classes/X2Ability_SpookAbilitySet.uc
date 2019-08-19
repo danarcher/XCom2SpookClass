@@ -15,7 +15,7 @@ var config float SPOOK_VEIL_TSGT_DETECTION_RANGE_REDUCTION;
 var config float SPOOK_VEIL_GSGT_DETECTION_RANGE_REDUCTION;
 var config float SPOOK_VEIL_MSGT_DETECTION_RANGE_REDUCTION;
 
-var config int SPOOK_FARSIGHT_SIGHT_RANGE_INCREASE;
+var config int SPOOK_WIRED_SIGHT_RANGE_INCREASE;
 
 var config int SPOOK_VANISH_CHARGES;
 var config float SPOOK_VANISH_RADIUS;
@@ -38,61 +38,85 @@ var config int SPOOK_DART_BLEED_DAMAGE_SPREAD_PER_TICK;
 
 var localized string OpportunistFriendlyName;
 
+const ShadowEffectName = 'SpookShadowEffect';
+const ExeuntAbilityName = 'Spook_Exeunt';
+
 static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> Templates;
 
-    Templates.AddItem(PurePassive('Spook_Exeunt', "img:///UILibrary_PerkIcons.UIPerk_height", true));
+
     Templates.AddItem(AddCoshAbility());
     Templates.AddItem(AddSapAbility());
+    Templates.AddItem(AddDartAbility());
+
+    Templates.AddItem(AddEclipseAbility());
+    Templates.AddItem(AddWiredAbility());
+
     Templates.AddItem(AddVeilAbility());
-    Templates.AddItem(AddFarsightAbility());
+    // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
+    Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
+    Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
     Templates.AddItem(AddVanishAbility());
+    Templates.AddItem(/*TODO:*/PurePassive('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_launch", true));
+    Templates.AddItem(/*TODO:*/PurePassive('Spook_Exodus', "img:///UILibrary_PerkIcons.UIPerk_flight", true));
+
+//  Templates.AddItem(PurePassive('Spook_BatonRound', "img:///UILibrary_PerkIcons.UIPerk_ambush", true));
+//  Templates.AddItem(PurePassive('Spook_Blackjack', "img:///UILibrary_PerkIcons.UIPerk_adventstunlancer_stunlance", true));
+//  Templates.AddItem(PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
+//  Templates.AddItem(PurePassive('Spook_Shroud', "img:///UILibrary_LW_PerkPack.LW_AbilityCovert", true));
+//  Templates.AddItem(PurePassive('Spook_Eidolon', "img:///UILibrary_PerkIcons.UIPerk_stealth", true));
+//  Templates.AddItem(PurePassive('Spook_Puncture', "img:///UILibrary_PerkIcons.UIPerk_hunter", true));
+//  Templates.AddItem(PurePassive('Spook_Takedown', "img:///UILibrary_PerkIcons.UIPerk_inthezone", true));
+//  Templates.AddItem(PurePassive('Spook_Cocoon', "img:///UILibrary_PerkIcons.UIPerk_stasisshield", true));
+//  Templates.AddItem(PurePassive('Spook_Pinpoint', "img:///UILibrary_PerkIcons.UIPerk_snapshot", true));
+//  Templates.AddItem(PurePassive('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_flight", true));
+//  Templates.AddItem(PurePassive('Spook_Thunderflash', "img:///UILibrary_PerkIcons.UIPerk_flashbang", true));
+//  Templates.AddItem(PurePassive('Spook_SatchelCharge', "img:///UILibrary_PerkIcons.UIPerk_item_x4", true));
+//  Templates.AddItem(PurePassive('Spook_Mini4', "img:///UILibrary_PerkIcons.UIPerk_bombard", true));
+//  Templates.AddItem(PurePassive('Spook_Shrapnel', "img:///UILibrary_PerkIcons.UIPerk_bigbooms", true));
+//  Templates.AddItem(PurePassive('Spook_Pyrotechnics', "img:///UILibrary_PerkIcons.UIPerk_flamethrower", true));
+//  Templates.AddItem(PurePassive('Spook_MadBomber', "img:///UILibrary_PerkIcons.UIPerk_quickthrow", true));
+
+    Templates.AddItem(PurePassive('Spook_Dummy0', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy1', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy2', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy3', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy4', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy5', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy6', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy7', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy8', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy9', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy10', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy11', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy12', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy13', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy14', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy15', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy16', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy17', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy18', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy19', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy20', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+
+    // To be removed!
+    Templates.AddItem(PurePassive('Spook_BattleHardened', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Farsight', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
     Templates.AddItem(AddOpportunistAbility());
     Templates.AddItem(AddOpportunistAttackAbility());
-    Templates.AddItem(AddBattleHardenedAbility());
-    Templates.AddItem(AddDartAbility());
-    Templates.AddItem(PurePassive('Spook_BatonRound', "img://UILibrary_PerkIcons.UIPerk_ambush", true));
-    Templates.AddItem(PurePassive('Spook_Eclipse', "img://UILibrary_PerkIcons.UIPerk_muton_punch", true)); // or UIPerk_coupdegrace
-    Templates.AddItem(PurePassive('Spook_Blackjack', "img:///UILibrary_PerkIcons.UIPerk_adventstunlancer_stunlance", true));
-    Templates.AddItem(PurePassive('Spook_Operator', "img://UILibrary_PerkIcons.UIPerk_psychosis", true));
-    Templates.AddItem(PurePassive('Spook_Shroud', "img:///UILibrary_LW_PerkPack.LW_AbilityCovert", true));
-    Templates.AddItem(PurePassive('Spook_Eidolon', "img://UILibrary_PerkIcons.UIPerk_stealth", true));
-    Templates.AddItem(PurePassive('Spook_Puncture', "img://UILibrary_PerkIcons.UIPerk_hunter", true));
-    Templates.AddItem(PurePassive('Spook_Takedown', "img://UILibrary_PerkIcons.UIPerk_inthezone", true));
-    Templates.AddItem(PurePassive('Spook_Cocoon', "img://UILibrary_PerkIcons.UIPerk_stasisshield", true));
-    Templates.AddItem(PurePassive('Spook_Pinpoint', "img://UILibrary_PerkIcons.UIPerk_snapshot", true));
-    Templates.AddItem(PurePassive('Spook_Exfil', "img://UILibrary_PerkIcons.UIPerk_flight", true));
-    Templates.AddItem(PurePassive('Spook_Thunderflash', "img://UILibrary_PerkIcons.UIPerk_flashbang", true));
-    Templates.AddItem(PurePassive('Spook_SatchelCharge', "img://UILibrary_PerkIcons.UIPerk_item_x4", true));
-    Templates.AddItem(PurePassive('Spook_Mini4', "img://UILibrary_PerkIcons.UIPerk_bombard", true));
-    Templates.AddItem(PurePassive('Spook_Shrapnel', "img://UILibrary_PerkIcons.UIPerk_bigbooms", true));
-    Templates.AddItem(PurePassive('Spook_Pyrotechnics', "img://UILibrary_PerkIcons.UIPerk_flamethrower", true));
-    Templates.AddItem(PurePassive('Spook_MadBomber', "img://UILibrary_PerkIcons.UIPerk_quickthrow", true));
-
-    Templates.AddItem(PurePassive('Spook_Dummy0', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy1', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy2', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy3', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy4', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy5', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy6', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy7', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy8', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy9', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy10', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy11', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy12', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy13', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy14', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy15', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy16', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy17', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy18', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy19', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy20', "img://UILibrary_PerkIcons.UIPerk_unknown", true));
 
     return Templates;
+}
+
+// Modify an ability so the shooter must be a Spook
+// Used for abilities gained from common weapons.
+static function AbilityRequiresSpookShooter(X2AbilityTemplate Template)
+{
+    local X2Condition_UnitProperty SpookShooter;
+    SpookShooter = new class'X2Condition_UnitProperty';
+    SpookShooter.RequireSoldierClasses.AddItem('Spook');
+    Template.AbilityShooterConditions.AddItem(SpookShooter);
 }
 
 static function X2AbilityTemplate AddCoshAbility()
@@ -139,6 +163,7 @@ static function X2AbilityTemplate AddCoshAbility()
 
     // Shooter Conditions
     //
+    AbilityRequiresSpookShooter(Template);
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
     SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
     Template.AddShooterEffectExclusions(SkipExclusions);
@@ -233,6 +258,7 @@ static function X2AbilityTemplate AddSapAbility()
 
     // Shooter Conditions
     //
+    AbilityRequiresSpookShooter(Template);
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
     SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
     Template.AddShooterEffectExclusions(SkipExclusions);
@@ -273,6 +299,103 @@ static function X2AbilityTemplate AddSapAbility()
     return Template;
 }
 
+static function X2Effect_Persistent CreateEclipsedStatusEffect()
+{
+    local X2Effect_Persistent PersistentEffect;
+    PersistentEffect = new class'X2Effect_Persistent';
+    PersistentEffect.EffectName = class'X2StatusEffects'.default.UnconsciousName;
+    PersistentEffect.DuplicateResponse = 2;
+    PersistentEffect.BuildPersistentEffect(1, true, false);
+    PersistentEffect.bRemoveWhenTargetDies = true;
+    PersistentEffect.bIsImpairing = true;
+    PersistentEffect.SetDisplayInfo(2, class'X2StatusEffects'.default.UnconsciousFriendlyName, class'X2StatusEffects'.default.UnconsciousFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun", true, "img:///UILibrary_Common.status_unconscious");
+    PersistentEffect.EffectAddedFn = class'X2StatusEffects'.static.UnconsciousEffectAdded;
+    PersistentEffect.EffectRemovedFn = class'X2StatusEffects'.static.UnconsciousEffectRemoved;
+    PersistentEffect.VisualizationFn = EclipsedVisualization;
+    PersistentEffect.EffectTickedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationTicked;
+    PersistentEffect.EffectRemovedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationRemoved;
+    PersistentEffect.CleansedVisualizationFn =class'X2StatusEffects'.static.UnconsciousCleansedVisualization;
+    PersistentEffect.EffectHierarchyValue = class'X2StatusEffects'.default.UNCONCIOUS_HIERARCHY_VALUE;
+    PersistentEffect.DamageTypes.AddItem('Unconscious');
+    return PersistentEffect;
+}
+
+static function EclipsedVisualization(XComGameState VisualizeGameState, out VisualizationTrack BuildTrack, const name EffectApplyResult)
+{
+    if(EffectApplyResult != 'AA_Success')
+    {
+        return;
+    }
+
+    if(XComGameState_Unit(BuildTrack.StateObject_NewState) == none)
+    {
+        return;
+    }
+
+    //AddEffectSoundAndFlyOverToTrack(BuildTrack, VisualizeGameState.GetContext(), default.UnconsciousFriendlyName, 'None', 4, "img:///UILibrary_Common.status_unconscious");
+    class'X2StatusEffects'.static.AddEffectMessageToTrack(BuildTrack, class'X2StatusEffects'.default.UnconsciousEffectAcquiredString, VisualizeGameState.GetContext());
+    class'X2StatusEffects'.static.UpdateUnitFlag(BuildTrack, VisualizeGameState.GetContext());
+}
+
+static function X2AbilityTemplate AddEclipseAbility()
+{
+    local X2AbilityTemplate                     Template;
+    local X2AbilityCost_ActionPoints            ActionPointCost;
+    local X2Condition_UnitProperty              UnitPropertyCondition;
+    local X2Condition_SpookEclipse              EclipseCondition;
+    local X2AbilityTarget_Single                SingleTarget;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Eclipse');
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_coupdegrace";
+    Template.Hostility = eHostility_Neutral;
+    Template.bLimitTargetIcons = true;
+
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+
+    Template.bShowActivation = true;
+    Template.ShotHUDPriority = 1101;
+
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    Template.AddShooterEffectExclusions();
+
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 1; // 1 = require an action point left, 0 = anytime, like Evac.
+    ActionPointCost.bFreeCost = true;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    SingleTarget = new class'X2AbilityTarget_Single';
+    Template.AbilityTargetStyle = SingleTarget;
+
+    UnitPropertyCondition = new class'X2Condition_UnitProperty';
+    UnitPropertyCondition.ExcludeFriendlyToSource = false;
+    UnitPropertyCondition.FailOnNonUnits = true;
+    UnitPropertyCondition.ExcludeDead = true;
+    UnitPropertyCondition.ExcludeAlien = true;
+    UnitPropertyCondition.ExcludeRobotic = true;
+    UnitPropertyCondition.ExcludeHostileToSource = true;
+    UnitPropertyCondition.RequireWithinRange = true;
+    UnitPropertyCondition.WithinRange = 144; // 1 tile
+    Template.AbilityTargetConditions.AddItem(UnitPropertyCondition);
+
+    EclipseCondition = new class'X2Condition_SpookEclipse';
+    Template.AbilityTargetConditions.AddItem(EclipseCondition);
+
+    Template.AddTargetEffect(CreateEclipsedStatusEffect());
+
+    Template.ActivationSpeech = 'StabilizingAlly';
+    Template.bShowActivation = true;
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+    Template.BuildVisualizationFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildVisualization;
+    Template.BuildAffectedVisualizationSyncFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildAffectedVisualizationSync;
+
+    return Template;
+}
+
 static function X2AbilityTemplate AddVeilAbility()
 {
     local X2AbilityTemplate                         Template;
@@ -308,36 +431,8 @@ static function X2AbilityTemplate AddVeilAbility()
     ShadowEffect = new class'X2Effect_Persistent';
     ShadowEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
     ShadowEffect.SetDisplayInfo(ePerkBuff_Passive, default.ShadowFriendlyName, default.ShadowHelpText, "img:///UILibrary_PerkIcons.UIPerk_stealth",,, Template.AbilitySourceName);
-    ShadowEffect.EffectName = 'SpookShadowEffect';
+    ShadowEffect.EffectName = ShadowEffectName;
     Template.AddTargetEffect(ShadowEffect);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
-static function x2AbilityTemplate AddFarsightAbility()
-{
-    local X2AbilityTemplate                 Template;
-    local X2Effect_PersistentStatChange     FarsightEffect;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Farsight');
-    Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_observer"; // or combatsim_perception
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SelfTarget;
-    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.bCrossClassEligible = true;
-    Template.bDisplayInUITooltip = true;
-    Template.bDisplayInUITacticalText = true;
-
-    FarsightEffect = new class'X2Effect_PersistentStatChange';
-    FarsightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    FarsightEffect.SetDisplayInfo(ePerkBuff_Passive,Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage,,, Template.AbilitySourceName);
-    FarsightEffect.AddPersistentStatChange(eStat_SightRadius, default.SPOOK_FARSIGHT_SIGHT_RANGE_INCREASE);
-    Template.AddTargetEffect(FarsightEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -358,7 +453,7 @@ static function X2AbilityTemplate AddVanishAbility()
     local array<name>                       SkipExclusions;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Vanish');
-    Template.IconImage = "img://UILibrary_PerkIcons.UIPerk_item_wraith";
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_item_wraith";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_AlwaysShow;
     Template.Hostility = eHostility_Neutral;
@@ -626,14 +721,15 @@ static function Opportunist_BuildSimpleVisualization(XComGameState VisualizeGame
     OutVisualizationTracks.AddItem(TargetTrack);
 }
 
-static function X2AbilityTemplate AddBattleHardenedAbility()
+static function X2AbilityTemplate AddWiredAbility()
 {
-    local X2AbilityTemplate                         Template;
-    local X2Effect_DamageImmunity                   ImmunityEffect;
+    local X2AbilityTemplate                 Template;
+    local X2Effect_DamageImmunity           ImmunityEffect;
+    local X2Effect_PersistentStatChange     SightEffect;
 
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_BattleHardened');
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Wired');
     Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mindblast";
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mentalstrength";
     Template.Hostility = eHostility_Neutral;
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
     Template.AbilityToHitCalc = default.DeadEye;
@@ -648,9 +744,14 @@ static function X2AbilityTemplate AddBattleHardenedAbility()
     ImmunityEffect.ImmuneTypes.AddItem('Unconscious');
     ImmunityEffect.ImmuneTypes.AddItem('Panic');
     ImmunityEffect.ImmuneTypes.AddItem(class'X2Item_DefaultDamageTypes'.default.DisorientDamageType);
-
     ImmunityEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, false, , Template.AbilitySourceName);
     ImmunityEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    Template.AddTargetEffect(ImmunityEffect);
+
+    SightEffect = new class'X2Effect_PersistentStatChange';
+    SightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    SightEffect.AddPersistentStatChange(eStat_SightRadius, default.SPOOK_WIRED_SIGHT_RANGE_INCREASE);
+    Template.AddTargetEffect(SightEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -660,7 +761,6 @@ static function X2AbilityTemplate AddBattleHardenedAbility()
 static function X2AbilityTemplate AddDartAbility()
 {
     local X2AbilityTemplate                     Template;
-    local X2Condition_UnitProperty              SpookShooter;
     local X2Condition_Visibility                RequireVisibleCondition;
     local X2Condition_UnitProperty              NoRobotsCondition;
     local X2AbilityCost_ActionPoints            ActionPointCost;
@@ -691,9 +791,7 @@ static function X2AbilityTemplate AddDartAbility()
     Template.Hostility = eHostility_Neutral;
     Template.bAllowFreeFireWeaponUpgrade = true;
 
-    // Shooter must be a Spook (since this ability applies to their weapon)
-    SpookShooter = new class'X2Condition_UnitProperty';
-    SpookShooter.RequireSoldierClasses.AddItem('Spook');
+    AbilityRequiresSpookShooter(Template);
 
     // Target must be visible
     RequireVisibleCondition = new class'X2Condition_Visibility';
@@ -806,51 +904,3 @@ static function XComGameState BuildDartGameState(XComGameStateContext Context)
 
     return NewGameState;
 }
-
-//        // Walk through all AI and find live AIs who can see the target.
-//        foreach History.IterateByClassType(class'XComGameState_AIUnitData', AIUnitDataState)
-//        {
-//            if (AIUnitDataState.m_iUnitObjectID != TargetState.ObjectID)
-//            {
-//                UnitState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(AIUnitDataState.m_iUnitObjectID));
-//                if (UnitState == none)
-//                {
-//                    UnitState = XComGameState_Unit(History.GetGameStateForObjectID(AIUnitDataState.m_iUnitObjectID));
-//                }
-//
-//                if( UnitState != None && UnitState.IsAlive() )
-//                {
-//                    VisibilityMgr.GetVisibilityInfo(UnitState.ObjectID, TargetState.ObjectID, VisibilityInfo);
-//                    if (VisibilityInfo.bVisibleGameplay)
-//                    {
-//                        AlertInfo.AlertTileLocation = m_kUnitState.TileLocation;
-//                        AlertInfo.AlertRadius = 1;
-//                        AlertInfo.AlertUnitSourceID = m_kUnitState.ObjectID;
-//                        AlertInfo.AnalyzingHistoryIndex = History.GetCurrentHistoryIndex();
-//
-//                        NewAIUnitDataState = NewGameState.GetGameStateForObjectID(AIUnitDataState.ObjectID);
-//                        if (NewAIUnitDataState == none)
-//                        {
-//                            NewAIUnitDataState = XComGameState_AIUnitData(NewGameState.CreateStateObject(AIUnitDataState.Class, AIUnitDataState.ObjectID));
-//                            if (NewAIUnitDataState.AddAlertData(NewAIUnitDataState.m_iUnitObjectID, eAC_AlertedByYell, AlertInfo, NewGameState))
-//                            {
-//                                NewGameState.AddStateObject(NewAIUnitDataState);
-//                            }
-//                            else
-//                            {
-//                                NewGameState.PurgeGameStateForObjectID(NewAIUnitDataState.ObjectID);
-//                            }
-//                        }
-//                        else
-//                        {
-//                            NewAIUnitDataState.AddAlertData(NewAIUnitDataState.m_iUnitObjectID, eAC_AlertedByYell, AlertInfo, NewGameState);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    return NewGameState;
-//}
-

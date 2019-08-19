@@ -24,9 +24,10 @@ function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object Ev
     local LWTuple EvacDelayTuple;
     local XComGameState_HeadquartersXCom XComHQ;
     local XComGameStateHistory History;
-    local XComGameState_Unit UnitState;
-    local bool bOnlySpecialSoldiersFound;
-    local int SquadIndex;
+    local XComGameState_Unit Unit;
+    local int SquadIndex, Spooks;
+    local bool bOnlySpooks;
+    local bool bSomeoneHasExeunt;
 
     EvacDelayTuple = LWTuple(EventData);
     if(EvacDelayTuple == none)
@@ -51,26 +52,46 @@ function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object Ev
     XComHQ = `XCOMHQ;
     History = `XCOMHISTORY;
 
-    bOnlySpecialSoldiersFound = true;
+    Spooks = 0;
+    bOnlySpooks = true;
+    bSomeoneHasExeunt = false;
+
     for (SquadIndex = 0; SquadIndex < XComHQ.Squad.Length; SquadIndex++)
     {
-        UnitState = XComGameState_Unit(History.GetGameStateForObjectID(XComHQ.Squad[SquadIndex].ObjectID));
-        if (UnitState != none && UnitState.GetSoldierClassTemplateName() == 'Spook')
+        Unit = XComGameState_Unit(History.GetGameStateForObjectID(XComHQ.Squad[SquadIndex].ObjectID));
+        if (Unit != none)
         {
-            `SPOOKLOG("OnGetEvacPlacementDelay: Found a Spook, -1");
-            EvacDelayTuple.Data[0].i -= 1; // go negative if we fire before LW2, that's fine
-        }
-        else
-        {
-            `SPOOKLOG("OnGetEvacPlacementDelay: Found another soldier");
-            bOnlySpecialSoldiersFound = false;
+            if (Unit.HasSoldierAbility(class'X2Ability_SpookAbilitySet'.const.ExeuntAbilityName))
+            {
+                bSomeoneHasExeunt = true;
+            }
+            if (Unit.GetSoldierClassTemplateName() == 'Spook')
+            {
+                ++Spooks;
+            }
+            else
+            {
+                bOnlySpooks = false;
+            }
         }
     }
 
-    if (bOnlySpecialSoldiersFound)
+    if (bSomeoneHasExeunt)
     {
-        `SPOOKLOG("OnGetEvacPlacementDelay: Only found Spooks, -100");
-        EvacDelayTuple.Data[0].i -= 100; // go negative if we fire before LW2, that's fine; capped to min 1 anyway
+        if (bOnlySpooks)
+        {
+            `SPOOKLOG("OnGetEvacPlacementDelay: Exeunt and only found Spooks, -100");
+            EvacDelayTuple.Data[0].i -= 100; // go negative if we fire before LW2, that's fine; capped to min 1 anyway
+        }
+        else
+        {
+            `SPOOKLOG("OnGetEvacPlacementDelay: Exeunt and " $ Spooks $ " Spooks, " $ -Spooks);
+            EvacDelayTuple.Data[0].i -= Spooks;
+        }
+    }
+    else
+    {
+        `SPOOKLOG("OnGetEvacPlacementDelay: Nobody has Exeunt");
     }
 
     return ELR_NoInterrupt;

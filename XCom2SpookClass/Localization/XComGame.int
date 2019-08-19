@@ -11,6 +11,13 @@ LocHelpText="Fire a dart at the target which causes bleeding."
 LocFlyOverText="Dart"
 LocPromotionPopupText="<Bullet/> Cannot be used versus robotic targets."
 
+[Spook_Wired X2AbilityTemplate]
+LocFriendlyName="Wired"
+LocLongDescription="Cannot be stunned, disoriented or rendered unconsciousness. Able to see further."
+LocHelpText=""
+LocFlyOverText="Wired"
+LocPromotionPopupText="<Bullet/> Passive effect."
+
 [Spook_Exeunt X2AbilityTemplate]
 LocFriendlyName="Exeunt"
 LocLongDescription="Evac times are reduced by 1 turn for each Spook on a mission, to a minimum of 1 turn. If only Spooks are on a mission, evac is 1 turn."
@@ -42,14 +49,14 @@ LocPromotionPopupText="<Bullet/> Passive effect."
 [Spook_Cosh X2AbilityTemplate]
 LocFriendlyName="Cosh"
 LocLongDescription="Attack an enemy within movement range with your baton, dealing full damage and disorienting them for 1 turn. Grants a free movement action."
-LocHelpText=""
+LocHelpText="Cosh the target."
 LocFlyOverText="Cosh"
 LocPromotionPopupText="<Bullet/> Unlike Sap, Cosh will break concealment.<br/><Bullet/> Robotic enemies are only damaged, not disoriented."
 
 [Spook_Sap X2AbilityTemplate]
 LocFriendlyName="Sap"
 LocLongDescription="Attack an enemy within movement range with your baton, dealing minimal damage and stunning them. Critical hits will render them unconscious. Grants a free movement action. Does not break concealment."
-LocHelpText=""
+LocHelpText="Sap the target."
 LocFlyOverText="Sap"
 LocPromotionPopupText="<Bullet/> Sap does not break concealment even if moving through detection range, although ending your turn in a vulnerable location may cause enemies to detect the solder as usual.<br/><Bullet/> Robotic enemies are only damaged, not stunned or rendered unconscious.<br/><Bullet/> Sapped enemies who remain unconscious do not grant corpses or loot."
 

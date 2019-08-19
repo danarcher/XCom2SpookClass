@@ -348,7 +348,7 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit
         }
     }
 
-    if (UnitHasEffect(SeenUnit, 'SpookShadowEffect') != none)
+    if (UnitHasEffect(SeenUnit, class'X2Ability_SpookAbilitySet'.const.ShadowEffectName) != none)
     {
         SeenUnit.GetKeystoneVisibilityLocation(SeenUnitTileLocation);
         SeenUnitPosition = `XWORLD.GetPositionFromTileCoordinates(SeenUnitTileLocation);

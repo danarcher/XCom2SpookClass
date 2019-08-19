@@ -70,7 +70,6 @@ Asylum (1) - Target rebel in LOS exits the AO. Works during terror missions.
 Ambassador (Passive) - Rebels gain Tactical Sense.
 Diplomatic Bag (Passive) - Rebels gain Carapace Plating.
 
-
 SPARE
 
 Farsight
