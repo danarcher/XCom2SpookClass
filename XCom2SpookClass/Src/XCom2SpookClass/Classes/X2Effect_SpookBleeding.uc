@@ -10,7 +10,8 @@ var localized string BleedingEffectAcquired;
 var localized string BleedingEffectTicked;
 var localized string BleedingEffectLost;
 
-static function X2Effect_SpookBleeding CreateBleedingStatusEffect(int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick)
+
+static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTypeName, int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick)
 {
     local X2Effect_SpookBleeding Effect;
     //local X2Condition_UnitProperty UnitPropCondition;
@@ -19,12 +20,12 @@ static function X2Effect_SpookBleeding CreateBleedingStatusEffect(int BleedingTu
     Effect.EffectName = 'SpookBleeding';
     Effect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(BleedingTurns));
     Effect.SetDisplayInfo(ePerkBuff_Penalty, default.BleedingFriendlyName, default.BleedingHelpText, "img:///UILibrary_PerkIcons.UIPerk_bloodcall");
-    Effect.SetBleedDamage(DamagePerTick, DamageSpreadPerTick, 'SpookBleedDamageType');
+    Effect.SetBleedDamage(DamagePerTick, DamageSpreadPerTick, DamageTypeName);
     Effect.VisualizationFn = BleedingVisualization;
     Effect.EffectTickedVisualizationFn = BleedingVisualizationTicked;
     Effect.EffectRemovedVisualizationFn = BleedingVisualizationRemoved;
     Effect.bRemoveWhenTargetDies = true;
-    Effect.DamageTypes.AddItem('SpookBleedDamageType');
+    Effect.DamageTypes.AddItem(DamageTypeName);
     Effect.DuplicateResponse = eDupe_Refresh;
     Effect.bCanTickEveryAction = true;
 
@@ -60,7 +61,6 @@ simulated function X2Effect_ApplyWeaponDamage GetBleedDamage()
 
 DefaultProperties
 {
-    DamageTypes(0)="SpookBleedDamageType"
     DuplicateResponse=eDupe_Refresh
     bCanTickEveryAction=true
 

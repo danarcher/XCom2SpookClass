@@ -13,13 +13,17 @@ function OnInit()
 
     `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
+    `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
 }
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
     // Ensure eg. reinforcement units have their movement events overridden by us;
-    // This does presume that units don't spawn during the player's turn.
+    // This does presume that units don't spawn during a player's turn and then
+    // move and see the player using their default logic, so we also check for
+    // spawns. Arguably this may be overkill (if we do the latter, the former is
+    // less relevant).
     if (`TACTICALRULES.GetLocalClientPlayerObjectID() == XComGameState_Player(EventSource).ObjectID)
     {
         `SPOOKLOG("OnPlayerTurnBegun: Human");
@@ -30,6 +34,30 @@ function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSou
     }
     ReplaceEventListeners();
     return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnUnitSpawned(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local X2EventManager EventMgr;
+    local XComGameState_Unit UnitState;
+    EventMgr = `XEVENTMGR;
+    UnitState = XComGameState_Unit(EventData);
+    if (UnitState != none)
+    {
+        `SPOOKLOG("OnUnitSpawned: Valid");
+        UnregisterUnitEvents(EventMgr, UnitState);
+    }
+    else
+    {
+        `SPOOKLOG("OnUnitSpawned: Invalid");
+    }
+    return ELR_NoInterrupt;
+}
+
+function UnregisterUnitEvents(X2EventManager EventMgr, XComGameState_Unit UnitState)
+{
+    EventMgr.UnRegisterFromEvent(UnitState, 'ObjectMoved');
+    EventMgr.UnRegisterFromEvent(UnitState, 'UnitTakeEffectDamage');
 }
 
 function ReplaceEventListeners()
@@ -48,8 +76,7 @@ function ReplaceEventListeners()
 
     foreach History.IterateByClassType(class'XComGameState_Unit', UnitState)
     {
-        EventMgr.UnRegisterFromEvent(UnitState, 'ObjectMoved');
-        EventMgr.UnRegisterFromEvent(UnitState, 'UnitTakeEffectDamage');
+        UnregisterUnitEvents(EventMgr, UnitState);
     }
 
     foreach History.IterateByClassType(class'XComGameState_Player', PlayerState)
@@ -431,7 +458,7 @@ function UnitASeesUnitB(XComGameState_Unit UnitA, XComGameState_Unit UnitB, XCom
 
 static function bool IsCorpseStealthKill(XComGameState_Unit Corpse)
 {
-    return Corpse.KilledByDamageTypes.Find('SpookBleedDamageType') >= 0;
+    return false; // Corpse.KilledByDamageTypes.Find(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName) >= 0;
 }
 
 function EventListenerReturn OnUnitDied(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
@@ -451,7 +478,7 @@ function EventListenerReturn OnUnitDied(Object EventData, Object EventSource, XC
         // Also TODO: elevaysheeyon should prevent detection if we're going all Dishonored. So higher up = they can't see you. Nobody looks up, after all.
         // There'd still be roof drones to worry about. Maybe roof drones get instasmurdered, the askholes.
         `SPOOKLOG("Detected a stealth kill");
-        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Unit Concealment Broken");
+        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Marking Spook Stealth Kill");
         Unit = XComGameState_Unit(NewGameState.CreateStateObject(class'XComGameState_Unit', Unit.ObjectID));
         Unit.KilledByDamageTypes.AddItem('SpookStealthKillMarker');
         NewGameState.AddStateObject(Unit);

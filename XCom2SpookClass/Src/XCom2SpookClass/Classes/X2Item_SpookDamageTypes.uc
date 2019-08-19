@@ -4,18 +4,22 @@ class X2Item_SpookDamageTypes
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
+const BleedDamageTypeName = 'SpookBleedDamageType';
+const StealthBleedDamageTypeName = 'SpookStealthBleedDamageType';
+
 static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> DamageTypes;
-    DamageTypes.AddItem(CreateSpookBleedDamageType());
+    DamageTypes.AddItem(CreateDamageType(BleedDamageTypeName));
+    DamageTypes.AddItem(CreateDamageType(StealthBleedDamageTypeName));
     return DamageTypes;
 }
 
-static function X2DamageTypeTemplate CreateSpookBleedDamageType()
+static function X2DamageTypeTemplate CreateDamageType(name DataName)
 {
     local X2DamageTypeTemplate Template;
 
-    `CREATE_X2TEMPLATE(class'X2DamageTypeTemplate', Template, 'SpookBleedDamageType');
+    `CREATE_X2TEMPLATE(class'X2DamageTypeTemplate', Template, DataName);
 
     Template.bCauseFracture = false;
     Template.MaxFireCount = 0;

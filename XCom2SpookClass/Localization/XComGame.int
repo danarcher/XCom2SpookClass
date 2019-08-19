@@ -1,8 +1,15 @@
 [Spook X2SoldierClassTemplate]
-+DisplayName="Spooks"
++DisplayName="Spook"
 ClassSummary="Spooks conduct black bag operations in enemy territory."
 LeftAbilityTreeTitle="Footpad"
 RightAbilityTreeTitle="Diplomat"
+
+[Spook_Dart X2AbilityTemplate]
+LocFriendlyName="Dart"
+LocLongDescription="Fire a dart which causes bleeding. Does not break concealment."
+LocHelpText="Fire a dart at the target which causes bleeding."
+LocFlyOverText="Dart"
+LocPromotionPopupText="<Bullet/> Cannot be used versus robotic targets."
 
 [Spook_Exeunt X2AbilityTemplate]
 LocFriendlyName="Exeunt"

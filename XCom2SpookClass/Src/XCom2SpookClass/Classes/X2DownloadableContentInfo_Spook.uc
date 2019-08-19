@@ -15,7 +15,52 @@ static event InstallNewCampaign(XComGameState StartState)
 static event OnPostTemplatesCreated()
 {
     `SPOOKSLOG("OnPostTemplatesCreated");
+    UpdateWeaponTemplates();
     UpdateAbilityTemplates();
+}
+
+static function UpdateWeaponTemplates()
+{
+    local X2ItemTemplateManager ItemManager;
+
+    `SPOOKSLOG("Updating weapon templates");
+    ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_CV', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_LS', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_MG', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_BM', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_CV', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_LS', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_MG', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_BM', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_CV', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_LS', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_MG', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_BM', class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+}
+
+static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, name ItemName, optional WeaponDamageValue ExtraDamage)
+{
+    local X2WeaponTemplate Template;
+
+    Template = X2WeaponTemplate(ItemManager.FindItemTemplate(ItemName));
+    if (Template != none)
+    {
+        `SPOOKSLOG("Adding dart ability to " $ ItemName);
+        Template.Abilities.AddItem('Spook_Dart');
+        if (ExtraDamage.Tag != '')
+        {
+            `SPOOKSLOG("Adding extra damage to " $ ItemName $ ", (" $ ExtraDamage.Damage $ " +/- " $ ExtraDamage.Spread $ " (+" $ ExtraDamage.PlusOne $ ") C" $ ExtraDamage.Crit $ " P" $ ExtraDamage.Pierce $ " S" $ ExtraDamage.Shred $ " Tag=" $ ExtraDamage.Tag $ " Type=" $ ExtraDamage.DamageType);
+            Template.ExtraDamage.AddItem(ExtraDamage);
+        }
+    }
+    else
+    {
+        `SPOOKSLOG(ItemName $ " not found");
+    }
 }
 
 static function UpdateAbilityTemplates()

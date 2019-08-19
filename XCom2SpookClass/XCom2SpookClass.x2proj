@@ -1,19 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<Project ToolsVersion="12" DefaultTargets="Default">
+<Project ToolsVersion="12" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Guid>48ab568f-81b3-449d-b755-02416abc4576</Guid>
-    <Name>Spook Class</Name>
+    <Name>XCom2SpookClass</Name>
     <Description>Spook class for XCOM 2.</Description>
     <SteamPublishID>0</SteamPublishID>
     <AssemblyName>XCom2SpookClass</AssemblyName>
     <RootNamespace>XCom2SpookClass</RootNamespace>
+    <ProjectGuid>{2c19b4de-a729-4cb0-bdba-c02105229de7}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Config" />
     <Folder Include="Content" />
     <Folder Include="Localization" />
     <Folder Include="Src" />
+    <Folder Include="Src\LW_Tuple\" />
     <Folder Include="Src\LW_Tuple\Classes" />
+    <Folder Include="Src\XCom2SpookClass\" />
     <Folder Include="Src\XCom2SpookClass\Classes" />
   </ItemGroup>
   <ItemGroup>

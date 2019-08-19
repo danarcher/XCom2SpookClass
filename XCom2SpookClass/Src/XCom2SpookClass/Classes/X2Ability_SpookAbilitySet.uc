@@ -27,6 +27,15 @@ var config int SPOOK_OPPORTUNIST_BLEED_TURNS;
 var config int SPOOK_OPPORTUNIST_BLEED_DAMAGE_PER_TICK;
 var config int SPOOK_OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK;
 
+var config WeaponDamageValue SPOOK_DART_CONVENTIONAL_DAMAGE;
+var config WeaponDamageValue SPOOK_DART_LASER_DAMAGE;
+var config WeaponDamageValue SPOOK_DART_MAGNETIC_DAMAGE;
+var config WeaponDamageValue SPOOK_DART_BEAM_DAMAGE;
+
+var config int SPOOK_DART_BLEED_TURNS;
+var config int SPOOK_DART_BLEED_DAMAGE_PER_TICK;
+var config int SPOOK_DART_BLEED_DAMAGE_SPREAD_PER_TICK;
+
 var localized string OpportunistFriendlyName;
 
 static function array<X2DataTemplate> CreateTemplates()
@@ -42,6 +51,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddOpportunistAbility());
     Templates.AddItem(AddOpportunistAttackAbility());
     Templates.AddItem(AddBattleHardenedAbility());
+    Templates.AddItem(AddDartAbility());
     Templates.AddItem(PurePassive('Spook_BatonRound', "img://UILibrary_PerkIcons.UIPerk_ambush", true));
     Templates.AddItem(PurePassive('Spook_Eclipse', "img://UILibrary_PerkIcons.UIPerk_muton_punch", true)); // or UIPerk_coupdegrace
     Templates.AddItem(PurePassive('Spook_Blackjack', "img:///UILibrary_PerkIcons.UIPerk_adventstunlancer_stunlance", true));
@@ -260,8 +270,6 @@ static function X2AbilityTemplate AddSapAbility()
     //
     Template.SourceMissSpeech = 'SwordMiss';
 
-    class'X2Effect_SpookTest'.static.Setup(Template);
-
     return Template;
 }
 
@@ -442,7 +450,7 @@ static function X2AbilityTemplate AddOpportunistAttackAbility()
     local X2Condition_UnitProperty          SourceConcealedCondition;
     local X2Condition_UnitProperty          TargetPropertyCondition;
     local X2Condition_Visibility            TargetVisibilityCondition;
-    local array<name>                       SkipExclusions;
+    //local array<name>                     SkipExclusions;
     //local X2Effect_Persistent             UnconsciousEffect;
     local X2Effect_SpookUngroupAI           UngroupEffect;
 
@@ -493,8 +501,8 @@ static function X2AbilityTemplate AddOpportunistAttackAbility()
     Template.AbilityTargetConditions.AddItem(TargetVisibilityCondition);
 
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
-    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
-    Template.AddShooterEffectExclusions(SkipExclusions);
+    //SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
+    //Template.AddShooterEffectExclusions(SkipExclusions);
 
     // ONLY trigger when the source is concealed
     SourceConcealedCondition = new class'X2Condition_UnitProperty';
@@ -515,8 +523,8 @@ static function X2AbilityTemplate AddOpportunistAttackAbility()
     UngroupEffect.bRemoveWhenTargetDies = true;
     Template.AddTargetEffect(UngroupEffect);
 
-    // Bleed!
-    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(default.SPOOK_OPPORTUNIST_BLEED_TURNS, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_PER_TICK, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK));
+    // Bleed
+    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.SPOOK_OPPORTUNIST_BLEED_TURNS, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_PER_TICK, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK));
 
     // Prevent repeatedly hammering on a unit with Opportunist triggers.
     //(This effect does nothing, but enables many-to-many marking of which Opportunist attacks have already occurred each turn.)
@@ -648,3 +656,201 @@ static function X2AbilityTemplate AddBattleHardenedAbility()
 
     return Template;
 }
+
+static function X2AbilityTemplate AddDartAbility()
+{
+    local X2AbilityTemplate                     Template;
+    local X2Condition_UnitProperty              SpookShooter;
+    local X2Condition_Visibility                RequireVisibleCondition;
+    local X2Condition_UnitProperty              NoRobotsCondition;
+    local X2AbilityCost_ActionPoints            ActionPointCost;
+    local X2Effect_ApplyWeaponDamage_SpookDart  DamageEffect;
+    local X2Effect_SpookUngroupAI               UngroupEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Dart');
+
+    Template.bDontDisplayInAbilitySummary = false;
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bloodcall";
+    Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_PISTOL_SHOT_PRIORITY;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.DisplayTargetHitChance = true;
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+    Template.bDisplayInUITooltip = true;
+    Template.bDisplayInUITacticalText = true;
+
+    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityToHitCalc = default.SimpleStandardAim;
+    Template.AbilityToHitOwnerOnMissCalc = default.SimpleStandardAim;
+    Template.TargetingMethod = class'X2TargetingMethod_OverTheShoulder';
+    Template.bUsesFiringCamera = true;
+    Template.CinescriptCameraType = "StandardGunFiring";
+
+    Template.ConcealmentRule = eConceal_Always;
+    Template.bSilentAbility = true;
+    Template.Hostility = eHostility_Neutral;
+    Template.bAllowFreeFireWeaponUpgrade = true;
+
+    // Shooter must be a Spook (since this ability applies to their weapon)
+    SpookShooter = new class'X2Condition_UnitProperty';
+    SpookShooter.RequireSoldierClasses.AddItem('Spook');
+
+    // Target must be visible
+    RequireVisibleCondition = new class'X2Condition_Visibility';
+    RequireVisibleCondition.bRequireGameplayVisible = true;
+    RequireVisibleCondition.bAllowSquadsight = true;
+    Template.AbilityTargetConditions.AddItem(RequireVisibleCondition);
+
+    // Target must be alive
+    Template.AbilityTargetConditions.AddItem(default.LivingHostileTargetProperty);
+
+    // Shooter must be alive
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+
+    // No Robots
+    NoRobotsCondition = new class'X2Condition_UnitProperty';
+    NoRobotsCondition.ExcludeRobotic = true;
+    Template.AbilityTargetConditions.AddItem(NoRobotsCondition);
+
+    // Cost an action
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 1;
+    ActionPointCost.bConsumeAllPoints = false;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    // Can cause a holotarget to be applied
+    Template.AddTargetEffect(class'X2Ability_GrenadierAbilitySet'.static.HoloTargetEffect());
+    Template.AssociatedPassives.AddItem('HoloTargeting');
+    // (Cannot shred even if the shooter can, so we don't add that effect.)
+
+    // Damage
+    DamageEffect = new class'X2Effect_ApplyWeaponDamage_SpookDart';
+    DamageEffect.bIgnoreBaseDamage = true;
+    DamageEffect.bAllowWeaponUpgrade = false;
+    DamageEffect.DamageTag = 'Spook_Dart';
+    Template.AddTargetEffect(DamageEffect);
+    Template.bAllowBonusWeaponEffects = false;
+    Template.bAllowAmmoEffects = false;
+
+    // Bleed
+    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.SPOOK_DART_BLEED_TURNS, default.SPOOK_DART_BLEED_DAMAGE_PER_TICK, default.SPOOK_DART_BLEED_DAMAGE_SPREAD_PER_TICK));
+
+    // Don't break your patrol by dying on them later, especially if you're in charge.
+    UngroupEffect = new class'X2Effect_SpookUngroupAI';
+    UngroupEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    UngroupEffect.bRemoveWhenTargetDies = true;
+    Template.AddTargetEffect(UngroupEffect);
+
+    Template.BuildNewGameStateFn = BuildDartGameState;
+    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+    Template.BuildInterruptGameStateFn = TypicalAbility_BuildInterruptGameState;
+
+    return Template;
+}
+
+static function XComGameState BuildDartGameState(XComGameStateContext Context)
+{
+    local XComGameState NewGameState;
+    local XComGameStateHistory History;
+    local XComGameStateContext_Ability AbilityContext;
+    local XComGameState_Unit TargetState;
+    local XComGameState_AIUnitData AI;
+    local AlertAbilityInfo AlertInfo;
+
+    History = `XCOMHISTORY;
+
+    NewGameState = History.CreateNewGameState(true, Context);
+
+    // First do what typical abilities do.
+    TypicalAbility_FillOutGameState(NewGameState);
+
+    // Then if we hit, we want to do some other things.
+    AbilityContext = XComGameStateContext_Ability(NewGameState.GetContext());
+    if (AbilityContext.IsResultContextHit())
+    {
+        // Grab our target unit.
+        TargetState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(AbilityContext.InputContext.PrimaryTarget.ObjectID));
+        if (TargetState == none)
+        {
+            TargetState = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.PrimaryTarget.ObjectID));
+        }
+
+        // If the target dies, everyone will be worried by the corpse.
+        // If they don't, we want to worry them.
+        if (TargetState != none && TargetState.IsAlive())
+        {
+            AlertInfo.AlertTileLocation = TargetState.TileLocation;
+            AlertInfo.AlertRadius = 1;
+            AlertInfo.AlertUnitSourceID = 0; //TargetState.ObjectID;
+            AlertInfo.AnalyzingHistoryIndex = History.GetCurrentHistoryIndex();
+
+            AI = XComGameState_AIUnitData(NewGameState.GetGameStateForObjectID(TargetState.GetAIUnitDataID()));
+            if (AI == none)
+            {
+                AI = XComGameState_AIUnitData(NewGameState.CreateStateObject(class'XComGameState_AIUnitData', TargetState.GetAIUnitDataID()));
+                if (AI.AddAlertData(AI.m_iUnitObjectID, eAC_DetectedSound, AlertInfo, NewGameState))
+                {
+                    NewGameState.AddStateObject(AI);
+                }
+                else
+                {
+                    NewGameState.PurgeGameStateForObjectID(AI.ObjectID);
+                }
+            }
+            else
+            {
+                AI.AddAlertData(AI.m_iUnitObjectID, eAC_DetectedSound, AlertInfo, NewGameState);
+            }
+        }
+    }
+
+    return NewGameState;
+}
+
+//        // Walk through all AI and find live AIs who can see the target.
+//        foreach History.IterateByClassType(class'XComGameState_AIUnitData', AIUnitDataState)
+//        {
+//            if (AIUnitDataState.m_iUnitObjectID != TargetState.ObjectID)
+//            {
+//                UnitState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(AIUnitDataState.m_iUnitObjectID));
+//                if (UnitState == none)
+//                {
+//                    UnitState = XComGameState_Unit(History.GetGameStateForObjectID(AIUnitDataState.m_iUnitObjectID));
+//                }
+//
+//                if( UnitState != None && UnitState.IsAlive() )
+//                {
+//                    VisibilityMgr.GetVisibilityInfo(UnitState.ObjectID, TargetState.ObjectID, VisibilityInfo);
+//                    if (VisibilityInfo.bVisibleGameplay)
+//                    {
+//                        AlertInfo.AlertTileLocation = m_kUnitState.TileLocation;
+//                        AlertInfo.AlertRadius = 1;
+//                        AlertInfo.AlertUnitSourceID = m_kUnitState.ObjectID;
+//                        AlertInfo.AnalyzingHistoryIndex = History.GetCurrentHistoryIndex();
+//
+//                        NewAIUnitDataState = NewGameState.GetGameStateForObjectID(AIUnitDataState.ObjectID);
+//                        if (NewAIUnitDataState == none)
+//                        {
+//                            NewAIUnitDataState = XComGameState_AIUnitData(NewGameState.CreateStateObject(AIUnitDataState.Class, AIUnitDataState.ObjectID));
+//                            if (NewAIUnitDataState.AddAlertData(NewAIUnitDataState.m_iUnitObjectID, eAC_AlertedByYell, AlertInfo, NewGameState))
+//                            {
+//                                NewGameState.AddStateObject(NewAIUnitDataState);
+//                            }
+//                            else
+//                            {
+//                                NewGameState.PurgeGameStateForObjectID(NewAIUnitDataState.ObjectID);
+//                            }
+//                        }
+//                        else
+//                        {
+//                            NewAIUnitDataState.AddAlertData(NewAIUnitDataState.m_iUnitObjectID, eAC_AlertedByYell, AlertInfo, NewGameState);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    return NewGameState;
+//}
+
