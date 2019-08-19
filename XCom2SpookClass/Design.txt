@@ -50,8 +50,10 @@ WANT
 Wired - Immune to irritating stuns, disorients and unconsiousness. Can see slightly further than normal troops.
 Eclipse (>|) - Render an adjacent ally (soldier or civilian) unconscious (and carryable) even if mind controlled. Does not break concealment. Clips, BA, gimme clips. (Uses the VIP "punch" icon.)
 LOOK>>>Veil (Passive) - Rank-based detection range reduction. Can't be revealed in high cover ***OR BY DRONES***.
+    NOTE: Could add an effect to spooks that makes them INVISIBLE to drones. See X2Effect_Burrowed.ModifyGameplayVisibilityForTarget().
 Exeunt (Passive) - Evac times are reduced by 1 turn for each NRO Delta Agent on a mission, to a minimum of 1 turn. If only NRO Delta Agents are on a mission, evac is always 1 turn.
 Operator (Passive) - Planting X4 (to destroy facilities), hacking a door, opening loot boxes, punching out VIPs, Eclipse, and picking up and putting down bodies do not consume an action or end your turn.
+    NOTE: If we changed the spook's team briefly before hacking etc. resetting afterwards we can perhaps prevent reveals by Kismet on VIP and rescue missions. In theory we could prevent reveal by modifying visibility from spook to VIP but then the objective won't complete.
 Vanish (>|) - Smoke, grant concealment and a concealed bonus move. Charges = 2.
 Exfil (>|) - Releases a smoke cloud and exit the AO. Charges = 1.
 Exodus (>|) - Targeted AoE. Releases a smoke cloud. All allied units in the AoE exit the AO. Charges = 1.
