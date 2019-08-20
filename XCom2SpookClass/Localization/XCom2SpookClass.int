@@ -1,6 +1,4 @@
 [X2Ability_SpookAbilitySet]
-ShadowFriendlyName="Shadow"
-ShadowHelpText="Remains concealed when next to high cover and interactable objects."
 OpportunistFriendlyName="Opportunist"
 
 [SpookDetectionManager]

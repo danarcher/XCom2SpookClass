@@ -4,6 +4,16 @@ ClassSummary="Spooks conduct black bag operations in enemy territory."
 LeftAbilityTreeTitle="Footpad"
 RightAbilityTreeTitle="Diplomat"
 
+[Spook_CarryUnit X2AbilityTemplate]
+LocFriendlyName=Carry Unit (Spook)
+LocHelpText="Pick up the target unit and carry them with you."
+LocFlyOverText=Picked Up Unit
+
+[Spook_PutDownUnit X2AbilityTemplate]
+LocFriendlyName=Put Down Unit (Spook)
+LocHelpText="Place the unit you are carrying at your feet."
+LocFlyOverText=Put Down Unit
+
 [Spook_Dart X2AbilityTemplate]
 LocFriendlyName="Dart"
 LocLongDescription="Fire a dart which causes bleeding. Does not break concealment."

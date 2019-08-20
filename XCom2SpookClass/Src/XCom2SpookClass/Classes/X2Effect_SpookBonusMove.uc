@@ -4,7 +4,6 @@ class X2Effect_SpookBonusMove
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var bool bIsConcealedBonusMove;
 var bool bEvenIfFree;
 
 function bool PostAbilityCostPaid(XComGameState_Effect EffectState, XComGameStateContext_Ability AbilityContext, XComGameState_Ability kAbility, XComGameState_Unit SourceUnit, XComGameState_Item AffectWeapon, XComGameState NewGameState, const array<name> PreCostActionPoints, const array<name> PreCostReservePoints)

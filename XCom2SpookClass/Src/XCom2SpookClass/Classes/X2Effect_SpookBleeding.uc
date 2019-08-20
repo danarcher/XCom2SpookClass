@@ -11,7 +11,7 @@ var localized string BleedingEffectTicked;
 var localized string BleedingEffectLost;
 
 
-static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTypeName, int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick)
+static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTypeName, int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick, int PlusOnePerTick)
 {
     local X2Effect_SpookBleeding Effect;
     //local X2Condition_UnitProperty UnitPropCondition;
@@ -20,7 +20,7 @@ static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTyp
     Effect.EffectName = 'SpookBleeding';
     Effect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(BleedingTurns));
     Effect.SetDisplayInfo(ePerkBuff_Penalty, default.BleedingFriendlyName, default.BleedingHelpText, "img:///UILibrary_PerkIcons.UIPerk_bloodcall");
-    Effect.SetBleedDamage(DamagePerTick, DamageSpreadPerTick, DamageTypeName);
+    Effect.SetBleedDamage(DamagePerTick, DamageSpreadPerTick, PlusOnePerTick, DamageTypeName);
     Effect.VisualizationFn = BleedingVisualization;
     Effect.EffectTickedVisualizationFn = BleedingVisualizationTicked;
     Effect.EffectRemovedVisualizationFn = BleedingVisualizationRemoved;
@@ -43,15 +43,18 @@ static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTyp
     return Effect;
 }
 
-simulated function SetBleedDamage(int Damage, int Spread, name DamageType)
+simulated function SetBleedDamage(int Damage, int Spread, int PlusOne, name DamageType)
 {
     local X2Effect_ApplyWeaponDamage BleedDamage;
 
     BleedDamage = GetBleedDamage();
     BleedDamage.EffectDamageValue.Damage = Damage;
     BleedDamage.EffectDamageValue.Spread = Spread;
+    BleedDamage.EffectDamageValue.PlusOne = PlusOne;
     BleedDamage.EffectDamageValue.DamageType = DamageType;
     BleedDamage.bIgnoreBaseDamage = true;
+    BleedDamage.bBypassShields = true;
+    BleedDamage.bIgnoreArmor = true;
 }
 
 simulated function X2Effect_ApplyWeaponDamage GetBleedDamage()

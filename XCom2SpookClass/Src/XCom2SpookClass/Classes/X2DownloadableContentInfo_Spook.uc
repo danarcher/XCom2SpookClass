@@ -26,44 +26,46 @@ static function UpdateWeaponTemplates()
     `SPOOKSLOG("Updating weapon templates");
     ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
 
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_CV', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_LS', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_MG', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_BM', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
 
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_CV', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_LS', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_MG', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_BM', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
 
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_CV', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_LS', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_MG', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_BM', true, false, class'X2Ability_SpookAbilitySet'.default.SPOOK_DART_BEAM_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
 
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_CV', false, true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_LS', false, true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_MG', false, true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_BM', false, true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_CV', true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_LS', true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_MG', true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_BM', true);
 }
 
-static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, name ItemName, bool bAddDart, bool bAddMelee, optional WeaponDamageValue ExtraDamage)
+static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, name ItemName, bool bMelee, optional WeaponDamageValue ExtraDamage)
 {
     local X2WeaponTemplate Template;
 
     Template = X2WeaponTemplate(ItemManager.FindItemTemplate(ItemName));
     if (Template != none)
     {
-        if (bAddDart)
-        {
-            `SPOOKSLOG("Adding dart ability to " $ ItemName);
-            Template.Abilities.AddItem('Spook_Dart');
-        }
-        if (bAddMelee)
+        if (bMelee)
         {
             `SPOOKSLOG("Adding melee abilities to " $ ItemName);
             Template.Abilities.AddItem('Spook_Cosh');
             Template.Abilities.AddItem('Spook_Sap');
+        }
+        else
+        {
+            `SPOOKSLOG("Adding ranged abilities to " $ ItemName);
+            Template.Abilities.AddItem('Spook_Dart');
+            Template.Abilities.AddItem('Spook_CarryUnit');
+            Template.Abilities.AddItem('Spook_PutDownUnit');
         }
         if (ExtraDamage.Tag != '')
         {
@@ -89,13 +91,30 @@ static function UpdateAbilityTemplates()
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'ChangeFormSawEnemy');
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'BurrowedAttack');
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'UnburrowSawEnemy');
+
+    DenySpooksAbility(AbilityManager, 'CarryUnit');
+    DenySpooksAbility(AbilityManager, 'PutDownUnit');
+
     `SPOOKSLOG("Ability template updates completed");
+}
+
+static function DenySpooksAbility(X2AbilityTemplateManager AbilityManager, name AbilityName)
+{
+    local X2AbilityTemplate Template;
+    local X2Condition_UnitProperty NonSpookShooter;
+    Template = AbilityManager.FindAbilityTemplate(AbilityName);
+    if (Template != none)
+    {
+        NonSpookShooter = new class'X2Condition_UnitProperty';
+        NonSpookShooter.ExcludeSoldierClasses.AddItem('Spook');
+        Template.AbilityShooterConditions.AddItem(NonSpookShooter);
+        `SPOOKSLOG("Denied spooks " $ AbilityName);
+    }
 }
 
 static function FindAndUpdateRevealAbilityTemplate(X2AbilityTemplateManager AbilityManager, name AbilityName)
 {
     local X2AbilityTemplate Template;
-
     Template = AbilityManager.FindAbilityTemplate(AbilityName);
     if (Template != none)
     {

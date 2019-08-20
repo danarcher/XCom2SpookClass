@@ -5,46 +5,46 @@ class X2Ability_SpookAbilitySet
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var config float SPOOK_VEIL_RK_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_SQ_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_LCPL_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_CPL_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_SGT_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_SSGT_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_TSGT_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_GSGT_DETECTION_RANGE_REDUCTION;
-var config float SPOOK_VEIL_MSGT_DETECTION_RANGE_REDUCTION;
+var config float VEIL_RK_DETECTION_RANGE_REDUCTION;
+var config float VEIL_SQ_DETECTION_RANGE_REDUCTION;
+var config float VEIL_LCPL_DETECTION_RANGE_REDUCTION;
+var config float VEIL_CPL_DETECTION_RANGE_REDUCTION;
+var config float VEIL_SGT_DETECTION_RANGE_REDUCTION;
+var config float VEIL_SSGT_DETECTION_RANGE_REDUCTION;
+var config float VEIL_TSGT_DETECTION_RANGE_REDUCTION;
+var config float VEIL_GSGT_DETECTION_RANGE_REDUCTION;
+var config float VEIL_MSGT_DETECTION_RANGE_REDUCTION;
 
-var config int SPOOK_WIRED_SIGHT_RANGE_INCREASE;
+var config int WIRED_SIGHT_RANGE_INCREASE;
 
-var config int SPOOK_VANISH_CHARGES;
-var config float SPOOK_VANISH_RADIUS;
+var config int VANISH_CHARGES;
+var config float VANISH_RADIUS;
 
-var localized string ShadowFriendlyName;
-var localized string ShadowHelpText;
+var config int OPPORTUNIST_BLEED_TURNS;
+var config int OPPORTUNIST_BLEED_DAMAGE_PER_TICK;
+var config int OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK;
+var config int OPPORTUNIST_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
-var config int SPOOK_OPPORTUNIST_BLEED_TURNS;
-var config int SPOOK_OPPORTUNIST_BLEED_DAMAGE_PER_TICK;
-var config int SPOOK_OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK;
+var config WeaponDamageValue DART_CONVENTIONAL_DAMAGE;
+var config WeaponDamageValue DART_LASER_DAMAGE;
+var config WeaponDamageValue DART_MAGNETIC_DAMAGE;
+var config WeaponDamageValue DART_BEAM_DAMAGE;
 
-var config WeaponDamageValue SPOOK_DART_CONVENTIONAL_DAMAGE;
-var config WeaponDamageValue SPOOK_DART_LASER_DAMAGE;
-var config WeaponDamageValue SPOOK_DART_MAGNETIC_DAMAGE;
-var config WeaponDamageValue SPOOK_DART_BEAM_DAMAGE;
-
-var config int SPOOK_DART_BLEED_TURNS;
-var config int SPOOK_DART_BLEED_DAMAGE_PER_TICK;
-var config int SPOOK_DART_BLEED_DAMAGE_SPREAD_PER_TICK;
+var config int DART_BLEED_TURNS;
+var config int DART_BLEED_DAMAGE_PER_TICK;
+var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
+var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var localized string OpportunistFriendlyName;
 
-const ShadowEffectName = 'SpookShadowEffect';
 const ExeuntAbilityName = 'Spook_Exeunt';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> Templates;
 
+    Templates.AddItem(CarryUnitAbility());
+    Templates.AddItem(PutDownUnitAbility());
 
     Templates.AddItem(AddCoshAbility());
     Templates.AddItem(AddSapAbility());
@@ -119,6 +119,164 @@ static function AbilityRequiresSpookShooter(X2AbilityTemplate Template)
     Template.AbilityShooterConditions.AddItem(SpookShooter);
 }
 
+// This is mostly the same as the base CarryUnit ability, but with a new name.
+// This is because LW2 forces CarryUnit to break concealment.
+// We don't want to change that for all classes, but we do want to change that for spooks.
+// We do remove the mobility penalty.
+static function X2AbilityTemplate CarryUnitAbility()
+{
+    local X2AbilityTemplate             Template;
+    local X2Condition_UnitProperty      TargetCondition, ShooterCondition;
+    local X2AbilityTarget_Single        SingleTarget;
+    local X2AbilityTrigger_PlayerInput  PlayerInput;
+    local X2Effect_PersistentStatChange CarryUnitEffect;
+    local X2Effect_Persistent           BeingCarriedEffect;
+    local X2Condition_UnitEffects       ExcludeEffects;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_CarryUnit');
+
+    Template.RemoveTemplateAvailablility(Template.BITFIELD_GAMEAREA_Multiplayer); // Do not allow "Carrying" in MP!
+
+    Template.AbilityCosts.AddItem(default.FreeActionCost);
+
+    Template.AbilityToHitCalc = default.DeadEye;
+
+    ShooterCondition = new class'X2Condition_UnitProperty';
+    ShooterCondition.ExcludeDead = true;
+    Template.AbilityShooterConditions.AddItem(ShooterCondition);
+
+    Template.AddShooterEffectExclusions();
+
+    AbilityRequiresSpookShooter(Template);
+
+    TargetCondition = new class'X2Condition_UnitProperty';
+    TargetCondition.CanBeCarried = true;
+    TargetCondition.ExcludeAlive = false;
+    TargetCondition.ExcludeDead = false;
+    TargetCondition.ExcludeFriendlyToSource = false;
+    TargetCondition.ExcludeHostileToSource = false;
+    TargetCondition.RequireWithinRange = true;
+    TargetCondition.WithinRange = class'X2Ability_CarryUnit'.default.CARRY_UNIT_RANGE;
+    Template.AbilityTargetConditions.AddItem(TargetCondition);
+
+    // The target must not have a cocoon on top of it
+    ExcludeEffects = new class'X2Condition_UnitEffects';
+    ExcludeEffects.AddExcludeEffect(class'X2Ability_ChryssalidCocoon'.default.GestationStage1EffectName, 'AA_UnitHasCocoonOnIt');
+    ExcludeEffects.AddExcludeEffect(class'X2Ability_ChryssalidCocoon'.default.GestationStage2EffectName, 'AA_UnitHasCocoonOnIt');
+    Template.AbilityTargetConditions.AddItem(ExcludeEffects);
+
+    SingleTarget = new class'X2AbilityTarget_Single';
+    Template.AbilityTargetStyle = SingleTarget;
+
+    PlayerInput = new class'X2AbilityTrigger_PlayerInput';
+    Template.AbilityTriggers.AddItem(PlayerInput);
+
+    Template.Hostility = eHostility_Neutral;
+
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_carry_unit";
+    Template.CinescriptCameraType = "Soldier_CarryPickup";
+
+    Template.ActivationSpeech = 'PickingUpBody';
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+    Template.BuildVisualizationFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildVisualization;
+    Template.BuildAppliedVisualizationSyncFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildAppliedVisualization;
+    Template.BuildAffectedVisualizationSyncFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildAffectedVisualization;
+
+    CarryUnitEffect = new class'X2Effect_PersistentStatChange';
+    CarryUnitEffect.BuildPersistentEffect(1, true, true);
+    CarryUnitEffect.SetDisplayInfo(ePerkBuff_Penalty, class'X2Ability_CarryUnit'.default.CarryUnitEffectFriendlyName, class'X2Ability_CarryUnit'.default.CarryUnitEffectFriendlyDesc, Template.IconImage, true);
+    //CarryUnitEffect.AddPersistentStatChange(eStat_Mobility, class'X2Ability_CarryUnit'.default.CARRY_UNIT_MOBILITY_ADJUST);
+    CarryUnitEffect.DuplicateResponse = eDupe_Ignore;
+    CarryUnitEffect.EffectName = class'X2Ability_CarryUnit'.default.CarryUnitEffectName;
+    Template.AddShooterEffect(CarryUnitEffect);
+
+    BeingCarriedEffect = new class'X2Effect_Persistent';
+    BeingCarriedEffect.BuildPersistentEffect(1, true, true);
+    BeingCarriedEffect.DuplicateResponse = eDupe_Ignore;
+    BeingCarriedEffect.EffectName = class'X2AbilityTemplateManager'.default.BeingCarriedEffectName;
+    BeingCarriedEffect.EffectAddedFn = class'X2Ability_CarryUnit'.static.BeingCarried_EffectAdded;
+    Template.AddTargetEffect(BeingCarriedEffect);
+
+    Template.AddAbilityEventListener('UnitMoveFinished', class'XComGameState_Ability'.static.CarryUnitMoveFinished, ELD_OnStateSubmitted);
+    Template.bLimitTargetIcons = true; //When selected, show carry-able units, rather than typical targets
+
+    return Template;
+}
+
+// This is mostly the same as the base ability, but free.
+static function X2DataTemplate PutDownUnitAbility()
+{
+    local X2AbilityTemplate             Template;
+    local X2AbilityCost_ActionPoints    ActionPointCost;
+    local X2Condition_UnitProperty      TargetCondition, ShooterCondition;
+    local X2AbilityTarget_Single        SingleTarget;
+    local X2AbilityTrigger_PlayerInput  PlayerInput;
+    local X2Effect_RemoveEffects        RemoveEffects;
+    local array<name>                   SkipExclusions;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_PutDownUnit');
+
+    ActionPointCost = new class 'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 1;
+    ActionPointCost.bFreeCost = true;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    Template.AbilityToHitCalc = default.DeadEye;
+
+    ShooterCondition = new class'X2Condition_UnitProperty';
+    ShooterCondition.ExcludeDead = true;
+    Template.AbilityShooterConditions.AddItem(ShooterCondition);
+
+    Template.AbilityShooterConditions.AddItem(new class'X2Condition_UnblockedNeighborTile');
+
+    AbilityRequiresSpookShooter(Template);
+
+    TargetCondition = new class'X2Condition_UnitProperty';
+    TargetCondition.BeingCarriedBySource = true;
+    TargetCondition.ExcludeAlive = false;
+    TargetCondition.ExcludeDead = false;
+    TargetCondition.ExcludeFriendlyToSource = false;
+    TargetCondition.ExcludeHostileToSource = false;
+    Template.AbilityTargetConditions.AddItem(TargetCondition);
+
+    SingleTarget = new class'X2AbilityTarget_Single';
+    Template.AbilityTargetStyle = SingleTarget;
+
+    PlayerInput = new class'X2AbilityTrigger_PlayerInput';
+    Template.AbilityTriggers.AddItem(PlayerInput);
+
+    Template.Hostility = eHostility_Neutral;
+    Template.CinescriptCameraType = "Soldier_CarryPutdown";
+
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_drop_unit";
+
+    Template.ActivationSpeech = 'DroppingBody';
+
+    Template.BuildNewGameStateFn = class'X2Ability_CarryUnit'.static.PutDownUnit_BuildGameState;
+    Template.BuildVisualizationFn = class'X2Ability_CarryUnit'.static.PutDownUnit_BuildVisualization;
+
+    RemoveEffects = new class'X2Effect_RemoveEffects';
+    RemoveEffects.EffectNamesToRemove.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);
+    Template.AddShooterEffect(RemoveEffects);
+
+    RemoveEffects = new class'X2Effect_RemoveEffects';
+    RemoveEffects.bCleanse = true;
+    RemoveEffects.EffectNamesToRemove.AddItem(class'X2AbilityTemplateManager'.default.BeingCarriedEffectName);
+    Template.AddTargetEffect(RemoveEffects);
+
+    SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);
+    Template.AddShooterEffectExclusions(SkipExclusions);
+
+    Template.bLimitTargetIcons = true; //When selected, show only the unit we can put down, rather than typical targets
+
+    return Template;
+}
+
 static function X2AbilityTemplate AddCoshAbility()
 {
     local X2AbilityTemplate                 Template;
@@ -183,7 +341,6 @@ static function X2AbilityTemplate AddCoshAbility()
     BonusMoveEffect = new class'X2Effect_SpookBonusMove';
     BonusMoveEffect.EffectName = 'SpookBonusMove';
     BonusMoveEffect.bApplyOnMiss = true;
-    BonusMoveEffect.bIsConcealedBonusMove = false;
     BonusMoveEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(1));
     Template.AddShooterEffect(BonusMoveEffect);
 
@@ -281,9 +438,8 @@ static function X2AbilityTemplate AddSapAbility()
 
     // Bonus Move Effect
     BonusMoveEffect = new class'X2Effect_SpookBonusMove';
-    BonusMoveEffect.EffectName = 'SpookBonusMove';
+    BonusMoveEffect.EffectName = 'SpookConcealedBonusMove';
     BonusMoveEffect.bApplyOnMiss = true;
-    BonusMoveEffect.bIsConcealedBonusMove = true;
     BonusMoveEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(1));
     Template.AddShooterEffect(BonusMoveEffect);
 
@@ -400,7 +556,6 @@ static function X2AbilityTemplate AddVeilAbility()
 {
     local X2AbilityTemplate                         Template;
     local X2Effect_SpookPersistentRankedStatChange  VeilEffect;
-    local X2Effect_Persistent                       ShadowEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Veil');
     Template.AbilitySourceName = 'eAbilitySource_Perk';
@@ -417,22 +572,16 @@ static function X2AbilityTemplate AddVeilAbility()
     VeilEffect = new class'X2Effect_SpookPersistentRankedStatChange';
     VeilEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
     VeilEffect.SetDisplayInfo(ePerkBuff_Passive,Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage,,, Template.AbilitySourceName);
-    VeilEffect.AddPersistentStatChange(0, eStat_DetectionModifier, default.SPOOK_VEIL_RK_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(1, eStat_DetectionModifier, default.SPOOK_VEIL_SQ_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(2, eStat_DetectionModifier, default.SPOOK_VEIL_LCPL_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(3, eStat_DetectionModifier, default.SPOOK_VEIL_CPL_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(4, eStat_DetectionModifier, default.SPOOK_VEIL_SGT_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(5, eStat_DetectionModifier, default.SPOOK_VEIL_SSGT_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(6, eStat_DetectionModifier, default.SPOOK_VEIL_TSGT_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(7, eStat_DetectionModifier, default.SPOOK_VEIL_GSGT_DETECTION_RANGE_REDUCTION);
-    VeilEffect.AddPersistentStatChange(8, eStat_DetectionModifier, default.SPOOK_VEIL_MSGT_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(0, eStat_DetectionModifier, default.VEIL_RK_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(1, eStat_DetectionModifier, default.VEIL_SQ_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(2, eStat_DetectionModifier, default.VEIL_LCPL_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(3, eStat_DetectionModifier, default.VEIL_CPL_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(4, eStat_DetectionModifier, default.VEIL_SGT_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(5, eStat_DetectionModifier, default.VEIL_SSGT_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(6, eStat_DetectionModifier, default.VEIL_TSGT_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(7, eStat_DetectionModifier, default.VEIL_GSGT_DETECTION_RANGE_REDUCTION);
+    VeilEffect.AddPersistentStatChange(8, eStat_DetectionModifier, default.VEIL_MSGT_DETECTION_RANGE_REDUCTION);
     Template.AddTargetEffect(VeilEffect);
-
-    ShadowEffect = new class'X2Effect_Persistent';
-    ShadowEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    ShadowEffect.SetDisplayInfo(ePerkBuff_Passive, default.ShadowFriendlyName, default.ShadowHelpText, "img:///UILibrary_PerkIcons.UIPerk_stealth",,, Template.AbilitySourceName);
-    ShadowEffect.EffectName = ShadowEffectName;
-    Template.AddTargetEffect(ShadowEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -485,7 +634,7 @@ static function X2AbilityTemplate AddVanishAbility()
     Template.AddShooterEffectExclusions(SkipExclusions);
 
     Charges = new class'X2AbilityCharges';
-    Charges.InitialCharges = default.SPOOK_VANISH_CHARGES;
+    Charges.InitialCharges = default.VANISH_CHARGES;
     Template.AbilityCharges = Charges;
     ChargeCost = new class'X2AbilityCost_Charges';
     ChargeCost.NumCharges = 1;
@@ -494,7 +643,7 @@ static function X2AbilityTemplate AddVanishAbility()
     RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
     RadiusMultiTarget.bUseWeaponRadius = false;
     RadiusMultiTarget.bUseSourceWeaponLocation = false;
-    RadiusMultiTarget.fTargetRadius = default.SPOOK_VANISH_RADIUS * 1.5; // tiles to meters
+    RadiusMultiTarget.fTargetRadius = default.VANISH_RADIUS * 1.5; // tiles to meters
     Template.AbilityMultiTargetStyle = RadiusMultiTarget;
 
     WeaponEffect = new class'X2Effect_ApplySmokeGrenadeToWorld';
@@ -511,9 +660,8 @@ static function X2AbilityTemplate AddVanishAbility()
 
     // Bonus Move Effect
     BonusMoveEffect = new class'X2Effect_SpookBonusMove';
-    BonusMoveEffect.EffectName = 'SpookBonusMove';
+    BonusMoveEffect.EffectName = 'SpookConcealedBonusMove';
     BonusMoveEffect.bApplyOnMiss = true;
-    BonusMoveEffect.bIsConcealedBonusMove = true;
     BonusMoveEffect.bEvenIfFree = true;
     BonusMoveEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(1));
     Template.AddShooterEffect(BonusMoveEffect);
@@ -619,7 +767,7 @@ static function X2AbilityTemplate AddOpportunistAttackAbility()
     Template.AddTargetEffect(UngroupEffect);
 
     // Bleed
-    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.SPOOK_OPPORTUNIST_BLEED_TURNS, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_PER_TICK, default.SPOOK_OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK));
+    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.OPPORTUNIST_BLEED_TURNS, default.OPPORTUNIST_BLEED_DAMAGE_PER_TICK, default.OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK, default.OPPORTUNIST_BLEED_DAMAGE_PLUSONE_PER_TICK));
 
     // Prevent repeatedly hammering on a unit with Opportunist triggers.
     //(This effect does nothing, but enables many-to-many marking of which Opportunist attacks have already occurred each turn.)
@@ -750,7 +898,7 @@ static function X2AbilityTemplate AddWiredAbility()
 
     SightEffect = new class'X2Effect_PersistentStatChange';
     SightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    SightEffect.AddPersistentStatChange(eStat_SightRadius, default.SPOOK_WIRED_SIGHT_RANGE_INCREASE);
+    SightEffect.AddPersistentStatChange(eStat_SightRadius, default.WIRED_SIGHT_RANGE_INCREASE);
     Template.AddTargetEffect(SightEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
@@ -831,7 +979,7 @@ static function X2AbilityTemplate AddDartAbility()
     Template.bAllowAmmoEffects = false;
 
     // Bleed
-    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.SPOOK_DART_BLEED_TURNS, default.SPOOK_DART_BLEED_DAMAGE_PER_TICK, default.SPOOK_DART_BLEED_DAMAGE_SPREAD_PER_TICK));
+    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.DART_BLEED_TURNS, default.DART_BLEED_DAMAGE_PER_TICK, default.DART_BLEED_DAMAGE_SPREAD_PER_TICK, default.DART_BLEED_DAMAGE_PLUSONE_PER_TICK));
 
     // Don't break your patrol by dying on them later, especially if you're in charge.
     UngroupEffect = new class'X2Effect_SpookUngroupAI';
