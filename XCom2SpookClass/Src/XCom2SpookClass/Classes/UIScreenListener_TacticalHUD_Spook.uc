@@ -5,6 +5,7 @@ class UIScreenListener_TacticalHUD_Spook
 `include(XCom2SpookClass\Src\Spook.uci)
 
 var SpookDetectionManager DetectionManager;
+var SpookTileManager TileManager;
 //var SpookSoundManager SoundManager;
 
 event OnInit(UIScreen Screen)
@@ -13,44 +14,13 @@ event OnInit(UIScreen Screen)
     This = self;
     `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'GetEvacPlacementDelay', OnGetEvacPlacementDelay, ELD_Immediate);
-    `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
 
     DetectionManager = new class'SpookDetectionManager';
     DetectionManager.OnInit();
+
+    TileManager = new class'SpookTileManager';
+    TileManager.OnInit(DetectionManager);
     //SoundManager.OnInit();
-}
-
-function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
-{
-    local XComGameState_HeadquartersXCom XComHQ;
-    local XComGameStateHistory History;
-    local XComWorldData WorldData;
-    local X2Actor_SpookTile Tile;
-    local XComGameState_Unit Unit;
-    local TTile TileLocation;
-    local vector Location;
-    local int i;
-
-    `SPOOKLOG("OnPlayerTurnBegun");
-
-    XComHQ = `XCOMHQ;
-    History = `XCOMHISTORY;
-    WorldData = `XWORLD;
-    for (i = 0; i < XComHQ.Squad.Length; i++)
-    {
-        Unit = XComGameState_Unit(History.GetGameStateForObjectID(XComHQ.Squad[i].ObjectID));
-        if (Unit != none)
-        {
-            `SPOOKLOG("Found unit, spawning test tile");
-            Unit.GetKeystoneVisibilityLocation(TileLocation);
-            Location = WorldData.GetPositionFromTileCoordinates(TileLocation);
-            Tile = `BATTLE.spawn(class'X2Actor_SpookTile');
-            Tile.SetLocation(Location);
-            Tile.SetHidden(false);
-            break;
-        }
-    }
-    return ELR_NoInterrupt;
 }
 
 function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object EventSource, XComGameState GameState, Name EventID)

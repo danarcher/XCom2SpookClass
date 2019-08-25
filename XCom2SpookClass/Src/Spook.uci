@@ -1,8 +1,11 @@
 `define BASELOG(msg, cond) `LOG(`msg, `cond, 'SpookLog')
 //`define BASELOG(msg) `CHEATMGR.WriteToFilteredLogFile(`msg, 'SpookLog')
 
-`define SPOOKLOG(msg) `BASELOG(Self $ ": " $ `msg);
-`define SPOOKSLOG(msg) `BASELOG(`msg);
+`define SPOOKLOG(msg) `BASELOG(Self $ ": " $ `msg)
+`define SPOOKSLOG(msg) `BASELOG(`msg)
+
+`define SPOOKASSERTLOG(cond) if (!(`cond)) { `SPOOKLOG("Assertion failed: `cond"); }
+`define SPOOKASSERTSLOG(cond) if (!(`cond)) { `SPOOKSLOG("Assertion failed: `cond"); }
 
 // BPE_xxx are flags for BuildPersistentEffect.
 //

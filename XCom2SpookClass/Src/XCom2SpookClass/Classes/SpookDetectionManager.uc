@@ -12,6 +12,8 @@ var config bool SHADOW_NOT_REVEALED_BY_DETECTOR;
 var config array<name> UNITS_NOT_REVEALED_ABILITIES;
 var config array<name> UNITS_NOT_REVEALED_EFFECTS;
 
+var float StatOverrideSpecialDetectionModifier;
+
 function OnInit()
 {
     local Object This;
@@ -21,6 +23,43 @@ function OnInit()
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
+    `SPOOKLOG("StatOverrideSpecialDetectionModifier is " $ default.StatOverrideSpecialDetectionModifier);
+}
+
+function float GetUnitDetectionModifier(XComGameState_Unit Unit)
+{
+    return Unit.GetCurrentStat(eStat_DetectionModifier);
+}
+
+function float GetConcealmentDetectionDistance(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+{
+    local XComGameState_Unit Enemy;
+    local XComGameState_InteractiveObject Tower;
+    local float DetectionRadius;
+    local float SightRadius;
+
+    Enemy = XComGameState_Unit(Detector);
+    if (Enemy != none)
+    {
+        SightRadius = Enemy.GetVisibilityRadius();
+        DetectionRadius = Enemy.GetCurrentStat(eStat_DetectionRadius);
+        DetectionRadius = DetectionRadius * FMax(1.0 - GetUnitDetectionModifier(Victim), 0.0);
+        DetectionRadius = FMin(SightRadius, DetectionRadius);
+    }
+    else
+    {
+        Tower = XComGameState_InteractiveObject(Detector);
+        if (Tower != none && !Tower.bHasBeenHacked)
+        {
+            DetectionRadius = `UNITSTOMETERS(Tower.DetectionRange);
+        }
+        else
+        {
+            DetectionRadius = 0;
+        }
+    }
+
+    return DetectionRadius;
 }
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
@@ -137,7 +176,7 @@ function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object 
                 //like blowing up the last structure between two units, when it needs to happen here.)
                 if (SeenUnit.IsConcealed() && SeenUnit.UnitBreaksConcealment(SourceUnit) && VisibilityInfo.TargetCover == CT_None)
                 {
-                    if (VisibilityInfo.DefaultTargetDist <= Square(SeenUnit.GetConcealmentDetectionDistance(SourceUnit)) && !StayConcealed(GameState, SeenUnit, SourceUnit))
+                    if (VisibilityInfo.DefaultTargetDist <= Square(GetConcealmentDetectionDistance(SourceUnit, SeenUnit)) && !StayConcealed(GameState, SeenUnit, SourceUnit))
                     {
                         SeenUnit.BreakConcealment(SourceUnit, VisibilityInfo.TargetCover == CT_None);
                     }
@@ -267,7 +306,7 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
                 OtherUnitState.UnitBreaksConcealment(ThisUnitState) &&
                 VisibilityInfoFromThisUnit.TargetCover == CT_None)
             {
-                ConcealmentDetectionDistance = OtherUnitState.GetConcealmentDetectionDistance(ThisUnitState);
+                ConcealmentDetectionDistance = GetConcealmentDetectionDistance(ThisUnitState, OtherUnitState);
                 if( VisibilityInfoFromThisUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, OtherUnitState, ThisUnitState))
                 {
                     OtherUnitState.BreakConcealment(ThisUnitState, true);
@@ -291,7 +330,7 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
                 // check if this unit is concealed and that concealment is broken by entering into an enemy's detection tile
                 if( ThisUnitState.IsConcealed() && ThisUnitState.UnitBreaksConcealment(OtherUnitState))
                 {
-                    ConcealmentDetectionDistance = ThisUnitState.GetConcealmentDetectionDistance(OtherUnitState);
+                    ConcealmentDetectionDistance = GetConcealmentDetectionDistance(OtherUnitState, ThisUnitState);
                     if (VisibilityInfoFromOtherUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, ThisUnitState, OtherUnitState))
                     {
                         ThisUnitState.BreakConcealment(OtherUnitState);
@@ -368,27 +407,23 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit
     HasInteractable = class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(SeenUnit, eInteractionType_Normal).Length > 0 ||
                       class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(SeenUnit, eInteractionType_Hack).Length > 0;
 
-    foreach default.SHADOW_EFFECTS(EffectName)
+    if (UnitHasShadowEffect(SeenUnit))
     {
-        if (UnitHasEffect(SeenUnit, EffectName) != none)
+        `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " has shadow effect");
+        if (WatcherUnit != none && default.SHADOW_NOT_REVEALED_BY_CLASSES.Find(WatcherUnit.GetMyTemplateName()) >= 0)
         {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " has shadow effect " $ EffectName);
-
-            if (WatcherUnit != none && default.SHADOW_NOT_REVEALED_BY_CLASSES.Find(WatcherUnit.GetMyTemplateName()) >= 0)
-            {
-                `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by " $ WatcherUnit.GetMyTemplateName());
-                return true;
-            }
-            if (WatcherDetector != none && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
-            {
-                `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by detectors");
-                return true;
-            }
-            if (HasHighCover || HasInteractable)
-            {
-                `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as in cover / near interactable");
-                return true;
-            }
+            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by " $ WatcherUnit.GetMyTemplateName());
+            return true;
+        }
+        if (WatcherDetector != none && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
+        {
+            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by detectors");
+            return true;
+        }
+        if (HasHighCover || HasInteractable)
+        {
+            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as in cover / near interactable");
+            return true;
         }
     }
 
@@ -408,6 +443,19 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit
     else
     {
         `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " not staying concealed");
+    }
+    return false;
+}
+
+function bool UnitHasShadowEffect(XComGameState_Unit Unit)
+{
+    local name EffectName;
+    foreach default.SHADOW_EFFECTS(EffectName)
+    {
+        if (UnitHasEffect(Unit, EffectName) != none)
+        {
+            return true;
+        }
     }
     return false;
 }
@@ -560,4 +608,9 @@ static function BuildSimpleVisualizationForStealthKill(XComGameState GameState, 
     SoundAndFlyOver.SetSoundAndFlyOverParameters(none, default.StealthKilledFriendlyName, '', eColor_Good,, 0, false);
 
     OutVisualizationTracks.AddItem(Track);
+}
+
+defaultproperties
+{
+    StatOverrideSpecialDetectionModifier=666.0
 }

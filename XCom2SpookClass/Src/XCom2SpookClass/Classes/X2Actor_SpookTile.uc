@@ -10,7 +10,7 @@ var StaticMeshComponent ConcealmentBreakTileRenderer;
 simulated event PostBeginPlay()
 {
     super.PostBeginPlay();
-    ConcealmentBreakTileMesh = StaticMesh(`CONTENT.RequestGameArchetype("UI_3D.Tile.ConcealmentTile_Enter"));
+    ConcealmentBreakTileMesh = StaticMesh(`CONTENT.RequestGameArchetype("Spook.Tile.ConcealmentBreakTile")); // UI_3D.Tile.SoundTile, UI_3D.Tile.ConcealmentTile_Enter
     if (ConcealmentBreakTileMesh != none)
     {
         ConcealmentBreakTileRenderer.SetStaticMesh(ConcealmentBreakTileMesh);

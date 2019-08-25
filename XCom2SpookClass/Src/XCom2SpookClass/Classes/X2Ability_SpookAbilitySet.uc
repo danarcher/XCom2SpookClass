@@ -54,6 +54,8 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddWiredAbility());
 
     Templates.AddItem(AddVeilAbility());
+    Templates.AddItem(AddStatOverrideAbility());
+    Templates.AddItem(AddStatOverrideCancelAbility());
     // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
     Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
@@ -582,6 +584,90 @@ static function X2AbilityTemplate AddVeilAbility()
     VeilEffect.AddPersistentStatChange(7, eStat_DetectionModifier, default.VEIL_GSGT_DETECTION_RANGE_REDUCTION);
     VeilEffect.AddPersistentStatChange(8, eStat_DetectionModifier, default.VEIL_MSGT_DETECTION_RANGE_REDUCTION);
     Template.AddTargetEffect(VeilEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddStatOverrideAbility()
+{
+    local X2AbilityTemplate                         Template;
+    local X2AbilityTrigger_EventListener            EventTrigger;
+    local X2Condition_SpookStatOverride             StatOverrideCondition;
+    local X2Effect_PersistentStatChange             StatOverrideEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_StatOverride');
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = 'SpookApplyStatOverride';
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.AbilityTriggerEventListener_Self;
+    EventTrigger.ListenerData.Filter = eFilter_Unit;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    StatOverrideCondition = new class'X2Condition_SpookStatOverride';
+    StatOverrideCondition.Required = true;
+    Template.AbilityShooterConditions.AddItem(StatOverrideCondition);
+
+    StatOverrideEffect = new class'X2Effect_PersistentStatChange';
+    StatOverrideEffect.EffectName = 'SpookStatOverrideEffect';
+    StatOverrideEffect.DuplicateResponse = eDupe_Ignore;
+    StatOverrideEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    StatOverrideEffect.AddPersistentStatChange(eStat_DetectionModifier, class'SpookDetectionManager'.default.StatOverrideSpecialDetectionModifier);
+    StatOverrideEffect.SetDisplayInfo(ePerkBuff_Passive, "Spook Stat Override", "Stat override is in effect.", Template.IconImage, true,, Template.AbilitySourceName);
+    Template.AddTargetEffect(StatOverrideEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddStatOverrideCancelAbility()
+{
+    local X2AbilityTemplate                         Template;
+    local X2AbilityTrigger_EventListener            EventTrigger;
+    local X2Condition_SpookStatOverride             StatOverrideCondition;
+    local X2Effect_RemoveEffects                    RemoveEffects;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_StatOverrideCancel');
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = 'SpookApplyStatOverride';
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.AbilityTriggerEventListener_Self;
+    EventTrigger.ListenerData.Filter = eFilter_Unit;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    StatOverrideCondition = new class'X2Condition_SpookStatOverride';
+    StatOverrideCondition.Required = false;
+    Template.AbilityShooterConditions.AddItem(StatOverrideCondition);
+
+    RemoveEffects = new class'X2Effect_RemoveEffects';
+    RemoveEffects.EffectNamesToRemove.AddItem('SpookStatOverrideEffect');
+    Template.AddTargetEffect(RemoveEffects);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
