@@ -6,6 +6,7 @@ class SpookTileManager
 `include(XCom2SpookClass\Src\Spook.uci)
 
 var config bool RENDER_TILE_OVERLAYS;
+var config bool RENDER_REQUIRES_SHADOW_EFFECT;
 
 var array<X2Actor_SpookTile> AllTiles;
 var array<X2Actor_SpookTile> UnusedTiles;
@@ -25,6 +26,7 @@ function OnInit(SpookDetectionManager DetectionManagerInstance)
     EventMgr.RegisterForEvent(This, 'PlayerTurnEnded', OnPlayerTurnEnded, ELD_OnStateSubmitted);
     EventMgr.RegisterForEvent(This, 'ObjectVisibilityChanged', OnObjectVisibilityChanged, ELD_OnStateSubmitted);
     EventMgr.RegisterForEvent(This, 'UnitMoveFinished', OnUnitMoveFinished, ELD_OnStateSubmitted);
+    EventMgr.RegisterForEvent(This, 'AbilityActivated', OnAbilityActivated, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'SpookUpdateTiles', OnSpookUpdateTiles, ELD_Immediate);
     `XCOMVISUALIZATIONMGR.RegisterObserver(self);
 }
@@ -53,6 +55,48 @@ function EventListenerReturn OnUnitMoveFinished(Object EventData, Object EventSo
 {
     `SPOOKLOG("OnUnitMoveFinished");
     `BATTLE.SetTimer(1.0f, false, nameof(UpdateTiles), self);
+    return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnAbilityActivated(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local XComGameStateContext_Ability AbilityContext;
+    local AbilityInputContext InputContext;
+    local XComGameState_Unit Unit;
+
+    `SPOOKLOG("OnAbilityActivated");
+    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+    if (AbilityContext == none)
+    {
+        `SPOOKLOG("No ability context, stopping");
+        return ELR_NoInterrupt;
+    }
+
+    if(AbilityContext.InterruptionStatus == eInterruptionStatus_Interrupt)
+    {
+        // Something complicated is still happening.
+        `SPOOKLOG("Still interrupting, stopping");
+        return ELR_NoInterrupt;
+    }
+
+    InputContext = AbilityContext.InputContext;
+    Unit = XComGameState_Unit(GameState.GetGameStateForObjectID(InputContext.SourceObject.ObjectID));
+    if (Unit == none)
+    {
+        Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(InputContext.SourceObject.ObjectID));
+    }
+    if (Unit == none)
+    {
+        `SPOOKLOG("No unit, stopping");
+        return ELR_NoInterrupt;
+    }
+    if (!Unit.IsConcealed() || !DetectionManager.UnitHasShadowEffect(Unit))
+    {
+        `SPOOKLOG("Not concealed or no shadow effect, stopping");
+        return ELR_NoInterrupt;
+    }
+
+    UpdateTiles();
     return ELR_NoInterrupt;
 }
 
@@ -111,9 +155,7 @@ function UpdateTiles()
     local XComTacticalController TacticalController;
     local StateObjectReference ActiveUnitRef;
 
-    FreeAllTiles();
-
-    if (!RENDER_TILE_OVERLAYS)
+    if (!default.RENDER_TILE_OVERLAYS)
     {
         return;
     }
@@ -123,6 +165,7 @@ function UpdateTiles()
     Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ActiveUnitRef.ObjectID));
     if (Unit != none && Unit.GetTeam() == eTeam_XCom)
     {
+        FreeAllTiles();
         UpdateTilesForUnit(Unit);
     }
 }
@@ -150,6 +193,10 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
         return;
     }
     UnitHasShadowEffect = DetectionManager.UnitHasShadowEffect(Unit);
+    if (default.RENDER_REQUIRES_SHADOW_EFFECT && !UnitHasShadowEffect)
+    {
+        return;
+    }
 
     `SPOOKLOG("Updating tiles for unit " $ Unit.GetFullName());
     `SPOOKLOG("Unit " $ Unit.GetFullName() $ " detection modifier:" $
@@ -173,7 +220,7 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
 
     foreach ConcealmentBreakers(Breaker)
     {
-        BreakerDetectionRadius = DetectionManager.GetConcealmentDetectionDistance(Breaker, Unit);
+        BreakerDetectionRadius = DetectionManager.GetConcealmentDetectionDistanceMeters(Breaker, Unit);
         `SPOOKLOG("Breaker " $ GetLogName(Breaker) $ " detects within " $ BreakerDetectionRadius);
 
         GetOwnTile(Breaker, BreakerTile);
@@ -232,7 +279,7 @@ static function bool GetOwnTile(XComGameState_BaseObject Detector, out TTile Til
     return false;
 }
 
-static function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array<XComGameState_BaseObject> ConcealmentBreakers)
+function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array<XComGameState_BaseObject> ConcealmentBreakers)
 {
     local XComGameStateHistory History;
     local ETeam UnitTeam;
@@ -251,7 +298,7 @@ static function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array
             continue;
         }
 
-        if (Unit.UnitBreaksConcealment(Candidate))
+        if (DetectionManager.BreaksConcealment(Candidate, Unit))
         {
             // Test pawn visibility to sync with debug commands such as X2DebugVisualizers.
             // Otherwise we could rely on visibility helpers.
@@ -268,7 +315,7 @@ static function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array
     }
     foreach History.IterateByClassType(class'XComGameState_InteractiveObject', Tower)
     {
-        if (Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked)
+        if (DetectionManager.BreaksConcealment(Tower, Unit))
         {
             TowerVisualizer = XComInteractiveLevelActor(Tower.GetVisualizer()); // or FindOrCreateVis
             if (TowerVisualizer != none && !(TowerVisualizer.bHidden))

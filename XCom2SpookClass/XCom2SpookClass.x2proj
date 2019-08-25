@@ -57,6 +57,7 @@
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookUngroupAI.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Item_SpookArmors.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Item_SpookDamageTypes.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2TacticalGameRuleset_SpookObserver.uc" />
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>

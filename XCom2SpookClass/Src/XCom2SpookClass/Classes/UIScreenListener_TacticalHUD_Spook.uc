@@ -6,11 +6,11 @@ class UIScreenListener_TacticalHUD_Spook
 
 var SpookDetectionManager DetectionManager;
 var SpookTileManager TileManager;
-//var SpookSoundManager SoundManager;
 
 event OnInit(UIScreen Screen)
 {
     local Object This;
+
     This = self;
     `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'GetEvacPlacementDelay', OnGetEvacPlacementDelay, ELD_Immediate);
@@ -20,7 +20,6 @@ event OnInit(UIScreen Screen)
 
     TileManager = new class'SpookTileManager';
     TileManager.OnInit(DetectionManager);
-    //SoundManager.OnInit();
 }
 
 function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object EventSource, XComGameState GameState, Name EventID)

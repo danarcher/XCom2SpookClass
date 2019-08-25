@@ -28,10 +28,28 @@ function OnInit()
 
 function float GetUnitDetectionModifier(XComGameState_Unit Unit)
 {
-    return Unit.GetCurrentStat(eStat_DetectionModifier);
+    local array<XComGameState_Effect> Mods;
+    local X2Effect_Persistent Effect;
+    local array<float> ModValues;
+    local int i;
+    local float Value;
+
+    Value = Unit.GetBaseStat(eStat_DetectionModifier);
+
+    Unit.GetStatModifiers(eStat_DetectionModifier, Mods, ModValues);
+    for (i = 0; i < Mods.Length; ++i)
+    {
+        Effect = (Mods[i] != none) ? Mods[i].GetX2Effect() : none;
+        if (Effect == none || Effect.EffectName != 'SpookStatOverrideEffect')
+        {
+            Value += ModValues[i];
+        }
+    }
+
+    return Value;
 }
 
-function float GetConcealmentDetectionDistance(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+function float GetConcealmentDetectionDistanceMeters(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
 {
     local XComGameState_Unit Enemy;
     local XComGameState_InteractiveObject Tower;
@@ -45,21 +63,50 @@ function float GetConcealmentDetectionDistance(XComGameState_BaseObject Detector
         DetectionRadius = Enemy.GetCurrentStat(eStat_DetectionRadius);
         DetectionRadius = DetectionRadius * FMax(1.0 - GetUnitDetectionModifier(Victim), 0.0);
         DetectionRadius = FMin(SightRadius, DetectionRadius);
-    }
-    else
-    {
-        Tower = XComGameState_InteractiveObject(Detector);
-        if (Tower != none && !Tower.bHasBeenHacked)
-        {
-            DetectionRadius = `UNITSTOMETERS(Tower.DetectionRange);
-        }
-        else
-        {
-            DetectionRadius = 0;
-        }
+        return DetectionRadius;
     }
 
-    return DetectionRadius;
+    Tower = XComGameState_InteractiveObject(Detector);
+    if (Tower != none)
+    {
+        DetectionRadius = `UNITSTOMETERS(Tower.DetectionRange);
+        return DetectionRadius;
+    }
+
+    return 0;
+}
+
+function float GetConcealmentDetectionDistanceUnits(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+{
+    return `METERSTOUNITS(GetConcealmentDetectionDistanceMeters(Detector, Victim));
+}
+
+function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+{
+    local XComGameState_Unit Enemy;
+    local XComGameState_InteractiveObject Tower;
+
+    Enemy = XComGameState_Unit(Detector);
+    if (Enemy != none)
+    {
+        if (UnitHasShadowEffect(Victim) && default.SHADOW_NOT_REVEALED_BY_CLASSES.Find(Enemy.GetMyTemplateName()) >= 0)
+        {
+            return false;
+        }
+        return Victim.UnitBreaksConcealment(Enemy);
+    }
+
+    Tower = XComGameState_InteractiveObject(Detector);
+    if (Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked)
+    {
+        if (UnitHasShadowEffect(Victim) && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
@@ -174,9 +221,9 @@ function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object 
                 //Check if the source should break their concealment due to the new conditions.
                 //(Typically happens in XComGameState_Unit when a unit moves, but there are edge cases,
                 //like blowing up the last structure between two units, when it needs to happen here.)
-                if (SeenUnit.IsConcealed() && SeenUnit.UnitBreaksConcealment(SourceUnit) && VisibilityInfo.TargetCover == CT_None)
+                if (SeenUnit.IsConcealed() && BreaksConcealment(SourceUnit, SeenUnit) && VisibilityInfo.TargetCover == CT_None)
                 {
-                    if (VisibilityInfo.DefaultTargetDist <= Square(GetConcealmentDetectionDistance(SourceUnit, SeenUnit)) && !StayConcealed(GameState, SeenUnit, SourceUnit))
+                    if (VisibilityInfo.DefaultTargetDist <= Square(GetConcealmentDetectionDistanceUnits(SourceUnit, SeenUnit)) && !StayConcealed(GameState, SeenUnit))
                     {
                         SeenUnit.BreakConcealment(SourceUnit, VisibilityInfo.TargetCover == CT_None);
                     }
@@ -245,7 +292,7 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
     {
         // concealment for this unit is broken when stepping into a new tile if the act of stepping into the new tile caused environmental damage (ex. "broken glass")
         // if this occurred, then the GameState will contain either an environmental damage state or an InteractiveObject state
-        if( ThisUnitState.IsConcealed() && SourceAbilityContext.ResultContext.bPathCausesDestruction && !StayConcealed(GameState, ThisUnitState, none))
+        if( ThisUnitState.IsConcealed() && SourceAbilityContext.ResultContext.bPathCausesDestruction && !StayConcealed(GameState, ThisUnitState))
         {
             ThisUnitState.BreakConcealment();
         }
@@ -273,11 +320,11 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
 
         foreach History.IterateByClassType(class'XComGameState_InteractiveObject', InteractiveObjectState)
         {
-            if( InteractiveObjectState.DetectionRange > 0.0 && !InteractiveObjectState.bHasBeenHacked)
+            if (BreaksConcealment(InteractiveObjectState, ThisUnitState))
             {
                 TestPosition = WorldData.GetPositionFromTileCoordinates(InteractiveObjectState.TileLocation);
-
-                if (VSizeSq(TestPosition - CurrentPosition) <= Square(InteractiveObjectState.DetectionRange) && !StayConcealed(GameState, ThisUnitState, InteractiveObjectState))
+                ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(InteractiveObjectState, ThisUnitState);
+                if (VSizeSq(TestPosition - CurrentPosition) <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, ThisUnitState))
                 {
                     ThisUnitState.BreakConcealment();
                     ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
@@ -301,18 +348,29 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
 
         if( VisibilityInfoFromThisUnit.bVisibleBasic )
         {
+            `SPOOKLOG(ThisUnitState.GetMyTemplateName() $ " can basically see " $ OtherUnitState.GetMyTemplateName());
+
             // check if the other unit is concealed, and this unit's move has revealed him
             if(OtherUnitState.IsConcealed() &&
-                OtherUnitState.UnitBreaksConcealment(ThisUnitState) &&
+                BreaksConcealment(ThisUnitState, OtherUnitState) &&
                 VisibilityInfoFromThisUnit.TargetCover == CT_None)
             {
-                ConcealmentDetectionDistance = GetConcealmentDetectionDistance(ThisUnitState, OtherUnitState);
-                if( VisibilityInfoFromThisUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, OtherUnitState, ThisUnitState))
+                ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(ThisUnitState, OtherUnitState);
+                `SPOOKLOG("This " $ ThisUnitState.GetMyTemplateName() $ " moved into LOS of other no-cover concealed unit " $ OtherUnitState.GetMyTemplateName() $ " and is concealment breaker");
+                if( VisibilityInfoFromThisUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance))
                 {
-                    OtherUnitState.BreakConcealment(ThisUnitState, true);
+                    `SPOOKLOG("Close enough to break concealment");
+                    if (!StayConcealed(GameState, OtherUnitState))
+                    {
+                        OtherUnitState.BreakConcealment(ThisUnitState, true);
 
-                    // have to refresh the unit state after broken concealment
-                    OtherUnitState = XComGameState_Unit(History.GetGameStateForObjectID(OtherUnitState.ObjectID));
+                        // have to refresh the unit state after broken concealment
+                        OtherUnitState = XComGameState_Unit(History.GetGameStateForObjectID(OtherUnitState.ObjectID));
+                    }
+                }
+                else
+                {
+                    `SPOOKLOG("Not close enough to break concealment, at " $ Sqrt(VisibilityInfoFromThisUnit.DefaultTargetDist) $ " but need to be " $ ConcealmentDetectionDistance);
                 }
             }
 
@@ -327,16 +385,27 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
 
             if( VisibilityInfoFromOtherUnit.bVisibleBasic )
             {
-                // check if this unit is concealed and that concealment is broken by entering into an enemy's detection tile
-                if( ThisUnitState.IsConcealed() && ThisUnitState.UnitBreaksConcealment(OtherUnitState))
-                {
-                    ConcealmentDetectionDistance = GetConcealmentDetectionDistance(OtherUnitState, ThisUnitState);
-                    if (VisibilityInfoFromOtherUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, ThisUnitState, OtherUnitState))
-                    {
-                        ThisUnitState.BreakConcealment(OtherUnitState);
+                `SPOOKLOG("Other " $ OtherUnitState.GetMyTemplateName() $ " can basically see this " $ ThisUnitState.GetMyTemplateName());
 
-                        // have to refresh the unit state after broken concealment
-                        ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
+                // check if this unit is concealed and that concealment is broken by entering into an enemy's detection tile
+                if( ThisUnitState.IsConcealed() && BreaksConcealment(OtherUnitState, ThisUnitState))
+                {
+                    `SPOOKLOG("Concealed " $ ThisUnitState.GetMyTemplateName() $ " moved into LOS of concealment breaker " $ OtherUnitState.GetMyTemplateName());
+                    ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(OtherUnitState, ThisUnitState);
+                    if (VisibilityInfoFromOtherUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance))
+                    {
+                        `SPOOKLOG("Close enough to break concealment");
+                        if (!StayConcealed(GameState, ThisUnitState))
+                        {
+                            ThisUnitState.BreakConcealment(OtherUnitState);
+
+                            // have to refresh the unit state after broken concealment
+                            ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
+                        }
+                    }
+                    else
+                    {
+                        `SPOOKLOG("Not close enough to break concealment, at " $ Sqrt(VisibilityInfoFromOtherUnit.DefaultTargetDist) $ " but need to be " $ ConcealmentDetectionDistance);
                     }
                 }
 
@@ -357,19 +426,64 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
     return ELR_NoInterrupt;
 }
 
-function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit, XComGameState_BaseObject Watcher)
+function bool IsConcealingLocationForConcealedUnit(XComGameState_Unit Unit, out TTile Tile)
 {
-    local XComGameState_Unit WatcherUnit;
-    local XComGameState_InteractiveObject WatcherDetector;
+    local XComWorldData World;
+    local vector Position;
+    local XComCoverPoint Cover;
+    local array<XComInteractPoint> InteractionPoints;
+    local XComInteractiveLevelActor InteractiveActor;
+    local XComGameState_InteractiveObject InteractiveObject;
+    local int i;
+
+    if (!UnitHasShadowEffect(Unit))
+    {
+        return false;
+    }
+
+    World = `XWORLD;
+    Position = World.GetPositionFromTileCoordinates(Tile);
+    World.GetCoverPointAtFloor(Position, Cover);
+    if (`HAS_HIGH_COVER(Cover))
+    {
+        return true;
+    }
+
+    World.GetInteractionPoints(Position, 8.0f, 90.0f, InteractionPoints);
+    for (i = 0; i < InteractionPoints.Length; ++i)
+    {
+        InteractiveActor = InteractionPoints[i].InteractiveActor;
+        if (InteractiveActor != none)
+        {
+            InteractiveObject = InteractiveActor.GetInteractiveState();
+            if (InteractiveObject != none)
+            {
+                if (InteractiveObject.MustBeHacked() ||
+                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_OpenChest' ||
+                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_TakeVial' ||
+                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_StasisTube' ||
+                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_PlantBomb')
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+function bool StayConcealed(XComGameState GameState, XComGameState_Unit Victim)
+{
     local XComGameStateContext_Ability SourceAbilityContext;
     local name EffectName;
-    local TTile SeenUnitTileLocation;
-    local Vector SeenUnitPosition;
-    local XComCoverPoint SeenUnitCover;
+    local TTile VictimTileLocation;
+    local Vector VictimPosition;
+    local XComCoverPoint VictimCover;
     local bool HasHighCover;
     local bool HasInteractable;
 
-    if (SeenUnit == none)
+    if (Victim == none)
     {
         `SPOOKLOG("StayConcealed: no unit ergo false");
         return false;
@@ -381,7 +495,7 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit
     {
         if (default.UNITS_NOT_REVEALED_ABILITIES.Find(SourceAbilityContext.InputContext.AbilityTemplateName) >= 0)
         {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as ability " $ SourceAbilityContext.InputContext.AbilityTemplateName $ " is active");
+            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as ability " $ SourceAbilityContext.InputContext.AbilityTemplateName $ " is active");
             return true;
         }
     }
@@ -389,61 +503,31 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit SeenUnit
     // Certain effects on the "seen" unit prevent concealment from breaking.
     foreach default.UNITS_NOT_REVEALED_EFFECTS(EffectName)
     {
-        if (UnitHasEffect(SeenUnit, EffectName) != none)
+        if (UnitHasEffect(Victim, EffectName) != none)
         {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as has effect " $ EffectName);
+            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as has effect " $ EffectName);
             return true;
         }
     }
 
-    WatcherUnit = XComGameState_Unit(Watcher);
-    WatcherDetector = XComGameState_InteractiveObject(Watcher);
-
-    SeenUnit.GetKeystoneVisibilityLocation(SeenUnitTileLocation);
-    SeenUnitPosition = `XWORLD.GetPositionFromTileCoordinates(SeenUnitTileLocation);
-    `XWORLD.GetCoverPointAtFloor(SeenUnitPosition, SeenUnitCover);
-    HasHighCover = `HAS_HIGH_COVER(SeenUnitCover);
-
-    HasInteractable = class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(SeenUnit, eInteractionType_Normal).Length > 0 ||
-                      class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(SeenUnit, eInteractionType_Hack).Length > 0;
-
-    if (UnitHasShadowEffect(SeenUnit))
+    if (UnitHasShadowEffect(Victim))
     {
-        `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " has shadow effect");
-        if (WatcherUnit != none && default.SHADOW_NOT_REVEALED_BY_CLASSES.Find(WatcherUnit.GetMyTemplateName()) >= 0)
-        {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by " $ WatcherUnit.GetMyTemplateName());
-            return true;
-        }
-        if (WatcherDetector != none && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
-        {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as cannot be revealed by detectors");
-            return true;
-        }
+        Victim.GetKeystoneVisibilityLocation(VictimTileLocation);
+        VictimPosition = `XWORLD.GetPositionFromTileCoordinates(VictimTileLocation);
+        `XWORLD.GetCoverPointAtFloor(VictimPosition, VictimCover);
+        HasHighCover = `HAS_HIGH_COVER(VictimCover);
+
+        HasInteractable = class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(Victim, eInteractionType_Normal).Length > 0 ||
+                          class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(Victim, eInteractionType_Hack).Length > 0;
+
         if (HasHighCover || HasInteractable)
         {
-            `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " staying concealed as in cover / near interactable");
+            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as in cover / near interactable");
             return true;
         }
     }
 
-    foreach default.SHADOW_NOT_REVEALED_BY_CLASSES(EffectName)
-    {
-        `SPOOKLOG("StayConcealed: Aside, cannot be revealed by '" $ EffectName $ "'");
-    }
-
-    if (WatcherUnit != none)
-    {
-        `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " not staying concealed from '" $ WatcherUnit.GetMyTemplateName() $ "'");
-    }
-    else if (WatcherDetector != none)
-    {
-        `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " not staying concealed from detector");
-    }
-    else
-    {
-        `SPOOKLOG("StayConcealed: " $ SeenUnit.GetFullName() $ " not staying concealed");
-    }
+    `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " not staying concealed");
     return false;
 }
 
@@ -506,7 +590,7 @@ function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object Eve
 
     if (Damager != None)
     {
-        if (StayConcealed(GameState, Damager, Damagee))
+        if (StayConcealed(GameState, Damager))
         {
             `SPOOKLOG("Damager stays concealed, no reaction");
             `SPOOKLOG("OnUnitTakeEffectDamage ends");
