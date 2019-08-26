@@ -97,13 +97,13 @@ function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState
     }
 
     Tower = XComGameState_InteractiveObject(Detector);
-    if (Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked)
+    if (Tower != none)
     {
         if (UnitHasShadowEffect(Victim) && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
         {
             return false;
         }
-        return true;
+        return Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked;
     }
 
     return false;

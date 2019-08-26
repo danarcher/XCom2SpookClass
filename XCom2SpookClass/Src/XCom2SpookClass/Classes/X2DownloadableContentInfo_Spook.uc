@@ -318,7 +318,7 @@ exec function SpookCycleStatOverrideMode()
     local XComGameState_Unit Unit;
     local XComGameState NewGameState;
 
-    `SPOOKSLOG("SpookCycleStatOverrideMode");
+    `SPOOKSLOG("SpookCycleStatOverrideMode console command");
     CycleStatOverrideMode();
 
     NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Flushing unity ability cache");
@@ -330,6 +330,12 @@ exec function SpookCycleStatOverrideMode()
         `XEVENTMGR.TriggerEvent('SpookApplyStatOverride', Unit, Unit);
     }
     `SPOOKSLOG("Triggering tile update");
+    `XEVENTMGR.TriggerEvent('SpookUpdateTiles');
+}
+
+exec function SpookUpdateTiles()
+{
+    `SPOOKSLOG("SpookUpdateTiles console command");
     `XEVENTMGR.TriggerEvent('SpookUpdateTiles');
 }
 

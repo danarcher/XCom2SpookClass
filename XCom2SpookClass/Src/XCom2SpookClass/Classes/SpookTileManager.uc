@@ -33,7 +33,8 @@ function OnInit(SpookDetectionManager DetectionManagerInstance)
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
-    //UpdateTiles();
+    `SPOOKLOG("OnPlayerTurnBegun");
+    //UpdateTiles(GameState);
     return ELR_NoInterrupt;
 }
 
@@ -54,7 +55,7 @@ function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object 
 function EventListenerReturn OnUnitMoveFinished(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
     `SPOOKLOG("OnUnitMoveFinished");
-    `BATTLE.SetTimer(1.0f, false, nameof(UpdateTiles), self);
+    UpdateTiles(GameState);
     return ELR_NoInterrupt;
 }
 
@@ -96,14 +97,14 @@ function EventListenerReturn OnAbilityActivated(Object EventData, Object EventSo
         return ELR_NoInterrupt;
     }
 
-    UpdateTiles();
+    UpdateTiles(GameState);
     return ELR_NoInterrupt;
 }
 
 function EventListenerReturn OnSpookUpdateTiles(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
     `SPOOKLOG("OnSpookUpdateTiles");
-    UpdateTiles();
+    UpdateTiles(GameState);
     return ELR_NoInterrupt;
 }
 
@@ -113,7 +114,16 @@ event OnVisualizationIdle();
 event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
 {
     `SPOOKLOG("OnActiveUnitChanged");
-    UpdateTiles();
+    if (NewActiveUnit == none)
+    {
+        `SPOOKLOG("No unit now active");
+        FreeAllTiles();
+    }
+    else
+    {
+        `SPOOKLOG("Active unit is " $ NewActiveUnit.GetMyTemplateName());
+        UpdateTiles(NewActiveUnit.GetParentGameState());
+    }
 }
 
 function X2Actor_SpookTile AllocTile()
@@ -149,7 +159,7 @@ function FreeAllTiles()
     }
 }
 
-function UpdateTiles()
+function UpdateTiles(XComGameState GameState)
 {
     local XComGameState_Unit Unit;
     local XComTacticalController TacticalController;
@@ -160,17 +170,28 @@ function UpdateTiles()
         return;
     }
 
+    if (GameState == none)
+    {
+        `SPOOKLOG("No game state supplied to UpdateTiles, using latest");
+        GameState = `XCOMHistory.GetGameStateFromHistory(-1);
+        return;
+    }
+
     TacticalController = XComTacticalController(class'WorldInfo'.static.GetWorldInfo().GetALocalPlayerController());
     ActiveUnitRef = TacticalController.GetActiveUnitStateRef();
-    Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ActiveUnitRef.ObjectID));
+    Unit = XComGameState_Unit(GameState.GetGameStateForObjectID(ActiveUnitRef.ObjectID));
+    if (Unit == none)
+    {
+        Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ActiveUnitRef.ObjectID));
+    }
     if (Unit != none && Unit.GetTeam() == eTeam_XCom)
     {
         FreeAllTiles();
-        UpdateTilesForUnit(Unit);
+        UpdateTilesForUnit(Unit, GameState);
     }
 }
 
-function UpdateTilesForUnit(XComGameState_Unit Unit)
+function UpdateTilesForUnit(XComGameState_Unit Unit, XComGameState GameState)
 {
     local XComWorldData World;
     local bool UnitHasShadowEffect;
@@ -201,7 +222,7 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
         return;
     }
 
-    if (DetectionManager.IsUnitConcealmentUnbreakableIgnoringTile(`XCOMHistory.GetGameStateFromHistory(-1), Unit))
+    if (DetectionManager.IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit))
     {
         `SPOOKLOG("Unit concalment is unbreakable");
         return;
@@ -223,7 +244,7 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
 
     World = `XWORLD;
 
-    GetVisibleConcealmentBreakers(Unit, ConcealmentBreakers);
+    GetVisibleConcealmentBreakers(Unit, GameState, ConcealmentBreakers);
     `SPOOKLOG("Team can see " $ ConcealmentBreakers.Length $ " concealment breakers");
 
     foreach ConcealmentBreakers(Breaker)
@@ -257,60 +278,26 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
     }
 }
 
-static function name GetLogName(XComGameState_BaseObject Obj)
-{
-   local XComGameState_Unit Unit;
-   Unit = XComGameState_Unit(Obj);
-   if (Unit != none)
-   {
-        return Unit.GetMyTemplateName();
-   }
-   return 'Tower';
-}
-
-function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array<XComGameState_BaseObject> ConcealmentBreakers)
+function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, XComGameState GameState, out array<XComGameState_BaseObject> ConcealmentBreakers)
 {
     local XComGameStateHistory History;
-    local ETeam UnitTeam;
-    local XComGameState_Unit Candidate;
-    local XGUnit CandidateVisualizer;
-    local XComUnitPawn CandidatePawn;
-    local XComGameState_InteractiveObject Tower;
-    local XComInteractiveLevelActor TowerVisualizer;
+    local array<StateObjectReference> VisibleObjects;
+    local StateObjectReference VisibleObjectRef;
+    local XComGameState_BaseObject VisibleObject;
 
     History = `XCOMHISTORY;
-    UnitTeam = Unit.GetTeam();
-    foreach History.IterateByClassType(class'XComGameState_Unit', Candidate)
+    class'X2TacticalVisibilityHelpers'.static.GetAllVisibleObjectsForPlayer(Unit.ControllingPlayer.ObjectID, VisibleObjects, , GameState.HistoryIndex, true);
+    foreach VisibleObjects(VisibleObjectRef)
     {
-        if (Candidate.ObjectID == Unit.ObjectID)
+        VisibleObject = GameState.GetGameStateForObjectID(VisibleObjectRef.ObjectID);
+        if (VisibleObject == none)
         {
-            continue;
+            VisibleObject = History.GetGameStateForObjectID(VisibleObjectRef.ObjectID);
         }
 
-        if (DetectionManager.BreaksConcealment(Candidate, Unit))
+        if (DetectionManager.BreaksConcealment(VisibleObject, Unit))
         {
-            // Test pawn visibility to sync with debug commands such as X2DebugVisualizers.
-            // Otherwise we could rely on visibility helpers.
-            CandidateVisualizer = XGUnit(Candidate.GetVisualizer());
-            if (CandidateVisualizer != none)
-            {
-                CandidatePawn = CandidateVisualizer.GetPawn();
-                if (CandidatePawn != none && CandidatePawn.IsVisibleToTeam(UnitTeam))
-                {
-                    ConcealmentBreakers.AddItem(Candidate);
-                }
-            }
-        }
-    }
-    foreach History.IterateByClassType(class'XComGameState_InteractiveObject', Tower)
-    {
-        if (DetectionManager.BreaksConcealment(Tower, Unit))
-        {
-            TowerVisualizer = XComInteractiveLevelActor(Tower.GetVisualizer()); // or FindOrCreateVis
-            if (TowerVisualizer != none && !(TowerVisualizer.bHidden))
-            {
-                ConcealmentBreakers.AddItem(Tower);
-            }
+            ConcealmentBreakers.AddItem(VisibleObject);
         }
     }
 }
@@ -337,4 +324,15 @@ function bool CanObjectSeeTile(XComGameState_BaseObject Obj, const out TTile Tes
         return true;
     }
     return false;
+}
+
+static function name GetLogName(XComGameState_BaseObject Obj)
+{
+   local XComGameState_Unit Unit;
+   Unit = XComGameState_Unit(Obj);
+   if (Unit != none)
+   {
+        return Unit.GetMyTemplateName();
+   }
+   return 'Tower';
 }
