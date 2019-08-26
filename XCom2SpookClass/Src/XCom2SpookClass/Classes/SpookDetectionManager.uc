@@ -93,7 +93,7 @@ function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState
         {
             return false;
         }
-        return Victim.UnitBreaksConcealment(Enemy);
+        return Victim.IsAlive() && Enemy.IsAlive() && Victim.UnitBreaksConcealment(Enemy);
     }
 
     Tower = XComGameState_InteractiveObject(Detector);
@@ -185,248 +185,200 @@ function ReplaceEventListeners()
     EventMgr.RegisterForEvent(This, 'UnitDied', OnUnitDied, ELD_OnStateSubmitted);
 }
 
-// Via LW2
 function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
-    local X2GameRulesetVisibilityInterface SourceObject;
-    local XComGameState_Unit SeenUnit;
-    local XComGameState_Unit SourceUnit;
-    local GameRulesCache_VisibilityInfo VisibilityInfo;
-    local X2GameRulesetVisibilityManager VisibilityMgr;
-
-    VisibilityMgr = `TACTICALRULES.VisibilityMgr;
-
-    SourceObject = X2GameRulesetVisibilityInterface(EventSource);
-
-    SeenUnit = XComGameState_Unit(EventData); // we only care about enemy units
-    // LWS Mods: Don't trigger on cosmetic units (see comments in XCGS_Unit about gremlins not wanting to receive movement events).
-    // Fixes bugs with Gremlins activating pods when you cancel a hack or when movement causes the gremlin to be visible while the unit
-    // isn't.
-    if(SeenUnit != none && SourceObject.TargetIsEnemy(SeenUnit.ObjectID) && !SeenUnit.GetMyTemplate().bIsCosmetic)
-    {
-        SourceUnit = XComGameState_Unit(SourceObject);
-        if(SourceUnit != none && GameState != none)
-        {
-            VisibilityMgr.GetVisibilityInfo(SourceUnit.ObjectID, SeenUnit.ObjectID, VisibilityInfo, GameState.HistoryIndex);
-            if(VisibilityInfo.bVisibleGameplay)
-            {
-                // (Deleted alien noises code, not possible, since XComGameState_Player.TurnsSinceEnemySeen is privatewrite.)
-
-                //Inform the units that they see each other
-                UnitASeesUnitB(SourceUnit, SeenUnit, GameState);
-            }
-            else if (VisibilityInfo.bVisibleBasic)
-            {
-                //If the target is not yet gameplay-visible, it might be because they are concealed.
-                //Check if the source should break their concealment due to the new conditions.
-                //(Typically happens in XComGameState_Unit when a unit moves, but there are edge cases,
-                //like blowing up the last structure between two units, when it needs to happen here.)
-                if (SeenUnit.IsConcealed() && BreaksConcealment(SourceUnit, SeenUnit) && VisibilityInfo.TargetCover == CT_None)
-                {
-                    if (VisibilityInfo.DefaultTargetDist <= Square(GetConcealmentDetectionDistanceUnits(SourceUnit, SeenUnit)) && !StayConcealed(GameState, SeenUnit))
-                    {
-                        SeenUnit.BreakConcealment(SourceUnit, VisibilityInfo.TargetCover == CT_None);
-                    }
-                }
-            }
-        }
-    }
-
+    local XComGameState_BaseObject Detector;
+    local XComGameState_Unit Victim;
+    Detector = XComGameState_BaseObject(EventSource);
+    Victim = XComGameState_Unit(EventData);
+    TryDetectorSeeingVictim(Detector, Victim, GameState);
     return ELR_NoInterrupt;
 }
 
-// unit moves - alert for him for other units he sees from the new location
-// unit moves - alert for other units towards this unit
-function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState, optional bool IgnoreCover)
 {
-    local XComGameState_Unit OtherUnitState, ThisUnitState;
-    local XComGameStateHistory History;
-    local X2GameRulesetVisibilityManager VisibilityMgr;
-    local GameRulesCache_VisibilityInfo VisibilityInfoFromThisUnit, VisibilityInfoFromOtherUnit;
-    local float ConcealmentDetectionDistance;
-    local XComGameState_AIGroup AIGroupState;
-    local XComGameStateContext_Ability SourceAbilityContext;
-    local XComGameState_InteractiveObject InteractiveObjectState;
-    local XComWorldData WorldData;
-    local Vector CurrentPosition, TestPosition;
-    local TTile CurrentTileLocation;
-    local XComGameState_Effect EffectState;
-    local X2Effect_Persistent PersistentEffect;
-    local XComGameState NewGameState;
-    local XComGameStateContext_EffectRemoved EffectRemovedContext;
+    local XComGameState_Unit Enemy;
+    local GameRulesCache_VisibilityInfo Visibility;
 
-    WorldData = `XWORLD;
-    History = `XCOMHISTORY;
-
-    ThisUnitState = XComGameState_Unit(EventData);
-
-    // don't activate from Gremlins etc
-    if (ThisUnitState.GetMyTemplate().bIsCosmetic) { return ELR_NoInterrupt; }
-
-    ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
-
-    // cleanse burning on entering water
-    ThisUnitState.GetKeystoneVisibilityLocation(CurrentTileLocation);
-    if( ThisUnitState.IsBurning() && WorldData.IsWaterTile(CurrentTileLocation) )
+    if (Detector == none || Victim == none || GameState == none
+        || Detector.ObjectID == Victim.ObjectID
+        || Victim.GetMyTemplate().bIsCosmetic)
     {
-        foreach History.IterateByClassType(class'XComGameState_Effect', EffectState)
-        {
-            if( EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID == ThisUnitState.ObjectID )
-            {
-                PersistentEffect = EffectState.GetX2Effect();
-                if( PersistentEffect.EffectName == class'X2StatusEffects'.default.BurningName )
-                {
-                    EffectRemovedContext = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);
-                    NewGameState = History.CreateNewGameState(true, EffectRemovedContext);
-                    EffectState.RemoveEffect(NewGameState, NewGameState, true); //Cleansed
+        return Victim;
+    }
 
-                    `TACTICALRULES.SubmitGameState(NewGameState);
-                }
-            }
+    Enemy = XComGameState_Unit(Detector);
+    if (Enemy != none)
+    {
+        if (!Enemy.IsAlive() || !Enemy.TargetIsEnemy(Victim.ObjectID))
+        {
+            return Victim;
+        }
+
+        `TACTICALRULES.VisibilityMgr.GetVisibilityInfo(Enemy.ObjectID, Victim.ObjectID, Visibility, GameState.HistoryIndex);
+        if (Visibility.bVisibleGameplay)
+        {
+            // (Deleted impossible alien noises code. XComGameState_Player.TurnsSinceEnemySeen is privatewrite.)
+            UnitASeesUnitB(Enemy, Victim, GameState);
+            return Victim;
+        }
+
+        if (!Visibility.bVisibleBasic)
+        {
+            return Victim;
         }
     }
 
-    SourceAbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-
-    if( SourceAbilityContext != None )
+    if (Victim.IsConcealed() && (IgnoreCover || Visibility.TargetCover == CT_None))
     {
-        // concealment for this unit is broken when stepping into a new tile if the act of stepping into the new tile caused environmental damage (ex. "broken glass")
-        // if this occurred, then the GameState will contain either an environmental damage state or an InteractiveObject state
-        if( ThisUnitState.IsConcealed() && SourceAbilityContext.ResultContext.bPathCausesDestruction && !StayConcealed(GameState, ThisUnitState))
-        {
-            ThisUnitState.BreakConcealment();
-        }
-
-        ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
-
-        // check if this unit is a member of a group waiting on this unit's movement to complete
-        // (or at least reach the interruption step where the movement should complete)
-        AIGroupState = ThisUnitState.GetGroupMembership();
-        if( AIGroupState != None &&
-            AIGroupState.IsWaitingOnUnitForReveal(ThisUnitState) &&
-            (SourceAbilityContext.InterruptionStatus != eInterruptionStatus_Interrupt ||
-            (AIGroupState.FinalVisibilityMovementStep > INDEX_NONE &&
-            AIGroupState.FinalVisibilityMovementStep <= SourceAbilityContext.ResultContext.InterruptionStep)) )
-        {
-            AIGroupState.StopWaitingOnUnitForReveal(ThisUnitState);
-        }
+        Victim = TryBreakConcealment(Detector, Victim, GameState);
     }
 
-    // concealment may be broken by moving within range of an interactive object 'detector'
-    if(ThisUnitState.IsConcealed())
+    if (Enemy != none && !Victim.IsConcealed())
     {
-        ThisUnitState.GetKeystoneVisibilityLocation(CurrentTileLocation);
-        CurrentPosition = WorldData.GetPositionFromTileCoordinates(CurrentTileLocation);
-
-        foreach History.IterateByClassType(class'XComGameState_InteractiveObject', InteractiveObjectState)
-        {
-            if (BreaksConcealment(InteractiveObjectState, ThisUnitState))
-            {
-                TestPosition = WorldData.GetPositionFromTileCoordinates(InteractiveObjectState.TileLocation);
-                ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(InteractiveObjectState, ThisUnitState);
-                if (VSizeSq(TestPosition - CurrentPosition) <= Square(ConcealmentDetectionDistance) && !StayConcealed(GameState, ThisUnitState))
-                {
-                    ThisUnitState.BreakConcealment();
-                    ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
-                    break;
-                }
-            }
-        }
+        UnitASeesUnitB(Enemy, Victim, GameState);
     }
 
-    // concealment may also be broken if this unit moves into detection range of an enemy unit
-    VisibilityMgr = `TACTICALRULES.VisibilityMgr;
-    foreach History.IterateByClassType(class'XComGameState_Unit', OtherUnitState)
+    return Victim;
+}
+
+function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState)
+{
+    local TTile DetectorTile, VictimTile;
+    local vector DetectorPosition, VictimPosition;
+    local XComWorldData World;
+    local XComGameState_Unit Enemy;
+
+    if (Detector == none || Victim == none || GameState == none
+        || Detector.ObjectID == Victim.ObjectID
+        || Victim.GetMyTemplate().bIsCosmetic)
     {
-        // don't process visibility against self
-        if( OtherUnitState.ObjectID == ThisUnitState.ObjectID )
+        return Victim;
+    }
+
+    if (!Victim.IsConcealed())
+    {
+        return Victim;
+    }
+
+    if (BreaksConcealment(Detector, Victim))
+    {
+        GetOwnTile(Detector, DetectorTile);
+        GetOwnTile(Victim, VictimTile);
+
+        World = `XWORLD;
+        DetectorPosition = World.GetPositionFromTileCoordinates(DetectorTile);
+        VictimPosition = World.GetPositionFromTileCoordinates(VictimTile);
+
+        if (VSizeSq(DetectorPosition - VictimPosition) <= Square(GetConcealmentDetectionDistanceUnits(Detector, Victim)))
         {
-            continue;
-        }
-
-        VisibilityMgr.GetVisibilityInfo(ThisUnitState.ObjectID, OtherUnitState.ObjectID, VisibilityInfoFromThisUnit);
-
-        if( VisibilityInfoFromThisUnit.bVisibleBasic )
-        {
-            `SPOOKLOG(ThisUnitState.GetMyTemplateName() $ " can basically see " $ OtherUnitState.GetMyTemplateName());
-
-            // check if the other unit is concealed, and this unit's move has revealed him
-            if(OtherUnitState.IsConcealed() &&
-                BreaksConcealment(ThisUnitState, OtherUnitState) &&
-                VisibilityInfoFromThisUnit.TargetCover == CT_None)
+            if (!IsUnitConcealmentUnbreakable(GameState, Victim))
             {
-                ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(ThisUnitState, OtherUnitState);
-                `SPOOKLOG("This " $ ThisUnitState.GetMyTemplateName() $ " moved into LOS of other no-cover concealed unit " $ OtherUnitState.GetMyTemplateName() $ " and is concealment breaker");
-                if( VisibilityInfoFromThisUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance))
+                Enemy = XComGameState_Unit(Detector);
+                if (Enemy != none)
                 {
-                    `SPOOKLOG("Close enough to break concealment");
-                    if (!StayConcealed(GameState, OtherUnitState))
-                    {
-                        OtherUnitState.BreakConcealment(ThisUnitState, true);
-
-                        // have to refresh the unit state after broken concealment
-                        OtherUnitState = XComGameState_Unit(History.GetGameStateForObjectID(OtherUnitState.ObjectID));
-                    }
+                    Victim.BreakConcealment(Enemy);
                 }
                 else
                 {
-                    `SPOOKLOG("Not close enough to break concealment, at " $ Sqrt(VisibilityInfoFromThisUnit.DefaultTargetDist) $ " but need to be " $ ConcealmentDetectionDistance);
+                    Victim.BreakConcealment();
                 }
+                Victim = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Victim.ObjectID));
             }
-
-            // generate alert data for this unit about other units
-            UnitASeesUnitB(ThisUnitState, OtherUnitState, GameState);
         }
+    }
 
-        // only need to process visibility updates from the other unit if it is still alive
-        if( OtherUnitState.IsAlive() )
+    return Victim;
+}
+
+function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local XComGameState_Unit Mover, Bystander;
+    local XComGameState_InteractiveObject Tower;
+    local XComGameStateHistory History;
+    local XComGameStateContext_Ability AbilityContext;
+    local XComGameState_AIGroup AIGroup;
+
+    History = `XCOMHISTORY;
+
+    Mover = XComGameState_Unit(EventData);
+    Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
+    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+
+    CleanseBurningIfInWater(Mover);
+
+    if (AbilityContext != None)
+    {
+        // Breaking windows breaks concealment.
+        if (AbilityContext.ResultContext.bPathCausesDestruction &&
+            Mover.IsConcealed() &&
+            !IsUnitConcealmentUnbreakableIgnoringTile(GameState, Mover))
         {
-            VisibilityMgr.GetVisibilityInfo(OtherUnitState.ObjectID, ThisUnitState.ObjectID, VisibilityInfoFromOtherUnit);
-
-            if( VisibilityInfoFromOtherUnit.bVisibleBasic )
-            {
-                `SPOOKLOG("Other " $ OtherUnitState.GetMyTemplateName() $ " can basically see this " $ ThisUnitState.GetMyTemplateName());
-
-                // check if this unit is concealed and that concealment is broken by entering into an enemy's detection tile
-                if( ThisUnitState.IsConcealed() && BreaksConcealment(OtherUnitState, ThisUnitState))
-                {
-                    `SPOOKLOG("Concealed " $ ThisUnitState.GetMyTemplateName() $ " moved into LOS of concealment breaker " $ OtherUnitState.GetMyTemplateName());
-                    ConcealmentDetectionDistance = GetConcealmentDetectionDistanceUnits(OtherUnitState, ThisUnitState);
-                    if (VisibilityInfoFromOtherUnit.DefaultTargetDist <= Square(ConcealmentDetectionDistance))
-                    {
-                        `SPOOKLOG("Close enough to break concealment");
-                        if (!StayConcealed(GameState, ThisUnitState))
-                        {
-                            ThisUnitState.BreakConcealment(OtherUnitState);
-
-                            // have to refresh the unit state after broken concealment
-                            ThisUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ThisUnitState.ObjectID));
-                        }
-                    }
-                    else
-                    {
-                        `SPOOKLOG("Not close enough to break concealment, at " $ Sqrt(VisibilityInfoFromOtherUnit.DefaultTargetDist) $ " but need to be " $ ConcealmentDetectionDistance);
-                    }
-                }
-
-                // generate alert data for other units that see this unit
-                if( VisibilityInfoFromOtherUnit.bVisibleBasic && !ThisUnitState.IsConcealed() )
-                {
-                    //  don't register an alert if this unit is about to reflex
-                    AIGroupState = OtherUnitState.GetGroupMembership();
-                    if (AIGroupState == none || AIGroupState.EverSightedByEnemy)
-                    {
-                        UnitASeesUnitB(OtherUnitState, ThisUnitState, GameState);
-                    }
-                }
-            }
+            Mover.BreakConcealment();
+            Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
         }
+    }
+
+    if (AbilityContext != none)
+    {
+        // Check if this unit is a member of a group waiting on this unit's movement to complete,
+        // or at least reach the interruption step where the movement should complete.
+        AIGroup = Mover.GetGroupMembership();
+        if (AIGroup != None &&
+            AIGroup.IsWaitingOnUnitForReveal(Mover) &&
+            (AbilityContext.InterruptionStatus != eInterruptionStatus_Interrupt ||
+             (AIGroup.FinalVisibilityMovementStep > INDEX_NONE &&
+              AIGroup.FinalVisibilityMovementStep <= AbilityContext.ResultContext.InterruptionStep)))
+        {
+            AIGroup.StopWaitingOnUnitForReveal(Mover);
+        }
+    }
+
+    foreach History.IterateByClassType(class'XComGameState_InteractiveObject', Tower)
+    {
+        Mover = TryDetectorSeeingVictim(Tower, Mover, GameState);
+    }
+
+    foreach History.IterateByClassType(class'XComGameState_Unit', Bystander)
+    {
+        Mover = TryDetectorSeeingVictim(Bystander, Mover, GameState);
+        Bystander = TryDetectorSeeingVictim(Mover, Bystander, GameState);
     }
 
     return ELR_NoInterrupt;
 }
 
-function bool IsConcealingLocationForConcealedUnit(XComGameState_Unit Unit, out TTile Tile)
+function bool GetOwnTile(XComGameState_BaseObject Obj, out TTile Tile)
+{
+    local XComGameState_Unit Unit;
+    local XComGameState_InteractiveObject Tower;
+
+    Unit = XComGameState_Unit(Obj);
+    if (Unit != none)
+    {
+        Unit.GetKeystoneVisibilityLocation(Tile);
+        return true;
+    }
+
+    Tower = XComGameState_InteractiveObject(Obj);
+    if (Tower != none)
+    {
+        Tile = Tower.TileLocation;
+        return true;
+    }
+
+    return false;
+}
+
+function bool IsUnitConcealmentUnbreakable(XComGameState GameState, XComGameState_Unit Unit)
+{
+    local TTile Tile;
+    GetOwnTile(Unit, Tile);
+    return IsTileUnbreakablyConcealingForUnit(Unit, Tile) ||
+           IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit);
+}
+
+function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TTile Tile)
 {
     local XComWorldData World;
     local vector Position;
@@ -473,20 +425,19 @@ function bool IsConcealingLocationForConcealedUnit(XComGameState_Unit Unit, out 
     return false;
 }
 
-function bool StayConcealed(XComGameState GameState, XComGameState_Unit Victim)
+function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, XComGameState_Unit Victim)
 {
     local XComGameStateContext_Ability SourceAbilityContext;
     local name EffectName;
-    local TTile VictimTileLocation;
-    local Vector VictimPosition;
-    local XComCoverPoint VictimCover;
-    local bool HasHighCover;
-    local bool HasInteractable;
 
     if (Victim == none)
     {
-        `SPOOKLOG("StayConcealed: no unit ergo false");
+        `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: no unit ergo false");
         return false;
+    }
+    if (!Victim.IsConcealed())
+    {
+        `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: not concealed ergo false");
     }
 
     // Certain abilities, whilst being executed, prevent concealment from breaking.
@@ -495,7 +446,7 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit Victim)
     {
         if (default.UNITS_NOT_REVEALED_ABILITIES.Find(SourceAbilityContext.InputContext.AbilityTemplateName) >= 0)
         {
-            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as ability " $ SourceAbilityContext.InputContext.AbilityTemplateName $ " is active");
+            `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " staying concealed as ability " $ SourceAbilityContext.InputContext.AbilityTemplateName $ " is active");
             return true;
         }
     }
@@ -505,29 +456,12 @@ function bool StayConcealed(XComGameState GameState, XComGameState_Unit Victim)
     {
         if (UnitHasEffect(Victim, EffectName) != none)
         {
-            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as has effect " $ EffectName);
+            `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " staying concealed as has effect " $ EffectName);
             return true;
         }
     }
 
-    if (UnitHasShadowEffect(Victim))
-    {
-        Victim.GetKeystoneVisibilityLocation(VictimTileLocation);
-        VictimPosition = `XWORLD.GetPositionFromTileCoordinates(VictimTileLocation);
-        `XWORLD.GetCoverPointAtFloor(VictimPosition, VictimCover);
-        HasHighCover = `HAS_HIGH_COVER(VictimCover);
-
-        HasInteractable = class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(Victim, eInteractionType_Normal).Length > 0 ||
-                          class'X2Condition_UnitInteractions'.static.GetUnitInteractionPoints(Victim, eInteractionType_Hack).Length > 0;
-
-        if (HasHighCover || HasInteractable)
-        {
-            `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " staying concealed as in cover / near interactable");
-            return true;
-        }
-    }
-
-    `SPOOKLOG("StayConcealed: " $ Victim.GetFullName() $ " not staying concealed");
+    `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " not staying concealed");
     return false;
 }
 
@@ -590,7 +524,7 @@ function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object Eve
 
     if (Damager != None)
     {
-        if (StayConcealed(GameState, Damager))
+        if (IsUnitConcealmentUnbreakableIgnoringTile(GameState, Damager))
         {
             `SPOOKLOG("Damager stays concealed, no reaction");
             `SPOOKLOG("OnUnitTakeEffectDamage ends");
@@ -625,12 +559,20 @@ function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object Eve
 
 function UnitASeesUnitB(XComGameState_Unit UnitA, XComGameState_Unit UnitB, XComGameState GameState)
 {
+    local XComGameState_AIGroup AIGroup;
+
     if (UnitB.IsDead() && !UnitA.HasSeenCorpse(UnitB.ObjectID) && IsCorpseStealthKill(UnitB))
     {
         `SPOOKLOG("UnitASeesUnitB filter marking stealth killed corpse " @ UnitB.ObjectID @ " seen by " @ UnitA.ObjectID);
         UnitA.MarkCorpseSeen(UnitB.ObjectID);
     }
-    class'XComGameState_Unit'.static.UnitASeesUnitB(UnitA, UnitB, GameState);
+
+    // Don't register an alert if this unit is about to reflex.
+    AIGroup = UnitA.GetGroupMembership();
+    if (AIGroup == none || AIGroup.EverSightedByEnemy)
+    {
+        class'XComGameState_Unit'.static.UnitASeesUnitB(UnitA, UnitB, GameState);
+    }
 }
 
 static function bool IsCorpseStealthKill(XComGameState_Unit Corpse)
@@ -692,6 +634,36 @@ static function BuildSimpleVisualizationForStealthKill(XComGameState GameState, 
     SoundAndFlyOver.SetSoundAndFlyOverParameters(none, default.StealthKilledFriendlyName, '', eColor_Good,, 0, false);
 
     OutVisualizationTracks.AddItem(Track);
+}
+
+function CleanseBurningIfInWater(XComGameState_Unit Unit)
+{
+    local TTile Tile;
+    local XComGameState_Effect EffectState;
+    local X2Effect_Persistent PersistentEffect;
+    local XComGameStateContext_EffectRemoved Context;
+    local XComGameState NewGameState;
+    local XComGameStateHistory History;
+
+    GetOwnTile(Unit, Tile);
+    if (Unit.IsBurning() && `XWORLD.IsWaterTile(Tile))
+    {
+        History = `XCOMHISTORY;
+        foreach History.IterateByClassType(class'XComGameState_Effect', EffectState)
+        {
+            if (EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID == Unit.ObjectID)
+            {
+                PersistentEffect = EffectState.GetX2Effect();
+                if (PersistentEffect.EffectName == class'X2StatusEffects'.default.BurningName)
+                {
+                    Context = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);
+                    NewGameState = History.CreateNewGameState(true, Context);
+                    EffectState.RemoveEffect(NewGameState, NewGameState, true);
+                    `TACTICALRULES.SubmitGameState(NewGameState);
+                }
+            }
+        }
+    }
 }
 
 defaultproperties

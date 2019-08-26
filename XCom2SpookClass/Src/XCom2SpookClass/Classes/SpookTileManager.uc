@@ -192,13 +192,21 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
     {
         return;
     }
+
+    `SPOOKLOG("Updating tiles for unit " $ Unit.GetFullName());
     UnitHasShadowEffect = DetectionManager.UnitHasShadowEffect(Unit);
     if (default.RENDER_REQUIRES_SHADOW_EFFECT && !UnitHasShadowEffect)
     {
+        `SPOOKLOG("Unit does not have required shadow effect");
         return;
     }
 
-    `SPOOKLOG("Updating tiles for unit " $ Unit.GetFullName());
+    if (DetectionManager.IsUnitConcealmentUnbreakableIgnoringTile(`XCOMHistory.GetGameStateFromHistory(-1), Unit))
+    {
+        `SPOOKLOG("Unit concalment is unbreakable");
+        return;
+    }
+
     `SPOOKLOG("Unit " $ Unit.GetFullName() $ " detection modifier:" $
         " cur=" $ Unit.GetCurrentStat(eStat_DetectionModifier) $
         " base=" $ Unit.GetBaseStat(eStat_DetectionModifier) $
@@ -223,7 +231,7 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
         BreakerDetectionRadius = DetectionManager.GetConcealmentDetectionDistanceMeters(Breaker, Unit);
         `SPOOKLOG("Breaker " $ GetLogName(Breaker) $ " detects within " $ BreakerDetectionRadius);
 
-        GetOwnTile(Breaker, BreakerTile);
+        DetectionManager.GetOwnTile(Breaker, BreakerTile);
         SearchTilePosition = World.GetPositionFromTileCoordinates(BreakerTile);
         SearchTilePosition.Z -= 1000;
 
@@ -237,10 +245,13 @@ function UpdateTilesForUnit(XComGameState_Unit Unit)
             CandidateTile = World.GetTileCoordinatesFromPosition(CandidateTilePosition);
             if (BreakerTile == CandidateTile || CanObjectSeeTile(Breaker, CandidateTile, BreakerDetectionRadius, World))
             {
-                Tile = AllocTile();
-                CandidateTilePosition.Z = World.GetFloorZForPosition(CandidateTilePosition) + 4;
-                Tile.SetLocation(CandidateTilePosition);
-                Tile.SetHidden(false);
+                if (!DetectionManager.IsTileUnbreakablyConcealingForUnit(Unit, CandidateTile))
+                {
+                    Tile = AllocTile();
+                    CandidateTilePosition.Z = World.GetFloorZForPosition(CandidateTilePosition) + 4;
+                    Tile.SetLocation(CandidateTilePosition);
+                    Tile.SetHidden(false);
+                }
             }
         }
     }
@@ -255,28 +266,6 @@ static function name GetLogName(XComGameState_BaseObject Obj)
         return Unit.GetMyTemplateName();
    }
    return 'Tower';
-}
-
-static function bool GetOwnTile(XComGameState_BaseObject Detector, out TTile Tile)
-{
-    local XComGameState_Unit Unit;
-    local XComGameState_InteractiveObject Tower;
-
-    Unit = XComGameState_Unit(Detector);
-    if (Unit != none)
-    {
-        Unit.GetKeystoneVisibilityLocation(Tile);
-        return true;
-    }
-
-    Tower = XComGameState_InteractiveObject(Detector);
-    if (Tower != none)
-    {
-        Tile = Tower.TileLocation;
-        return true;
-    }
-
-    return false;
 }
 
 function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array<XComGameState_BaseObject> ConcealmentBreakers)
@@ -327,13 +316,13 @@ function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, out array<XComGa
 }
 
 // Adapted from X2TacticalVisibilityHelpers.CanUnitSeeLocation().
-static function bool CanObjectSeeTile(XComGameState_BaseObject Obj, const out TTile TestTile, float DetectionRadius, XComWorldData World)
+function bool CanObjectSeeTile(XComGameState_BaseObject Obj, const out TTile TestTile, float DetectionRadius, XComWorldData World)
 {
     local TTile ObjTile;
     local GameRulesCache_VisibilityInfo Visibility;
     local float Detect;
 
-    if (!GetOwnTile(Obj, ObjTile))
+    if (!DetectionManager.GetOwnTile(Obj, ObjTile))
     {
         return false;
     }
