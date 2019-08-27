@@ -28,6 +28,7 @@ var config int OPPORTUNIST_BLEED_DAMAGE_PLUSONE_PER_TICK;
 var config WeaponDamageValue DART_CONVENTIONAL_DAMAGE;
 var config WeaponDamageValue DART_LASER_DAMAGE;
 var config WeaponDamageValue DART_MAGNETIC_DAMAGE;
+var config WeaponDamageValue DART_COIL_DAMAGE;
 var config WeaponDamageValue DART_BEAM_DAMAGE;
 
 var config int DART_BLEED_TURNS;
@@ -36,14 +37,15 @@ var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
 var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var localized string OpportunistFriendlyName;
-var localized string ShadowNotRevealedByClassesFriendlyName;
-var localized string ShadowNotRevealedByClassesHelpText;
+var localized string WiredNotRevealedByClassesFriendlyName;
+var localized string WiredNotRevealedByClassesHelpText;
 
 const ExeuntAbilityName = 'Spook_Exeunt';
+const WiredAbilityName = 'Spook_Wired';
 
 // These names are used for related abilities, effects, and events!
-const ShadowNotRevealedByClassesName = 'Spook_ShadowNotRevealedByClasses';
-const ShadowNotRevealedByClassesCancelName = 'Spook_ShadowNotRevealedByClassesCancel';
+const WiredNotRevealedByClassesName = 'Spook_WiredNotRevealedByClasses';
+const WiredNotRevealedByClassesCancelName = 'Spook_WiredNotRevealedByClassesCancel';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -62,8 +64,8 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddVeilAbility());
     Templates.AddItem(AddStatOverrideAbility());
     Templates.AddItem(AddStatOverrideCancelAbility());
-    Templates.AddItem(AddShadowNotRevealedByClassesAbility());
-    Templates.AddItem(AddShadowNotRevealedByClassesCancelAbility());
+    Templates.AddItem(AddWiredNotRevealedByClassesAbility());
+    Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
     // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
     Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
@@ -156,7 +158,6 @@ static function X2AbilityTemplate CarryUnitAbility()
     Template.AbilityShooterConditions.AddItem(ShooterCondition);
 
     Template.AddShooterEffectExclusions();
-
     AbilityRequiresSpookShooter(Template);
 
     TargetCondition = new class'X2Condition_UnitProperty';
@@ -187,6 +188,8 @@ static function X2AbilityTemplate CarryUnitAbility()
     Template.AbilitySourceName = 'eAbilitySource_Standard';
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_carry_unit";
     Template.CinescriptCameraType = "Soldier_CarryPickup";
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
 
     Template.ActivationSpeech = 'PickingUpBody';
 
@@ -212,6 +215,8 @@ static function X2AbilityTemplate CarryUnitAbility()
 
     Template.AddAbilityEventListener('UnitMoveFinished', class'XComGameState_Ability'.static.CarryUnitMoveFinished, ELD_OnStateSubmitted);
     Template.bLimitTargetIcons = true; //When selected, show carry-able units, rather than typical targets
+
+    Template.OverrideAbilities.AddItem('CarryUnit');
 
     return Template;
 }
@@ -264,6 +269,8 @@ static function X2DataTemplate PutDownUnitAbility()
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.AbilitySourceName = 'eAbilitySource_Standard';
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_drop_unit";
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
 
     Template.ActivationSpeech = 'DroppingBody';
 
@@ -284,6 +291,8 @@ static function X2DataTemplate PutDownUnitAbility()
 
     Template.bLimitTargetIcons = true; //When selected, show only the unit we can put down, rather than typical targets
 
+    Template.OverrideAbilities.AddItem('PutDownUnit');
+
     return Template;
 }
 
@@ -300,7 +309,7 @@ static function X2AbilityTemplate AddCoshAbility()
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Cosh');
 
     Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_AlwaysShow;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.BuildNewGameStateFn = TypicalMoveEndAbility_BuildGameState;
     Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
     Template.BuildInterruptGameStateFn = TypicalMoveEndAbility_BuildInterruptGameState;
@@ -379,7 +388,7 @@ static function X2AbilityTemplate AddSapAbility()
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Sap');
 
     Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_AlwaysShow;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.BuildNewGameStateFn = TypicalMoveEndAbility_BuildGameState;
     Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
     Template.BuildInterruptGameStateFn = TypicalMoveEndAbility_BuildInterruptGameState;
@@ -514,7 +523,7 @@ static function X2AbilityTemplate AddEclipseAbility()
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Eclipse');
 
     Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_coupdegrace";
     Template.Hostility = eHostility_Neutral;
     Template.bLimitTargetIcons = true;
@@ -682,18 +691,18 @@ static function X2AbilityTemplate AddStatOverrideCancelAbility()
     return Template;
 }
 
-static function X2AbilityTemplate AddShadowNotRevealedByClassesAbility()
+static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
 {
     local X2AbilityTemplate                            Template;
     local X2AbilityTrigger_EventListener               EventTrigger;
     local X2Condition_UnitProperty                     TargetPropertyCondition;
-    local X2Condition_SpookShadowNotRevealedByClasses  TargetSpecialCondition;
+    local X2Condition_SpookWiredNotRevealedByClasses   TargetSpecialCondition;
     local X2Effect_PersistentStatChange                DetectionChangeEffect;
 
-    `CREATE_X2ABILITY_TEMPLATE(Template, ShadowNotRevealedByClassesName);
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesName);
 
     EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = ShadowNotRevealedByClassesName;
+    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesName;
     EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
     EventTrigger.ListenerData.Filter = eFilter_Unit;
     EventTrigger.ListenerData.Deferral = ELD_Immediate;
@@ -714,15 +723,15 @@ static function X2AbilityTemplate AddShadowNotRevealedByClassesAbility()
 
     TargetPropertyCondition = new class'X2Condition_UnitProperty'; // Defaults are good; living enemy, etc.
     Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
-    TargetSpecialCondition = new class'X2Condition_SpookShadowNotRevealedByClasses';
+    TargetSpecialCondition = new class'X2Condition_SpookWiredNotRevealedByClasses';
     Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
 
     DetectionChangeEffect = new class'X2Effect_PersistentStatChange';
-    DetectionChangeEffect.EffectName = ShadowNotRevealedByClassesName;
+    DetectionChangeEffect.EffectName = WiredNotRevealedByClassesName;
     DetectionChangeEffect.DuplicateResponse = eDupe_Ignore;
     DetectionChangeEffect.BuildPersistentEffect(`BPE_TickAtEndOfNAnyTurns(1)); // Last until the end of the turn it's cast.
     DetectionChangeEffect.AddPersistentStatChange(eStat_DetectionRadius, -100);
-    DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.ShadowNotRevealedByClassesFriendlyName, default.ShadowNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
+    DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.WiredNotRevealedByClassesFriendlyName, default.WiredNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
     Template.AddTargetEffect(DetectionChangeEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
@@ -730,17 +739,17 @@ static function X2AbilityTemplate AddShadowNotRevealedByClassesAbility()
     return Template;
 }
 
-static function X2AbilityTemplate AddShadowNotRevealedByClassesCancelAbility()
+static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
 {
     local X2AbilityTemplate                 Template;
     local X2AbilityTrigger_EventListener    EventTrigger;
     local X2Condition_UnitEffects           TargetEffectCondition;
     local X2Effect_RemoveEffects            RemoveEffects;
 
-    `CREATE_X2ABILITY_TEMPLATE(Template, ShadowNotRevealedByClassesCancelName);
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesCancelName);
 
     EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = ShadowNotRevealedByClassesCancelName;
+    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesCancelName;
     EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
     EventTrigger.ListenerData.Filter = eFilter_None;
     EventTrigger.ListenerData.Deferral = ELD_Immediate;
@@ -761,11 +770,11 @@ static function X2AbilityTemplate AddShadowNotRevealedByClassesCancelAbility()
     AbilityRequiresSpookShooter(Template);
 
     TargetEffectCondition = new class'X2Condition_UnitEffects';
-    TargetEffectCondition.AddRequireEffect(ShadowNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
+    TargetEffectCondition.AddRequireEffect(WiredNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
     Template.AbilityTargetConditions.AddItem(TargetEffectCondition);
 
     RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.EffectNamesToRemove.AddItem(ShadowNotRevealedByClassesName);
+    RemoveEffects.EffectNamesToRemove.AddItem(WiredNotRevealedByClassesName);
     Template.AddTargetEffect(RemoveEffects);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
@@ -789,7 +798,7 @@ static function X2AbilityTemplate AddVanishAbility()
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Vanish');
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_item_wraith";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_AlwaysShow;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.Hostility = eHostility_Neutral;
     Template.bDisplayInUITacticalText = true;
     Template.bCrossClassEligible = false;
@@ -930,7 +939,7 @@ static function X2AbilityTemplate AddOpportunistAttackAbility()
 
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
     //SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
-    //Template.AddShooterEffectExclusions(SkipExclusions);
+    Template.AddShooterEffectExclusions(); //SkipExclusions);
 
     // ONLY trigger when the source is concealed
     SourceConcealedCondition = new class'X2Condition_UnitProperty';
@@ -1058,9 +1067,9 @@ static function X2AbilityTemplate AddWiredAbility()
 {
     local X2AbilityTemplate                 Template;
     local X2Effect_DamageImmunity           ImmunityEffect;
-    local X2Effect_PersistentStatChange     SightEffect;
+    //local X2Effect_PersistentStatChange     SightEffect;
 
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Wired');
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredAbilityName);
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mentalstrength";
     Template.Hostility = eHostility_Neutral;
@@ -1077,14 +1086,19 @@ static function X2AbilityTemplate AddWiredAbility()
     ImmunityEffect.ImmuneTypes.AddItem('Unconscious');
     ImmunityEffect.ImmuneTypes.AddItem('Panic');
     ImmunityEffect.ImmuneTypes.AddItem(class'X2Item_DefaultDamageTypes'.default.DisorientDamageType);
-    ImmunityEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, false, , Template.AbilitySourceName);
+    ImmunityEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, , , Template.AbilitySourceName);
     ImmunityEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
     Template.AddTargetEffect(ImmunityEffect);
 
-    SightEffect = new class'X2Effect_PersistentStatChange';
-    SightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    SightEffect.AddPersistentStatChange(eStat_SightRadius, default.WIRED_SIGHT_RANGE_INCREASE);
-    Template.AddTargetEffect(SightEffect);
+//  SightEffect = new class'X2Effect_PersistentStatChange';
+//  SightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+//  SightEffect.AddPersistentStatChange(eStat_SightRadius, default.WIRED_SIGHT_RANGE_INCREASE);
+//  Template.AddTargetEffect(SightEffect);
+
+    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesName);
+    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesCancelName);
+    Template.AdditionalAbilities.AddItem('Spook_StatOverride');
+    Template.AdditionalAbilities.AddItem('Spook_StatOverrideCancel');
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -1105,7 +1119,7 @@ static function X2AbilityTemplate AddDartAbility()
     Template.bDontDisplayInAbilitySummary = false;
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bloodcall";
     Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_PISTOL_SHOT_PRIORITY;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.DisplayTargetHitChance = true;
     Template.AbilitySourceName = 'eAbilitySource_Standard';
     Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
@@ -1125,6 +1139,7 @@ static function X2AbilityTemplate AddDartAbility()
     Template.bAllowFreeFireWeaponUpgrade = true;
 
     AbilityRequiresSpookShooter(Template);
+    Template.AddShooterEffectExclusions();
 
     // Target must be visible
     RequireVisibleCondition = new class'X2Condition_Visibility';

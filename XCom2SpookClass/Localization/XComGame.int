@@ -23,10 +23,10 @@ LocPromotionPopupText="<Bullet/> Cannot be used versus robotic targets."
 
 [Spook_Wired X2AbilityTemplate]
 LocFriendlyName="Wired"
-LocLongDescription="Cannot be stunned, disoriented or rendered unconsciousness. Able to see further."
-LocHelpText=""
+LocLongDescription="Cannot be stunned, disoriented or rendered unconscious. Drones can rarely detect you."
+LocHelpText="Cannot be stunned, disoriented or rendered unconscious. Drones can rarely detect you."
 LocFlyOverText="Wired"
-LocPromotionPopupText="<Bullet/> Passive effect."
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> You cannot be stunned, disoriented or rendered unconscious.<br/><Bullet/> Drones sensors are scrambled and so can rarely detect you when concealed."
 
 [Spook_Exeunt X2AbilityTemplate]
 LocFriendlyName="Exeunt"
@@ -38,9 +38,9 @@ LocPromotionPopupText="<Bullet/> Passive effect."
 [Spook_Veil X2AbilityTemplate]
 LocFriendlyName="Veil"
 LocFlyOverText="Veil"
-LocLongDescription="Enemies have 50% or less detection range against you, depending on your rank. Retain concealment next to high cover and interactable objects."
-LocHelpText="Enemies have greatly reduced detection range against you."
-LocPromotionPopupText="<Bullet/> Enemies have 50% or less detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence.<br/><Bullet/> This ability also grants a small reduction in this soldier's impact on infiltration times.<br/><Bullet/> The detection range reduction does not apply to ADVENT security towers.<br/><Bullet/> When in high cover, or next to an interactable object, your concealment cannot be broken from any angle, even by enemies in close proximity."
+LocLongDescription="Enemies' detection range is reduced, depending on your rank. Retain concealment next to high cover and objectives."
+LocHelpText="Enemies have greatly reduced detection range against you. Retain concealment next to high cover and objectives."
+LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Enemies have a reduced detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence.<br/><Bullet/> The detection range reduction does not apply to ADVENT security towers.<br/><Bullet/> When in high cover, or next to chests and similar objectives, your concealment cannot be broken from any angle, even by enemies in close proximity.<br/><Bullet/> This ability also grants a small reduction in this soldier's impact on infiltration times."
 
 [Spook_Opportunist X2AbilityTemplate]
 LocFriendlyName="Opportunist"
@@ -349,3 +349,39 @@ LocFlyOverText="Unknown"
 LocLongDescription="No effect. Reserved for future use."
 LocHelpText="No effect. Reserved for future use."
 LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
+
+[SpookPistol_CV X2WeaponTemplate]
+FriendlyName="Spook Pistol"
+FriendlyNamePlural="Spook Pistols"
+UnknownUtilityCategory="Pistol"
+BriefSummary="A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons."
+TacticalText="<Bullet/> Pistols lose accuracy at long ranges."
+
+[SpookPistol_LS X2WeaponTemplate]
+FriendlyName="Laser Spook Pistol"
+FriendlyNamePlural="Laser Spook Pistols"
+UnknownUtilityCategory="Pistol"
+BriefSummary="Based on the advances in beam weapons tech we've achieved, this new pistol boasts a substantial improvement in power over our conventional pistol."
+TacticalText="<Bullet/> Laser pistols are substantially more effective and accurate than their conventional precursors.\n<Bullet/> Pistols lose accuracy at long ranges."
+
+[SpookPistol_MG X2WeaponTemplate]
+FriendlyName="Mag Spook Pistol"
+FriendlyNamePlural="Mag Spook Pistols"
+UnknownUtilityCategory="Pistol"
+BriefSummary="Based on the advances in magnetic weapons tech we've achieved, this new pistol boasts a substantial improvement in power over our conventional pistol."
+TacticalText="<Bullet/> Magnetic pistols do more damage than conventional or laser pistols.\n<Bullet/> Pistols lose accuracy at long ranges."
+
+[SpookPistol_CG X2WeaponTemplate]
+FriendlyName="Gauss Spook Pistol"
+FriendlyNamePlural="Gauss Spook Pistols"
+UnknownUtilityCategory="Pistol"
+BriefSummary="A powerful, coil-tech sidearm that can punch through enemy armor."
+TacticalText="<Bullet/> Coil weapons automatically pierce 1 enemy armor.\n<Bullet/> Pistols lose accuracy at long ranges."
+AbilityDescName="pistol"
+
+[SpookPistol_BM X2WeaponTemplate]
+FriendlyName="Plasma Spook Pistol"
+FriendlyNamePlural="Plasma Spook Pistols"
+UnknownUtilityCategory="Pistol"
+BriefSummary="The ultimate sidearm, this pistol integrates the aliens' plasma weapons technology to powerful effect."
+TacticalText="<Bullet/> Plasma pistols are the most powerful handguns on Earth.\n<Bullet/> Pistols lose accuracy at long ranges.<br/><Bullet/> Plasma weapons also cause targets to take 1 additional damage on future hits."

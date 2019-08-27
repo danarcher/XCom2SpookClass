@@ -8,7 +8,7 @@ class SpookDetectionManager
 var localized string StealthKilledFriendlyName;
 
 var config array<name> SHADOW_EFFECTS;
-var config array<name> SHADOW_NOT_REVEALED_BY_CLASSES;
+var config array<name> WIRED_NOT_REVEALED_BY_CLASSES;
 var config bool SHADOW_NOT_REVEALED_BY_DETECTOR;
 var config array<name> UNITS_NOT_REVEALED_ABILITIES;
 var config array<name> UNITS_NOT_REVEALED_EFFECTS;
@@ -106,7 +106,7 @@ function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState
     Enemy = XComGameState_Unit(Detector);
     if (Enemy != none)
     {
-        if (UnitHasShadowEffect(Victim) && default.SHADOW_NOT_REVEALED_BY_CLASSES.Find(Enemy.GetMyTemplateName()) >= 0)
+        if (Victim.IsUnitAffectedByEffectName(class'X2Ability_SpookAbilitySet'.const.WiredAbilityName) && default.WIRED_NOT_REVEALED_BY_CLASSES.Find(Enemy.GetMyTemplateName()) >= 0)
         {
             return false;
         }
@@ -699,9 +699,9 @@ event OnVisualizationIdle();
 // X2VisualizationMgrObserverInterface
 event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
 {
-    // We don't want SHADOW_NOT_REVEALED_BY_CLASSES units to reveal spooks
-    // (strictly units with SHADOW_EFFECTS, but that's only spooks) on them.
-    // We do want SHADOW_NOT_REVEALED_BY_CLASSES units to reveal everyone else
+    // We don't want WIRED_NOT_REVEALED_BY_CLASSES units to reveal spooks
+    // (strictly units with the Wired effect, but that's only spooks) on them.
+    // We do want WIRED_NOT_REVEALED_BY_CLASSES units to reveal everyone else
     // as usual.
     //
     // We officially handle this in DetectionManager.BreaksConcealment().
@@ -711,7 +711,7 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     // it's time to move a spook, we want zero red tiles around these units,
     // and no on-a-stick indicators if we walk right up to them.
     //
-    // So, we use special abilities to debuff SHADOW_NOT_REVEALED_BY_CLASSES
+    // So, we use special abilities to debuff WIRED_NOT_REVEALED_BY_CLASSES
     // units during the spook unit's turn; specifically we toggle on the debuff
     // when the spook becomes active, and toggle it off again if the user tabs
     // to another unit. This is highly unusual since, like console cheats, we're
@@ -720,9 +720,8 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     //
     // Only spooks possess these special abilities, only triggered by us not
     // the player (who isn't even aware they exist), and they go hand in hand
-    // with the shadow effect which is applied by the Veil ability, though
-    // they're not triggered by Veil either, but by us in response to active
-    // unit changes as the player tabs between units.
+    // with the Wired ability, though they're only triggered by us, in response
+    // to active unit changes as the player tabs between units.
     //
     // This should stop all visual indicators as we want, which it does.
     // It should also mean our GetConcealmentDetectionDistanceMeters() sees
@@ -731,7 +730,7 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     // since we deliberately handle the mechanic in
     // DetectionManager.BreaksConcealment() anyway (and were doing so before we
     // started fretting about visuals) and hence avoid relying on this radius
-    // being zero during the shadow spook's turn, other than to suppress
+    // being zero during the spook's turn, other than to suppress
     // concealment-breaking visuals, which is working fine.
     //
     // We can't and don't want to rely on the enemy detection radius being zero
@@ -743,9 +742,9 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     // BuildPersistentEffect parameters), so that eStat_DetectionRadius returns
     // to normal, in case the game gets over its apparent radius bug by the
     // following turn. We want it normal anyway, so that *other* (ie. non-spook)
-    // units *can* be detected by SHADOW_NOT_REVEALED_BY_CLASSES units (we don't
+    // units *can* be detected by WIRED_NOT_REVEALED_BY_CLASSES units (we don't
     // want their detection radius zero other than when we're moving a spook),
-    // but we *also* don't want spooks detected by SHADOW_NOT_REVEALED_BY_CLASSES
+    // but we *also* don't want spooks detected by WIRED_NOT_REVEALED_BY_CLASSES
     // units, so it's handy our DetectionManager.BreaksConcealment() code is
     // handling that anyway.
     //
@@ -767,8 +766,8 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     local XComGameState GameState;
     local name ApplyName, CancelName;
 
-    ApplyName = class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesName;
-    CancelName = class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesCancelName;
+    ApplyName = class'X2Ability_SpookAbilitySet'.const.WiredNotRevealedByClassesName;
+    CancelName = class'X2Ability_SpookAbilitySet'.const.WiredNotRevealedByClassesCancelName;
 
     GameState = `XCOMHISTORY.GetGameStateFromHistory(-1);
     `SPOOKLOG("OnActiveUnitChanged");

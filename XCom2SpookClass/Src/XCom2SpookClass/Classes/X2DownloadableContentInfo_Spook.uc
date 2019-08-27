@@ -131,25 +131,9 @@ static function UpdateWeaponTemplates()
     `SPOOKSLOG("Updating weapon templates");
     ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
 
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'AssaultRifle_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
-
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'SMG_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
-
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_CV', false, class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_LS', false, class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_MG', false, class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Shotgun_BM', false, class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
-
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_CV', true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_LS', true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_MG', true);
-    FindAndUpdateWeaponTemplate(ItemManager, 'Sword_BM', true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'CombatKnife_CV', true);
+    FindAndUpdateWeaponTemplate(ItemManager, 'CombatKnife_MG', true);
+    // There are no other combat knife variants in use.
 }
 
 static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, name ItemName, bool bMelee, optional WeaponDamageValue ExtraDamage)
@@ -164,22 +148,6 @@ static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, n
             `SPOOKSLOG("Adding melee abilities to " $ ItemName);
             Template.Abilities.AddItem('Spook_Cosh');
             Template.Abilities.AddItem('Spook_Sap');
-        }
-        else
-        {
-            `SPOOKSLOG("Adding ranged abilities to " $ ItemName);
-            Template.Abilities.AddItem('Spook_Dart');
-            Template.Abilities.AddItem('Spook_CarryUnit');
-            Template.Abilities.AddItem('Spook_PutDownUnit');
-            Template.Abilities.AddItem('Spook_StatOverride');
-            Template.Abilities.AddItem('Spook_StatOverrideCancel');
-            Template.Abilities.AddItem(class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesName);
-            Template.Abilities.AddItem(class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesCancelName);
-        }
-        if (ExtraDamage.Tag != '')
-        {
-            `SPOOKSLOG("Adding extra damage to " $ ItemName $ ", (" $ ExtraDamage.Damage $ " +/- " $ ExtraDamage.Spread $ " (+" $ ExtraDamage.PlusOne $ ") C" $ ExtraDamage.Crit $ " P" $ ExtraDamage.Pierce $ " S" $ ExtraDamage.Shred $ " Tag=" $ ExtraDamage.Tag $ " Type=" $ ExtraDamage.DamageType);
-            Template.ExtraDamage.AddItem(ExtraDamage);
         }
     }
     else
@@ -200,9 +168,6 @@ static function UpdateAbilityTemplates()
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'ChangeFormSawEnemy');
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'BurrowedAttack');
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'UnburrowSawEnemy');
-
-    DenySpooksAbility(AbilityManager, 'CarryUnit');
-    DenySpooksAbility(AbilityManager, 'PutDownUnit');
 
     `SPOOKSLOG("Ability template updates completed");
 }

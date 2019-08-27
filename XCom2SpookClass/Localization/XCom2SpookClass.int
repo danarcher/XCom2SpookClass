@@ -1,7 +1,7 @@
 [X2Ability_SpookAbilitySet]
 OpportunistFriendlyName="Opportunist"
-ShadowNotRevealedByClassesFriendlyName="Scrambled"
-ShadowNotRevealedByClassesHelpText="Unable to detect some concealed soldiers."
+WiredNotRevealedByClassesFriendlyName="Scrambled"
+WiredNotRevealedByClassesHelpText="Unable to detect some concealed soldiers."
 
 [SpookDetectionManager]
 StealthKilledFriendlyName="Stealth Kill"

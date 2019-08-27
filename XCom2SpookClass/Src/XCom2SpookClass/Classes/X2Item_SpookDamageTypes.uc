@@ -6,12 +6,14 @@ class X2Item_SpookDamageTypes
 
 const BleedDamageTypeName = 'SpookBleedDamageType';
 const StealthBleedDamageTypeName = 'SpookStealthBleedDamageType';
+const PrecisionProjectileDamageTypeName = 'SpookPrecisionProjectileDamageType';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> DamageTypes;
     DamageTypes.AddItem(CreateDamageType(BleedDamageTypeName));
     DamageTypes.AddItem(CreateDamageType(StealthBleedDamageTypeName));
+    DamageTypes.AddItem(CreateDamageType(PrecisionProjectileDamageTypeName));
     return DamageTypes;
 }
 
