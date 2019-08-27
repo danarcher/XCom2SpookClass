@@ -173,6 +173,8 @@ static function FindAndUpdateWeaponTemplate(X2ItemTemplateManager ItemManager, n
             Template.Abilities.AddItem('Spook_PutDownUnit');
             Template.Abilities.AddItem('Spook_StatOverride');
             Template.Abilities.AddItem('Spook_StatOverrideCancel');
+            Template.Abilities.AddItem(class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesName);
+            Template.Abilities.AddItem(class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesCancelName);
         }
         if (ExtraDamage.Tag != '')
         {

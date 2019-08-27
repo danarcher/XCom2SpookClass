@@ -1,5 +1,6 @@
 class SpookDetectionManager
     extends Object
+    implements(X2VisualizationMgrObserverInterface)
     config(Spook);
 
 `include(XCom2SpookClass\Src\Spook.uci)
@@ -14,6 +15,21 @@ var config array<name> UNITS_NOT_REVEALED_EFFECTS;
 
 var float StatOverrideSpecialDetectionModifier;
 
+enum EConcealBreakReason
+{
+    eCBR_EnemyTookDamage,
+    eCBR_UnitVisibilityChange,
+    eCBR_UnitMoveIntoDetectionRange,
+    eCBR_EnemyMoveIntoDetectionRange,
+    eCBR_BrokenWindow,
+};
+
+enum ECoverHandling
+{
+    eCH_SafeInCover,
+    eCH_IgnoreCover,
+};
+
 function OnInit()
 {
     local Object This;
@@ -24,6 +40,7 @@ function OnInit()
     `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
     `SPOOKLOG("StatOverrideSpecialDetectionModifier is " $ default.StatOverrideSpecialDetectionModifier);
+    `XCOMVISUALIZATIONMGR.RegisterObserver(self);
 }
 
 function float GetUnitDetectionModifier(XComGameState_Unit Unit)
@@ -60,7 +77,7 @@ function float GetConcealmentDetectionDistanceMeters(XComGameState_BaseObject De
     if (Enemy != none)
     {
         SightRadius = Enemy.GetVisibilityRadius();
-        DetectionRadius = Enemy.GetCurrentStat(eStat_DetectionRadius);
+        DetectionRadius = FMax(Enemy.GetCurrentStat(eStat_DetectionRadius), 0.0);
         DetectionRadius = DetectionRadius * FMax(1.0 - GetUnitDetectionModifier(Victim), 0.0);
         DetectionRadius = FMin(SightRadius, DetectionRadius);
         return DetectionRadius;
@@ -81,7 +98,7 @@ function float GetConcealmentDetectionDistanceUnits(XComGameState_BaseObject Det
     return `METERSTOUNITS(GetConcealmentDetectionDistanceMeters(Detector, Victim));
 }
 
-function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, EConcealBreakReason Reason)
 {
     local XComGameState_Unit Enemy;
     local XComGameState_InteractiveObject Tower;
@@ -191,11 +208,11 @@ function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object 
     local XComGameState_Unit Victim;
     Detector = XComGameState_BaseObject(EventSource);
     Victim = XComGameState_Unit(EventData);
-    TryDetectorSeeingVictim(Detector, Victim, GameState);
+    TryDetectorSeeingVictim(Detector, Victim, GameState, eCBR_UnitVisibilityChange, eCH_SafeInCover);
     return ELR_NoInterrupt;
 }
 
-function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState, optional bool IgnoreCover)
+function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState, EConcealBreakReason Reason, ECoverHandling CoverHandling)
 {
     local XComGameState_Unit Enemy;
     local GameRulesCache_VisibilityInfo Visibility;
@@ -229,9 +246,9 @@ function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Det
         }
     }
 
-    if (Victim.IsConcealed() && (IgnoreCover || Visibility.TargetCover == CT_None))
+    if (Victim.IsConcealed() && (CoverHandling == eCH_IgnoreCover || Visibility.TargetCover == CT_None))
     {
-        Victim = TryBreakConcealment(Detector, Victim, GameState);
+        Victim = TryBreakConcealment(Detector, Victim, GameState, Reason);
     }
 
     if (Enemy != none && !Victim.IsConcealed())
@@ -242,7 +259,7 @@ function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Det
     return Victim;
 }
 
-function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState)
+function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, XComGameState GameState, EConcealBreakReason Reason)
 {
     local TTile DetectorTile, VictimTile;
     local vector DetectorPosition, VictimPosition;
@@ -261,7 +278,7 @@ function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detecto
         return Victim;
     }
 
-    if (BreaksConcealment(Detector, Victim))
+    if (BreaksConcealment(Detector, Victim, Reason))
     {
         GetOwnTile(Detector, DetectorTile);
         GetOwnTile(Victim, VictimTile);
@@ -272,7 +289,7 @@ function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detecto
 
         if (VSizeSq(DetectorPosition - VictimPosition) <= Square(GetConcealmentDetectionDistanceUnits(Detector, Victim)))
         {
-            if (!IsUnitConcealmentUnbreakable(GameState, Victim))
+            if (!IsUnitConcealmentUnbreakable(GameState, Victim, Reason))
             {
                 Enemy = XComGameState_Unit(Detector);
                 if (Enemy != none)
@@ -309,10 +326,10 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
 
     if (AbilityContext != None)
     {
-        // Breaking windows breaks concealment.
+        // Breaking windows breaks concealment. Ignore tile since we broke a window to get to it.
         if (AbilityContext.ResultContext.bPathCausesDestruction &&
             Mover.IsConcealed() &&
-            !IsUnitConcealmentUnbreakableIgnoringTile(GameState, Mover))
+            !IsUnitConcealmentUnbreakableIgnoringTile(GameState, Mover, eCBR_BrokenWindow))
         {
             Mover.BreakConcealment();
             Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
@@ -336,13 +353,13 @@ function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSou
 
     foreach History.IterateByClassType(class'XComGameState_InteractiveObject', Tower)
     {
-        Mover = TryDetectorSeeingVictim(Tower, Mover, GameState);
+        Mover = TryDetectorSeeingVictim(Tower, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
     }
 
     foreach History.IterateByClassType(class'XComGameState_Unit', Bystander)
     {
-        Mover = TryDetectorSeeingVictim(Bystander, Mover, GameState);
-        Bystander = TryDetectorSeeingVictim(Mover, Bystander, GameState);
+        Mover = TryDetectorSeeingVictim(Bystander, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
+        Bystander = TryDetectorSeeingVictim(Mover, Bystander, GameState, eCBR_EnemyMoveIntoDetectionRange, eCH_SafeInCover);
     }
 
     return ELR_NoInterrupt;
@@ -370,15 +387,15 @@ function bool GetOwnTile(XComGameState_BaseObject Obj, out TTile Tile)
     return false;
 }
 
-function bool IsUnitConcealmentUnbreakable(XComGameState GameState, XComGameState_Unit Unit)
+function bool IsUnitConcealmentUnbreakable(XComGameState GameState, XComGameState_Unit Unit, EConcealBreakReason Reason)
 {
     local TTile Tile;
     GetOwnTile(Unit, Tile);
-    return IsTileUnbreakablyConcealingForUnit(Unit, Tile) ||
-           IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit);
+    return IsTileUnbreakablyConcealingForUnit(Unit, Tile, Reason) ||
+           IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit, Reason);
 }
 
-function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TTile Tile)
+function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TTile Tile, EConcealBreakReason Reason)
 {
     local XComWorldData World;
     local vector Position;
@@ -390,6 +407,13 @@ function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TT
 
     if (!UnitHasShadowEffect(Unit))
     {
+        return false;
+    }
+
+    if (Reason == eCBR_UnitMoveIntoDetectionRange)
+    {
+        // If we move into detection range, our tile won't protect us.
+        // (We're doing this because it means we don't have to replace default concealment tile handling!)
         return false;
     }
 
@@ -425,7 +449,7 @@ function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TT
     return false;
 }
 
-function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, XComGameState_Unit Victim)
+function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, XComGameState_Unit Victim, EConcealBreakReason Reason)
 {
     local XComGameStateContext_Ability SourceAbilityContext;
     local name EffectName;
@@ -454,7 +478,7 @@ function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, 
     // Certain effects on the "seen" unit prevent concealment from breaking.
     foreach default.UNITS_NOT_REVEALED_EFFECTS(EffectName)
     {
-        if (UnitHasEffect(Victim, EffectName) != none)
+        if (Victim.IsUnitAffectedByEffectName(EffectName))
         {
             `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " staying concealed as has effect " $ EffectName);
             return true;
@@ -470,7 +494,7 @@ function bool UnitHasShadowEffect(XComGameState_Unit Unit)
     local name EffectName;
     foreach default.SHADOW_EFFECTS(EffectName)
     {
-        if (UnitHasEffect(Unit, EffectName) != none)
+        if (Unit.IsUnitAffectedByEffectName(EffectName))
         {
             return true;
         }
@@ -524,7 +548,7 @@ function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object Eve
 
     if (Damager != None)
     {
-        if (IsUnitConcealmentUnbreakableIgnoringTile(GameState, Damager))
+        if (IsUnitConcealmentUnbreakableIgnoringTile(GameState, Damager, eCBR_EnemyTookDamage))
         {
             `SPOOKLOG("Damager stays concealed, no reaction");
             `SPOOKLOG("OnUnitTakeEffectDamage ends");
@@ -663,6 +687,97 @@ function CleanseBurningIfInWater(XComGameState_Unit Unit)
                 }
             }
         }
+    }
+}
+
+// X2VisualizationMgrObserverInterface
+event OnVisualizationBlockComplete(XComGameState AssociatedGameState);
+
+// X2VisualizationMgrObserverInterface
+event OnVisualizationIdle();
+
+// X2VisualizationMgrObserverInterface
+event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
+{
+    // We don't want SHADOW_NOT_REVEALED_BY_CLASSES units to reveal spooks
+    // (strictly units with SHADOW_EFFECTS, but that's only spooks) on them.
+    // We do want SHADOW_NOT_REVEALED_BY_CLASSES units to reveal everyone else
+    // as usual.
+    //
+    // We officially handle this in DetectionManager.BreaksConcealment().
+    // But this doesn't affect concealment-breaking *visuals* (tiles, and
+    // raised-on-a-stick stepping-on-this-tile-is-bad indicators such as those
+    // built in and further provided by e.g. the "Gotcha Again" mod). When
+    // it's time to move a spook, we want zero red tiles around these units,
+    // and no on-a-stick indicators if we walk right up to them.
+    //
+    // So, we use special abilities to debuff SHADOW_NOT_REVEALED_BY_CLASSES
+    // units during the spook unit's turn; specifically we toggle on the debuff
+    // when the spook becomes active, and toggle it off again if the user tabs
+    // to another unit. This is highly unusual since, like console cheats, we're
+    // changing the game state (applying effects to units) outside of normal
+    // unit actions, and all of this is written into game state history.
+    //
+    // Only spooks possess these special abilities, only triggered by us not
+    // the player (who isn't even aware they exist), and they go hand in hand
+    // with the shadow effect which is applied by the Veil ability, though
+    // they're not triggered by Veil either, but by us in response to active
+    // unit changes as the player tabs between units.
+    //
+    // This should stop all visual indicators as we want, which it does.
+    // It should also mean our GetConcealmentDetectionDistanceMeters() sees
+    // zero for eStat_DetectionRadius during our turn when moving a spook, which
+    // didn't appear to be the case in brief testing, however, we don't care,
+    // since we deliberately handle the mechanic in
+    // DetectionManager.BreaksConcealment() anyway (and were doing so before we
+    // started fretting about visuals) and hence avoid relying on this radius
+    // being zero during the shadow spook's turn, other than to suppress
+    // concealment-breaking visuals, which is working fine.
+    //
+    // We can't and don't want to rely on the enemy detection radius being zero
+    // during the enemy turn, "can't" because a) it may be bugged, see above and
+    // "don't want to" because b) we don't want this zero radius applying to all
+    // units. So...
+    //
+    // We've also set these debuffs to expire at the end of the turn (via
+    // BuildPersistentEffect parameters), so that eStat_DetectionRadius returns
+    // to normal, in case the game gets over its apparent radius bug by the
+    // following turn. We want it normal anyway, so that *other* (ie. non-spook)
+    // units *can* be detected by SHADOW_NOT_REVEALED_BY_CLASSES units (we don't
+    // want their detection radius zero other than when we're moving a spook),
+    // but we *also* don't want spooks detected by SHADOW_NOT_REVEALED_BY_CLASSES
+    // units, so it's handy our DetectionManager.BreaksConcealment() code is
+    // handling that anyway.
+    //
+    // All in all, if we didn't care about visuals, we could remove these
+    // special abilities completely and rely on
+    // DetectionManager.BreaksConcealment() to handle this 100% reliably.
+    //
+    // Yes, it's confounding. This game behaves strangely when modded.
+    //
+    // Addendum: I may have found the bug of which I accused the game. If the
+    // game isn't capping eStat_DetectionRadius at a minimum of zero, then
+    // actually it's worth noting what we did is add a massive negative
+    // modifier. This will very, very likely make it massively negative.
+    // Since we *square it* and then test whether the square of the unit's
+    // distance is less than this, and the squaring removes the sign, we
+    // may have tripped ourselves up! I've hence put a fix into the function
+    // GetConcealmentDetectionDistanceMeters() to clamp the value at zero if
+    // below zero, via FMax(n, 0). Cough.
+    local XComGameState GameState;
+    local name ApplyName, CancelName;
+
+    ApplyName = class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesName;
+    CancelName = class'X2Ability_SpookAbilitySet'.const.ShadowNotRevealedByClassesCancelName;
+
+    GameState = `XCOMHISTORY.GetGameStateFromHistory(-1);
+    `SPOOKLOG("OnActiveUnitChanged");
+    `SPOOKLOG("Triggering event " $ CancelName);
+    `XEVENTMGR.TriggerEvent(CancelName, none, none, GameState);
+    if (NewActiveUnit != none && NewActiveUnit.FindAbility(ApplyName).ObjectID != 0)
+    {
+        `SPOOKLOG("Triggering event " $ ApplyName $ " for active unit " $ NewActiveUnit.GetMyTemplateName() $ " " $ NewActiveUnit.GetFullName());
+        `XEVENTMGR.TriggerEvent(ApplyName, NewActiveUnit, NewActiveUnit, GameState);
     }
 }
 

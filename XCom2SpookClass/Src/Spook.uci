@@ -7,7 +7,14 @@
 `define SPOOKASSERTLOG(cond) if (!(`cond)) { `SPOOKLOG("Assertion failed: `cond"); }
 `define SPOOKASSERTSLOG(cond) if (!(`cond)) { `SPOOKSLOG("Assertion failed: `cond"); }
 
-// BPE_xxx are flags for BuildPersistentEffect.
+// BPE_xxx are flags for X2Effect_Persistent.BuildPersistentEffect().
+//
+// function BuildPersistentEffect(
+//      int _iNumTurns,
+//      optional bool _bInfiniteDuration=false,
+//      optional bool _bRemoveWhenSourceDies=true,
+//      optional bool _bIgnorePlayerCheckOnTick=false,
+//      optional GameRuleStateChange _WatchRule=eGameRule_TacticalGameStart);
 //
 // Persistent effects tick only when told to tick.
 //

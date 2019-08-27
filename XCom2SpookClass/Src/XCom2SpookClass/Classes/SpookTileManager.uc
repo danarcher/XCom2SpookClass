@@ -108,9 +108,13 @@ function EventListenerReturn OnSpookUpdateTiles(Object EventData, Object EventSo
     return ELR_NoInterrupt;
 }
 
+// X2VisualizationMgrObserverInterface
 event OnVisualizationBlockComplete(XComGameState AssociatedGameState);
+
+// X2VisualizationMgrObserverInterface
 event OnVisualizationIdle();
 
+// X2VisualizationMgrObserverInterface
 event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
 {
     `SPOOKLOG("OnActiveUnitChanged");
@@ -222,9 +226,9 @@ function UpdateTilesForUnit(XComGameState_Unit Unit, XComGameState GameState)
         return;
     }
 
-    if (DetectionManager.IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit))
+    if (DetectionManager.IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit, eCBR_UnitMoveIntoDetectionRange))
     {
-        `SPOOKLOG("Unit concalment is unbreakable");
+        `SPOOKLOG("Unit concealment is unbreakable");
         return;
     }
 
@@ -266,7 +270,7 @@ function UpdateTilesForUnit(XComGameState_Unit Unit, XComGameState GameState)
             CandidateTile = World.GetTileCoordinatesFromPosition(CandidateTilePosition);
             if (BreakerTile == CandidateTile || CanObjectSeeTile(Breaker, CandidateTile, BreakerDetectionRadius, World))
             {
-                if (!DetectionManager.IsTileUnbreakablyConcealingForUnit(Unit, CandidateTile))
+                if (!DetectionManager.IsTileUnbreakablyConcealingForUnit(Unit, CandidateTile, eCBR_UnitMoveIntoDetectionRange))
                 {
                     Tile = AllocTile();
                     CandidateTilePosition.Z = World.GetFloorZForPosition(CandidateTilePosition) + 4;
@@ -295,7 +299,7 @@ function GetVisibleConcealmentBreakers(XComGameState_Unit Unit, XComGameState Ga
             VisibleObject = History.GetGameStateForObjectID(VisibleObjectRef.ObjectID);
         }
 
-        if (DetectionManager.BreaksConcealment(VisibleObject, Unit))
+        if (DetectionManager.BreaksConcealment(VisibleObject, Unit, eCBR_UnitMoveIntoDetectionRange))
         {
             ConcealmentBreakers.AddItem(VisibleObject);
         }

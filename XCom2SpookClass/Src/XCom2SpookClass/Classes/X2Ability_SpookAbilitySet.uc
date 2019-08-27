@@ -36,8 +36,14 @@ var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
 var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var localized string OpportunistFriendlyName;
+var localized string ShadowNotRevealedByClassesFriendlyName;
+var localized string ShadowNotRevealedByClassesHelpText;
 
 const ExeuntAbilityName = 'Spook_Exeunt';
+
+// These names are used for related abilities, effects, and events!
+const ShadowNotRevealedByClassesName = 'Spook_ShadowNotRevealedByClasses';
+const ShadowNotRevealedByClassesCancelName = 'Spook_ShadowNotRevealedByClassesCancel';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -56,6 +62,8 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddVeilAbility());
     Templates.AddItem(AddStatOverrideAbility());
     Templates.AddItem(AddStatOverrideCancelAbility());
+    Templates.AddItem(AddShadowNotRevealedByClassesAbility());
+    Templates.AddItem(AddShadowNotRevealedByClassesCancelAbility());
     // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
     Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
@@ -674,6 +682,97 @@ static function X2AbilityTemplate AddStatOverrideCancelAbility()
     return Template;
 }
 
+static function X2AbilityTemplate AddShadowNotRevealedByClassesAbility()
+{
+    local X2AbilityTemplate                            Template;
+    local X2AbilityTrigger_EventListener               EventTrigger;
+    local X2Condition_UnitProperty                     TargetPropertyCondition;
+    local X2Condition_SpookShadowNotRevealedByClasses  TargetSpecialCondition;
+    local X2Effect_PersistentStatChange                DetectionChangeEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, ShadowNotRevealedByClassesName);
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = ShadowNotRevealedByClassesName;
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
+    EventTrigger.ListenerData.Filter = eFilter_Unit;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    AbilityRequiresSpookShooter(Template);
+
+    TargetPropertyCondition = new class'X2Condition_UnitProperty'; // Defaults are good; living enemy, etc.
+    Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
+    TargetSpecialCondition = new class'X2Condition_SpookShadowNotRevealedByClasses';
+    Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
+
+    DetectionChangeEffect = new class'X2Effect_PersistentStatChange';
+    DetectionChangeEffect.EffectName = ShadowNotRevealedByClassesName;
+    DetectionChangeEffect.DuplicateResponse = eDupe_Ignore;
+    DetectionChangeEffect.BuildPersistentEffect(`BPE_TickAtEndOfNAnyTurns(1)); // Last until the end of the turn it's cast.
+    DetectionChangeEffect.AddPersistentStatChange(eStat_DetectionRadius, -100);
+    DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.ShadowNotRevealedByClassesFriendlyName, default.ShadowNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
+    Template.AddTargetEffect(DetectionChangeEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddShadowNotRevealedByClassesCancelAbility()
+{
+    local X2AbilityTemplate                 Template;
+    local X2AbilityTrigger_EventListener    EventTrigger;
+    local X2Condition_UnitEffects           TargetEffectCondition;
+    local X2Effect_RemoveEffects            RemoveEffects;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, ShadowNotRevealedByClassesCancelName);
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = ShadowNotRevealedByClassesCancelName;
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
+    EventTrigger.ListenerData.Filter = eFilter_None;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    // Don't care if we're dead.
+    //Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    AbilityRequiresSpookShooter(Template);
+
+    TargetEffectCondition = new class'X2Condition_UnitEffects';
+    TargetEffectCondition.AddRequireEffect(ShadowNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
+    Template.AbilityTargetConditions.AddItem(TargetEffectCondition);
+
+    RemoveEffects = new class'X2Effect_RemoveEffects';
+    RemoveEffects.EffectNamesToRemove.AddItem(ShadowNotRevealedByClassesName);
+    Template.AddTargetEffect(RemoveEffects);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
 static function X2AbilityTemplate AddVanishAbility()
 {
     local X2AbilityTemplate                 Template;
@@ -1108,7 +1207,10 @@ static function XComGameState BuildDartGameState(XComGameStateContext Context)
         }
 
         // If the target dies, everyone will be worried by the corpse.
-        // If they don't, we want to worry them.
+        // If they don't, we want to worry them. We don't want red alert
+        // behaviour, which other code suppresses
+        // (DetectionManager.OnUnitTakeEffectDamage), but we do want them
+        // alerted, as if by a bad sound.
         if (TargetState != none && TargetState.IsAlive())
         {
             AlertInfo.AlertTileLocation = TargetState.TileLocation;
