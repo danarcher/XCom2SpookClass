@@ -385,3 +385,8 @@ FriendlyNamePlural="Plasma Spook Pistols"
 UnknownUtilityCategory="Pistol"
 BriefSummary="The ultimate sidearm, this pistol integrates the aliens' plasma weapons technology to powerful effect."
 TacticalText="<Bullet/> Plasma pistols are the most powerful handguns on Earth.\n<Bullet/> Pistols lose accuracy at long ranges.<br/><Bullet/> Plasma weapons also cause targets to take 1 additional damage on future hits."
+
+[POI_SpookRecruit X2PointOfInterestTemplate]
+DisplayNames[0]="Coded Signal"
+CompletedSummaries[0]="Upon arrival at this clearly improvised beacon, we were approached by a shadowy individual presenting valid pre-invasion military credentials."
+POIImages[0]="img:///UILibrary_StrategyImages.X2StrategyMap.POI_MysteriousStranger"

@@ -1,4 +1,4 @@
-class UIScreenListener_TacticalHUD_Spook
+class UIScreenListener_UITacticalHUD_Spook
     extends UIScreenListener
     config(Spook);
 
