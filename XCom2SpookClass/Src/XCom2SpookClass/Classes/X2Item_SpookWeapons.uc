@@ -55,6 +55,9 @@ var config int PISTOL_BEAM_IPOINTS;
 
 var config array<int> SHORT_RANGE;
 
+var config int PISTOL_MOBILITY_BONUS;
+var config int PISTOL_DETECTION_MODIFIER;
+
 static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> Templates;
@@ -96,6 +99,8 @@ static function X2WeaponTemplate CreatePistolBase(name TemplateName, int Tier)
     Template.Abilities.AddItem('Reload');
     Template.Abilities.AddItem('HotLoadAmmo');
     Template.Abilities.AddItem('Spook_Dart'); // Requires ExtraDamage from DART_[tech]_DAMAGE at each weapon tech.
+    Template.Abilities.AddItem('Spook_Pistol_StatBonus');
+    Template.SetUIStatMarkup(class'XLocalizedData'.default.MobilityLabel, eStat_Mobility, default.PISTOL_MOBILITY_BONUS);
 
     Template.UIArmoryCameraPointTag = 'UIPawnLocation_WeaponUpgrade_AssaultRifle';
     //Template.SetAnimationNameForAbility('FanFire', 'FF_FireMultiShotConvA');

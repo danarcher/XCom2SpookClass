@@ -350,12 +350,16 @@ LocLongDescription="No effect. Reserved for future use."
 LocHelpText="No effect. Reserved for future use."
 LocPromotionPopupText="<Bullet/> No effect.<br/><Bullet/> Reserved for future use."
 
+;Override LW2 text which references gunners.
+[CombatKnife_CV X2WeaponTemplate]
+TacticalText="<Bullet/> A lightweight secondary melee weapon.<br/><Bullet/> A knife attack requires one action and does not end your turn.<br/>"
+
 [SpookPistol_CV X2WeaponTemplate]
 FriendlyName="Spook Pistol"
 FriendlyNamePlural="Spook Pistols"
 UnknownUtilityCategory="Pistol"
 BriefSummary="A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons."
-TacticalText="<Bullet/> Pistols lose accuracy at long ranges."
+TacticalText="<Bullet/> A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons.\n<Bullet/> Pistols lose accuracy at long ranges."
 
 [SpookPistol_LS X2WeaponTemplate]
 FriendlyName="Laser Spook Pistol"
