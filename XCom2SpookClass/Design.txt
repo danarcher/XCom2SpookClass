@@ -1,41 +1,51 @@
 
 
-BATON GRANTS
+SILENCED SPOOK PISTOL GRANTS
+Shoot - Short range, serious accuracy bonus/penalty. Rifle damage. Very quiet.
+Dart (1) - Short range. Bleed. Can use while concealed. Stealth. Ungroup on death. No robots. Charges = rank, 1-8. Not 3-10 after all.
+Infinite ammo.
 
-Cosh (>|)- Fleche range. Damage, disorient. Free move.
-Sap (>|) - Fleche range. Unconscious. Free stealth move. Stealth. Ungroup. No robots. Cooldown 3.
-
-NEEDLE RIFLE GRANTS
-
-Shoot - Short/medium range. Damage. Bleed. No robots.
-Dart (1) - Short range. Bleed. Requires concealed. Stealth. Ungroup. No robots. Charges = rank.
+COMBAT KNIFE GRANTS
+Being pointy.
 
 STARTING PERKS
+See tree below, squaddie grants all three, LW style.
 
-Phantom (since passive; appears on main UI as main skill)
-Eclipse (since active; appears on RHS and obvious in practice)
-Wired (since, er, I want it)
+RANKS
+
+  RK 0
+  SQ 1
+LCPL 2
+ CPL 3
+ SGT 4
+SSGT 5
+TSGT 6
+GSGT 7
+MSGT 8
 
 TREE: Footpad
 
-LCPL Veil
- CPL Exeunt
- SGT Operator
-SSGT Vanish
-TGST Tradecraft
+  SQ Wired
+LCPL Phantom
+ CPL Veil
+ SGT Distract
+SSGT Meld
+TGST Vanish
 GSGT Exfil
 MSGT Exodus
 
-TREE: (Middle)
+TREE: (Middle) - knives, or booms?
+  SQ Knife Fighter
 LCPL Combatives
- CPL Center Mass
- SGT Aggression
+ CPL Fleche
+ SGT ??
 SSGT Bladestorm
-TSGT Executioner
-GSGT Bring Em On
-MSGT Combat Fitness
+TSGT ??
+GSGT ??
+MSGT ??
 
 TREE: Diplomat
+  SQ Eclipse
 LCPL Rorschach
  CPL Diplomatic Training
  SGT Negotiator
@@ -44,19 +54,25 @@ TSGT Asylum
 GSGT Ambassador
 MSGT Diplomatic Bag
 
+GTS PERKS
+CPL Exeunt
+SSGT Operator (grants special: CarryUnit and PutDownUnit, Hack, Objective Fiddle, Plant X4, ...)
+
 -------------------------
 
 WANT
-Wired - Immune to irritating stuns, disorients and unconsiousness. Can see slightly further than normal troops.
-Eclipse (>|) - Render an adjacent ally (soldier or civilian) unconscious (and carryable) even if mind controlled. Does not break concealment. Clips, BA, gimme clips. (Uses the VIP "punch" icon.)
-LOOK>>>Veil (Passive) - Rank-based detection range reduction. Can't be revealed in high cover ***OR BY DRONES***.
-    NOTE: Could add an effect to spooks that makes them INVISIBLE to drones. See X2Effect_Burrowed.ModifyGameplayVisibilityForTarget().
-Exeunt (Passive) - Evac times are reduced by 1 turn for each NRO Delta Agent on a mission, to a minimum of 1 turn. If only NRO Delta Agents are on a mission, evac is always 1 turn.
-Operator (Passive) - Planting X4 (to destroy facilities), hacking a door, opening loot boxes, punching out VIPs, Eclipse, and picking up and putting down bodies do not consume an action or end your turn.
-    NOTE: If we changed the spook's team briefly before hacking etc. resetting afterwards we can perhaps prevent reveals by Kismet on VIP and rescue missions. In theory we could prevent reveal by modifying visibility from spook to VIP but then the objective won't complete.
+Wired - Immune to irritating stuns, panics, disorients, unconsciousness and mind control. Can't be revealed by drones.
+Phantom
+Veil (Passive) - Rank-based detection range reduction. (No infiltration boost.)
+Distract (Free) - Distract nearby enemies toward a targeted location. Long throw range. Medium sound radius. Causes yellow alert, stealth. Cooldown 3.
+Meld (Passive) - Can't be revealed once in high cover.
 Vanish (>|) - Smoke, grant concealment and a concealed bonus move. Charges = 2.
 Exfil (>|) - Releases a smoke cloud and exit the AO. Charges = 1.
 Exodus (>|) - Targeted AoE. Releases a smoke cloud. All allied units in the AoE exit the AO. Charges = 1.
+Exeunt (Passive) - Evac times are reduced by 1 turn for each NRO Delta Agent on a mission, to a minimum of 1 turn. If only NRO Delta Agents are on a mission, evac is always 1 turn.
+Operator (Passive) - Planting X4 (to destroy facilities), hacking a door, opening loot boxes, punching out VIPs, Eclipse, and picking up and putting down bodies do not consume an action or end your turn.
+    NOTE: If we changed the spook's team briefly before hacking etc. resetting afterwards we can perhaps prevent reveals by Kismet on VIP and rescue missions. In theory we could prevent reveal by modifying visibility from spook to VIP but then the objective won't complete.
+Eclipse (>|) - Render an adjacent ally (soldier or civilian) unconscious (and carryable) even if mind controlled. Does not break concealment. Clips, BA, gimme clips. (Uses the VIP "punch" icon.)
 
 QUITE NICE
 Eidolon (Free) - Self and all Phantom allies gain concealment. Charges = 1.
@@ -75,3 +91,43 @@ SPARE
 Farsight
 Opportunist
 Battle Hardened (Passive) - Immune to stun, unconscious, panic, disorient.
+Cosh (>|)- Fleche range. Damage, disorient. Free move.
+Sap (>|) - Fleche range. Unconscious. Free stealth move. Stealth. Ungroup. No robots. Cooldown 3.
+Insertion (Passive) - Rank-based infiltration boost.
+
+TOTAL XP ("KILLS") PER RANK
+XComGameData_XpData.ini
+
+            Rookie  Veteran Commander   Legend
+  RK        0       0       0           0
+  SQ        3       3       3           3
+LCPL        10      13      14          15
+ CPL        25      31      34          37
+ SGT        49      58      64          70
+SSGT        73      95      105         115
+TSGT        107     143     158         173
+GSGT        152     203     224         245
+MSGT        208     276     304         332
+
+XP ("KILLS") PER MISSION
+LW2
+
+SoldierXP = Round(MissionStartingEnemies / Max(3, SquadSize) x (ClassMultiplier ?? 5.7)) + 1 x StartingEnemiesKilled
+
+e.g. Solo an 8 enemy mission, 1 kill = Round(8 / 3 x 5.7) + 1 = 15 + 1 = 16
+e.g. 6 man a 12 enemy mission, 1 kill each = Round(12/6 x 5.7) + 1 = 12
+(e.g. Solo a 20 enemy mission, 0 kills = Round(20/3 x 5.7) = 38)
+(e.g. Solo an 8 enemy mission, kill them all = Round(8 / 3 x 5.7) + 8 = 23
+
+TOTAL MISSIONS PER RANK (Sololowkill-to-typicalsquadhalfkill, could be higher if taking too many soldiers on easy missions, or lower if stealthing massive enemy numbers missions)
+
+            Rookie  Legend
+  RK        0       0
+  SQ        1       1
+LCPL        2       2
+ CPL        3       3-4
+ SGT        4-5     5-6
+SSGT        5-7     8-10
+TSGT        7-9     11-15
+GSGT        10-13   16-21
+MSGT        13-18   21-28

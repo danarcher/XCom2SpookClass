@@ -4,56 +4,6 @@ class X2DownloadableContentInfo_Spook
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-// We'd like to replace the game's default tile overlays for "stepping
-// on this tile breaks concealment". The game doesn't allow us to do
-// this, since it's handled in native code.
-//
-// So we have a different approach:
-//
-// We're replacing all gameplay code to do with concealment breaking
-// (at least all the code we can, that isn't hidden in per-map designer
-// Kismet scripts) in SpookDetectionManager.
-//
-// That code already has the logic to do with our special reasons to
-// not detect soldiers in concealment who might otherwise be detected.
-//
-// If "stat override" is configured, we additionally:
-// - Add a special detection modifier to every soldier, with a large
-//   magic number. That number is large enough to reduce enemies'
-//   detection radii to zero, which disables the default concealment
-//   breaking til overlays.
-// - Look for that special stat override in our detection logic, and
-//   if it's there, pretend it isn't, and hence detection ranges are
-//   based on all other modifiers than this one.
-// - SpookTileManager then renders custom tile overlays instead. It's
-//   also possible to persuade SpookTileManager to render its tiles
-//   even if stat override is off, to check the accuracy of our
-//   overlay placement versus the game's defaults: both the standard
-//   concealment breaking tile overlays, and ours, then will appear on
-//   the same tiles.
-//
-// Applying this requires some unpleasant legwork, especially since
-// we'd like to be able to toggle this on and off for diagnostic
-// purposes.
-//
-// Spooks have two abilities (never seen or used by the player) called
-// Spook_StatOverride and Spook_StatOverrideCancel. The former will
-// apply the special modifier to spooks detection radii *if* stat
-// override is configured. The latter will remove any special modifier
-// from spooks' detection radii *if* stat override is not configured.
-//
-// These abilities activate once at the start of tactical play, and also
-// activate via custom console command, SpookCycleStatOverrideMode.
-// (More specifically they react to an event triggered by that console
-// command, once the console command has also committed a blank state
-// change to history, which is needed to flush the game's per-unit
-// ability cache, which otherwise prevents the abilities from
-// activiting properly, because the result of the special X2Condition
-// we use to check "stat override" is cached by the game, but we just
-// changed it, so we need to flush the cache.)
-var config bool STAT_OVERRIDE_BY_DEFAULT;
-var name StatOverrideMode;
-
 static function X2DownloadableContentInfo_Spook GetSpookDLC()
 {
     local array<X2DownloadableContentInfo> DLCInfos;
@@ -72,42 +22,6 @@ static function X2DownloadableContentInfo_Spook GetSpookDLC()
     return none;
 }
 
-static function bool IsStatOverrideEnabled()
-{
-    local X2DownloadableContentInfo_Spook SpookDLC;
-    SpookDLC = GetSpookDLC();
-
-    if (SpookDLC.StatOverrideMode == 'AA_Default')
-    {
-        return default.STAT_OVERRIDE_BY_DEFAULT;
-    }
-    if (SpookDLC.StatOverrideMode == 'AA_Off')
-    {
-        return false;
-    }
-    return true;
-}
-
-static function CycleStatOverrideMode()
-{
-    local X2DownloadableContentInfo_Spook SpookDLC;
-    SpookDLC = GetSpookDLC();
-
-    if (SpookDLC.StatOverrideMode == 'AA_Default')
-    {
-        SpookDLC.StatOverrideMode = 'AA_Off';
-    }
-    else if (SpookDLC.StatOverrideMode == 'AA_Off')
-    {
-        SpookDLC.StatOverrideMode = 'AA_On';
-    }
-    else if (SpookDLC.StatOverrideMode == 'AA_On')
-    {
-        SpookDLC.StatOverrideMode = 'AA_Default';
-    }
-    `SPOOKSLOG("StatOverrideMode is now '" $ SpookDLC.StatOverrideMode $ "'");
-}
-
 static event OnLoadedSavedGame()
 {
 }
@@ -119,7 +33,6 @@ static event InstallNewCampaign(XComGameState StartState)
 static event OnPostTemplatesCreated()
 {
     `SPOOKSLOG("OnPostTemplatesCreated");
-    `SPOOKSLOG("StatOverrideMode is '" $ GetSpookDLC().StatOverrideMode $ "'");
     UpdateWeaponTemplates();
     UpdateAbilityTemplates();
 }
@@ -280,33 +193,8 @@ exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)
     }
 }
 
-exec function SpookCycleStatOverrideMode()
-{
-    local XComGameState_Unit Unit;
-    local XComGameState NewGameState;
-
-    `SPOOKSLOG("SpookCycleStatOverrideMode console command");
-    CycleStatOverrideMode();
-
-    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Flushing unity ability cache");
-    `TACTICALRULES.SubmitGameState(NewGameState);
-
-    foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_Unit', Unit)
-    {
-        `SPOOKSLOG("Triggering event on " $ Unit.GetMyTemplateName() $ " " $ Unit.GetFullName());
-        `XEVENTMGR.TriggerEvent('SpookApplyStatOverride', Unit, Unit);
-    }
-    `SPOOKSLOG("Triggering tile update");
-    `XEVENTMGR.TriggerEvent('SpookUpdateTiles');
-}
-
 exec function SpookUpdateTiles()
 {
     `SPOOKSLOG("SpookUpdateTiles console command");
     `XEVENTMGR.TriggerEvent('SpookUpdateTiles');
-}
-
-defaultproperties
-{
-    StatOverrideMode="AA_Default"
 }

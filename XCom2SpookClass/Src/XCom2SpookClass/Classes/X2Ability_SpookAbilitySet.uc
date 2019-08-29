@@ -15,15 +15,13 @@ var config float VEIL_TSGT_DETECTION_RANGE_REDUCTION;
 var config float VEIL_GSGT_DETECTION_RANGE_REDUCTION;
 var config float VEIL_MSGT_DETECTION_RANGE_REDUCTION;
 
-var config int WIRED_SIGHT_RANGE_INCREASE;
+var config int DISTRACT_COOLDOWN_TURNS;
+var config float DISTRACT_RANGE_TILES;
+var config float DISTRACT_ALERT_RANGE_TILES;
+var config float DISTRACT_SHOOTER_AI_RANGE_TILES;
 
 var config int VANISH_CHARGES;
 var config float VANISH_RADIUS;
-
-var config int OPPORTUNIST_BLEED_TURNS;
-var config int OPPORTUNIST_BLEED_DAMAGE_PER_TICK;
-var config int OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK;
-var config int OPPORTUNIST_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var config WeaponDamageValue DART_CONVENTIONAL_DAMAGE;
 var config WeaponDamageValue DART_LASER_DAMAGE;
@@ -36,7 +34,6 @@ var config int DART_BLEED_DAMAGE_PER_TICK;
 var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
 var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
-var localized string OpportunistFriendlyName;
 var localized string WiredNotRevealedByClassesFriendlyName;
 var localized string WiredNotRevealedByClassesHelpText;
 
@@ -51,6 +48,12 @@ static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> Templates;
 
+    Templates.AddItem(AddWiredAbility());
+    Templates.AddItem(AddWiredNotRevealedByClassesAbility());
+    Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
+    Templates.AddItem(AddDistractAbility());
+    Templates.AddItem(AddMeldAbility());
+
     Templates.AddItem(CarryUnitAbility());
     Templates.AddItem(PutDownUnitAbility());
 
@@ -60,36 +63,14 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddPistolStatBonusAbility());
 
     Templates.AddItem(AddEclipseAbility());
-    Templates.AddItem(AddWiredAbility());
 
     Templates.AddItem(AddVeilAbility());
-    Templates.AddItem(AddStatOverrideAbility());
-    Templates.AddItem(AddStatOverrideCancelAbility());
-    Templates.AddItem(AddWiredNotRevealedByClassesAbility());
-    Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
     // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
     Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
     Templates.AddItem(AddVanishAbility());
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_launch", true));
     Templates.AddItem(/*TODO:*/PurePassive('Spook_Exodus', "img:///UILibrary_PerkIcons.UIPerk_flight", true));
-
-//  Templates.AddItem(PurePassive('Spook_BatonRound', "img:///UILibrary_PerkIcons.UIPerk_ambush", true));
-//  Templates.AddItem(PurePassive('Spook_Blackjack', "img:///UILibrary_PerkIcons.UIPerk_adventstunlancer_stunlance", true));
-//  Templates.AddItem(PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
-//  Templates.AddItem(PurePassive('Spook_Shroud', "img:///UILibrary_LW_PerkPack.LW_AbilityCovert", true));
-//  Templates.AddItem(PurePassive('Spook_Eidolon', "img:///UILibrary_PerkIcons.UIPerk_stealth", true));
-//  Templates.AddItem(PurePassive('Spook_Puncture', "img:///UILibrary_PerkIcons.UIPerk_hunter", true));
-//  Templates.AddItem(PurePassive('Spook_Takedown', "img:///UILibrary_PerkIcons.UIPerk_inthezone", true));
-//  Templates.AddItem(PurePassive('Spook_Cocoon', "img:///UILibrary_PerkIcons.UIPerk_stasisshield", true));
-//  Templates.AddItem(PurePassive('Spook_Pinpoint', "img:///UILibrary_PerkIcons.UIPerk_snapshot", true));
-//  Templates.AddItem(PurePassive('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_flight", true));
-//  Templates.AddItem(PurePassive('Spook_Thunderflash', "img:///UILibrary_PerkIcons.UIPerk_flashbang", true));
-//  Templates.AddItem(PurePassive('Spook_SatchelCharge', "img:///UILibrary_PerkIcons.UIPerk_item_x4", true));
-//  Templates.AddItem(PurePassive('Spook_Mini4', "img:///UILibrary_PerkIcons.UIPerk_bombard", true));
-//  Templates.AddItem(PurePassive('Spook_Shrapnel', "img:///UILibrary_PerkIcons.UIPerk_bigbooms", true));
-//  Templates.AddItem(PurePassive('Spook_Pyrotechnics', "img:///UILibrary_PerkIcons.UIPerk_flamethrower", true));
-//  Templates.AddItem(PurePassive('Spook_MadBomber', "img:///UILibrary_PerkIcons.UIPerk_quickthrow", true));
 
     Templates.AddItem(PurePassive('Spook_Dummy0', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
     Templates.AddItem(PurePassive('Spook_Dummy1', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
@@ -113,12 +94,6 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(PurePassive('Spook_Dummy19', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
     Templates.AddItem(PurePassive('Spook_Dummy20', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
 
-    // To be removed!
-    Templates.AddItem(PurePassive('Spook_BattleHardened', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Farsight', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(AddOpportunistAbility());
-    Templates.AddItem(AddOpportunistAttackAbility());
-
     return Templates;
 }
 
@@ -130,6 +105,298 @@ static function AbilityRequiresSpookShooter(X2AbilityTemplate Template)
     SpookShooter = new class'X2Condition_UnitProperty';
     SpookShooter.RequireSoldierClasses.AddItem('Spook');
     Template.AbilityShooterConditions.AddItem(SpookShooter);
+}
+
+static function X2AbilityTemplate AddWiredAbility()
+{
+    local X2AbilityTemplate                 Template;
+    local X2Effect_DamageImmunity           ImmunityEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredAbilityName);
+    Template.AbilitySourceName = 'eAbilitySource_Perk';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mentalstrength";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+    Template.bCrossClassEligible = true;
+    Template.bDisplayInUITooltip = true;
+    Template.bDisplayInUITacticalText = true;
+
+    ImmunityEffect = new class'X2Effect_DamageImmunity';
+    ImmunityEffect.ImmuneTypes.AddItem('Stun');
+    ImmunityEffect.ImmuneTypes.AddItem('Unconscious');
+    ImmunityEffect.ImmuneTypes.AddItem('Panic');
+    ImmunityEffect.ImmuneTypes.AddItem('Mental');
+    ImmunityEffect.ImmuneTypes.AddItem(class'X2Item_DefaultDamageTypes'.default.DisorientDamageType);
+    ImmunityEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, , , Template.AbilitySourceName);
+    ImmunityEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    Template.AddTargetEffect(ImmunityEffect);
+
+    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesName);
+    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesCancelName);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
+{
+    local X2AbilityTemplate                            Template;
+    local X2AbilityTrigger_EventListener               EventTrigger;
+    local X2Condition_UnitProperty                     TargetPropertyCondition;
+    local X2Condition_SpookWiredNotRevealedByClasses   TargetSpecialCondition;
+    local X2Effect_PersistentStatChange                DetectionChangeEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesName);
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesName;
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
+    EventTrigger.ListenerData.Filter = eFilter_Unit;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    AbilityRequiresSpookShooter(Template);
+
+    TargetPropertyCondition = new class'X2Condition_UnitProperty'; // Defaults are good; living enemy, etc.
+    Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
+    TargetSpecialCondition = new class'X2Condition_SpookWiredNotRevealedByClasses';
+    Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
+
+    DetectionChangeEffect = new class'X2Effect_PersistentStatChange';
+    DetectionChangeEffect.EffectName = WiredNotRevealedByClassesName;
+    DetectionChangeEffect.DuplicateResponse = eDupe_Ignore;
+    DetectionChangeEffect.BuildPersistentEffect(`BPE_TickAtEndOfNAnyTurns(1)); // Last until the end of the turn it's cast.
+    DetectionChangeEffect.AddPersistentStatChange(eStat_DetectionRadius, -100);
+    DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.WiredNotRevealedByClassesFriendlyName, default.WiredNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
+    Template.AddTargetEffect(DetectionChangeEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
+{
+    local X2AbilityTemplate                 Template;
+    local X2AbilityTrigger_EventListener    EventTrigger;
+    local X2Condition_UnitEffects           TargetEffectCondition;
+    local X2Effect_RemoveEffects            RemoveEffects;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesCancelName);
+
+    EventTrigger = new class'X2AbilityTrigger_EventListener';
+    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesCancelName;
+    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
+    EventTrigger.ListenerData.Filter = eFilter_None;
+    EventTrigger.ListenerData.Deferral = ELD_Immediate;
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityTriggers.AddItem(EventTrigger);
+    Template.bCrossClassEligible = false;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    // Don't care if we're dead.
+    //Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    AbilityRequiresSpookShooter(Template);
+
+    TargetEffectCondition = new class'X2Condition_UnitEffects';
+    TargetEffectCondition.AddRequireEffect(WiredNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
+    Template.AbilityTargetConditions.AddItem(TargetEffectCondition);
+
+    RemoveEffects = new class'X2Effect_RemoveEffects';
+    RemoveEffects.EffectNamesToRemove.AddItem(WiredNotRevealedByClassesName);
+    Template.AddTargetEffect(RemoveEffects);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddDistractAbility()
+{
+    local X2AbilityTemplate             Template;
+    local X2AbilityCost_ActionPoints    ActionPointCost;
+    local X2AbilityCooldown             Cooldown;
+
+    local X2AbilityTarget_Cursor        CursorTarget;
+    local X2AbilityMultiTarget_Radius   RadiusMultiTarget;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Distract');
+
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mimicbeacon";
+    Template.AbilitySourceName = 'eAbilitySource_Perk';
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.Hostility = eHostility_Neutral;
+    Template.ConcealmentRule = eConceal_Always;
+    Template.bSilentAbility = true;
+    Template.bHideWeaponDuringFire = true;
+    Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_GRENADE_PRIORITY;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 1;
+    ActionPointCost.bFreeCost = true;
+    ActionPointCost.bConsumeAllPoints = true;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    Cooldown = new class'X2AbilityCooldown';
+    Cooldown.iNumTurns = default.DISTRACT_COOLDOWN_TURNS;
+    Template.AbilityCooldown = Cooldown;
+
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    Template.AddShooterEffectExclusions();
+
+    CursorTarget = new class'X2AbilityTarget_Cursor';
+    CursorTarget.FixedAbilityRange = `UNITSTOMETERS(`TILESTOUNITS(default.DISTRACT_RANGE_TILES));
+    Template.AbilityTargetStyle = CursorTarget;
+
+    RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
+    RadiusMultiTarget.fTargetRadius = 0.25; // small amount so it just grabs one tile
+    Template.AbilityMultiTargetStyle = RadiusMultiTarget;
+
+    Template.TargetingMethod = class'X2TargetingMethod_MimicBeacon';
+    Template.SkipRenderOfTargetingTemplate = true;
+
+    Template.BuildNewGameStateFn = BuildDistractGameState;
+    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+
+    return Template;
+}
+
+static function XComGameState BuildDistractGameState(XComGameStateContext Context)
+{
+    local XComGameStateHistory History;
+    local XComGameState NewGameState;
+    local XComGameStateContext_Ability AbilityContext;
+    local XComWorldData World;
+    local vector TargetPosition, ShooterPosition;
+    local TTile TargetTile;
+    local XComGameState_Unit Shooter, Unit;
+    local vector UnitPosition;
+    local int AIID;
+    local XComGameState_AIUnitData AI;
+    local AlertAbilityInfo AlertInfo;
+
+    `SPOOKSLOG("BuildDistractGameState");
+    History = `XCOMHISTORY;
+    World = `XWORLD;
+
+    NewGameState = History.CreateNewGameState(true, Context);
+
+    // First do what typical abilities do.
+    TypicalAbility_FillOutGameState(NewGameState);
+
+    // Then if we hit, we want to do some other things.
+    AbilityContext = XComGameStateContext_Ability(NewGameState.GetContext());
+    if (!AbilityContext.IsResultContextHit())
+    {
+        `SPOOKSLOG("Distract missed!");
+        return NewGameState;
+    }
+
+    Shooter = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
+    if (Shooter == none)
+    {
+        `SPOOKSLOG("Distract has no shooter!");
+    }
+
+    if (AbilityContext.ResultContext.ProjectileHitLocations.Length < 1)
+    {
+        `SPOOKSLOG("Distract has no projectile hit locations!");
+        return NewGameState;
+    }
+
+    ShooterPosition = World.GetPositionFromTileCoordinates(Shooter.TileLocation);
+    TargetPosition = AbilityContext.ResultContext.ProjectileHitLocations[0];
+    if (!World.GetFloorTileForPosition(TargetPosition, TargetTile))
+    {
+        `SPOOKSLOG("Projectile hit location has no floor tile!");
+        return NewGameState;
+    }
+
+    foreach History.IterateByClassType(class'XComGameState_Unit', Unit)
+    {
+        if (Unit.GetTeam() != eTeam_Alien || !Unit.IsAlive())
+        {
+            // Not a live alien.
+            continue;
+        }
+
+        AIID = Unit.GetAIUnitDataID();
+        if (AIID <= 0)
+        {
+            // Not an AI.
+            continue;
+        }
+
+        UnitPosition = World.GetPositionFromTileCoordinates(Unit.TileLocation);
+        if (VSizeSq(TargetPosition - UnitPosition) > Square(`TILESTOUNITS(default.DISTRACT_ALERT_RANGE_TILES)))
+        {
+            `SPOOKSLOG(Unit.GetMyTemplateName() $ " too far from target");
+            continue;
+        }
+
+        if (VSizeSq(ShooterPosition - UnitPosition) > Square(`TILESTOUNITS(default.DISTRACT_SHOOTER_AI_RANGE_TILES)))
+        {
+            `SPOOKSLOG(Unit.GetMyTemplateName() $ " too far from shooter");
+            continue;
+        }
+
+        `SPOOKSLOG("Alerting " $ Unit.GetMyTemplateName());
+        AlertInfo.AlertTileLocation = TargetTile;
+        AlertInfo.AlertRadius = 1;
+        AlertInfo.AlertUnitSourceID = 0;
+        AlertInfo.AnalyzingHistoryIndex = History.GetCurrentHistoryIndex();
+
+        AI = XComGameState_AIUnitData(NewGameState.GetGameStateForObjectID(AIID));
+        if (AI == none)
+        {
+            AI = XComGameState_AIUnitData(NewGameState.CreateStateObject(class'XComGameState_AIUnitData', AIID));
+            if (AI.AddAlertData(AI.m_iUnitObjectID, eAC_SeesAlertedAllies, AlertInfo, NewGameState))
+            {
+                NewGameState.AddStateObject(AI);
+            }
+            else
+            {
+                NewGameState.PurgeGameStateForObjectID(AI.ObjectID);
+            }
+        }
+        else
+        {
+            AI.AddAlertData(AI.m_iUnitObjectID, eAC_SeesAlertedAllies, AlertInfo, NewGameState);
+        }
+    }
+
+    return NewGameState;
+}
+
+
+static function X2AbilityTemplate AddMeldAbility()
+{
+    // Handled by SpookDetectionManager.IsTileUnbreakablyConcealingForUnit().
+    return PurePassive('Spook_Meld', "img:///UILibrary_PerkIcons.UIPerk_height", true);
 }
 
 // This is mostly the same as the base CarryUnit ability, but with a new name.
@@ -610,181 +877,6 @@ static function X2AbilityTemplate AddVeilAbility()
     return Template;
 }
 
-static function X2AbilityTemplate AddStatOverrideAbility()
-{
-    local X2AbilityTemplate                         Template;
-    local X2AbilityTrigger_EventListener            EventTrigger;
-    local X2Condition_SpookStatOverride             StatOverrideCondition;
-    local X2Effect_PersistentStatChange             StatOverrideEffect;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_StatOverride');
-
-    EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = 'SpookApplyStatOverride';
-    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.AbilityTriggerEventListener_Self;
-    EventTrigger.ListenerData.Filter = eFilter_Unit;
-    EventTrigger.ListenerData.Deferral = ELD_Immediate;
-
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SelfTarget;
-    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-
-    StatOverrideCondition = new class'X2Condition_SpookStatOverride';
-    StatOverrideCondition.Required = true;
-    Template.AbilityShooterConditions.AddItem(StatOverrideCondition);
-
-    StatOverrideEffect = new class'X2Effect_PersistentStatChange';
-    StatOverrideEffect.EffectName = 'SpookStatOverrideEffect';
-    StatOverrideEffect.DuplicateResponse = eDupe_Ignore;
-    StatOverrideEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    StatOverrideEffect.AddPersistentStatChange(eStat_DetectionModifier, class'SpookDetectionManager'.default.StatOverrideSpecialDetectionModifier);
-    StatOverrideEffect.SetDisplayInfo(ePerkBuff_Passive, "Spook Stat Override", "Stat override is in effect.", Template.IconImage, true,, Template.AbilitySourceName);
-    Template.AddTargetEffect(StatOverrideEffect);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddStatOverrideCancelAbility()
-{
-    local X2AbilityTemplate                         Template;
-    local X2AbilityTrigger_EventListener            EventTrigger;
-    local X2Condition_SpookStatOverride             StatOverrideCondition;
-    local X2Effect_RemoveEffects                    RemoveEffects;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_StatOverrideCancel');
-
-    EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = 'SpookApplyStatOverride';
-    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.AbilityTriggerEventListener_Self;
-    EventTrigger.ListenerData.Filter = eFilter_Unit;
-    EventTrigger.ListenerData.Deferral = ELD_Immediate;
-
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SelfTarget;
-    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-
-    StatOverrideCondition = new class'X2Condition_SpookStatOverride';
-    StatOverrideCondition.Required = false;
-    Template.AbilityShooterConditions.AddItem(StatOverrideCondition);
-
-    RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.EffectNamesToRemove.AddItem('SpookStatOverrideEffect');
-    Template.AddTargetEffect(RemoveEffects);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
-{
-    local X2AbilityTemplate                            Template;
-    local X2AbilityTrigger_EventListener               EventTrigger;
-    local X2Condition_UnitProperty                     TargetPropertyCondition;
-    local X2Condition_SpookWiredNotRevealedByClasses   TargetSpecialCondition;
-    local X2Effect_PersistentStatChange                DetectionChangeEffect;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesName);
-
-    EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesName;
-    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
-    EventTrigger.ListenerData.Filter = eFilter_Unit;
-    EventTrigger.ListenerData.Deferral = ELD_Immediate;
-
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SimpleSingleTarget;
-    Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-
-    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
-    AbilityRequiresSpookShooter(Template);
-
-    TargetPropertyCondition = new class'X2Condition_UnitProperty'; // Defaults are good; living enemy, etc.
-    Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
-    TargetSpecialCondition = new class'X2Condition_SpookWiredNotRevealedByClasses';
-    Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
-
-    DetectionChangeEffect = new class'X2Effect_PersistentStatChange';
-    DetectionChangeEffect.EffectName = WiredNotRevealedByClassesName;
-    DetectionChangeEffect.DuplicateResponse = eDupe_Ignore;
-    DetectionChangeEffect.BuildPersistentEffect(`BPE_TickAtEndOfNAnyTurns(1)); // Last until the end of the turn it's cast.
-    DetectionChangeEffect.AddPersistentStatChange(eStat_DetectionRadius, -100);
-    DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.WiredNotRevealedByClassesFriendlyName, default.WiredNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
-    Template.AddTargetEffect(DetectionChangeEffect);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
-{
-    local X2AbilityTemplate                 Template;
-    local X2AbilityTrigger_EventListener    EventTrigger;
-    local X2Condition_UnitEffects           TargetEffectCondition;
-    local X2Effect_RemoveEffects            RemoveEffects;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesCancelName);
-
-    EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesCancelName;
-    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
-    EventTrigger.ListenerData.Filter = eFilter_None;
-    EventTrigger.ListenerData.Deferral = ELD_Immediate;
-
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SimpleSingleTarget;
-    Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-
-    // Don't care if we're dead.
-    //Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
-    AbilityRequiresSpookShooter(Template);
-
-    TargetEffectCondition = new class'X2Condition_UnitEffects';
-    TargetEffectCondition.AddRequireEffect(WiredNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
-    Template.AbilityTargetConditions.AddItem(TargetEffectCondition);
-
-    RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.EffectNamesToRemove.AddItem(WiredNotRevealedByClassesName);
-    Template.AddTargetEffect(RemoveEffects);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
 static function X2AbilityTemplate AddVanishAbility()
 {
     local X2AbilityTemplate                 Template;
@@ -866,244 +958,6 @@ static function X2AbilityTemplate AddVanishAbility()
     Template.ActivationSpeech = 'ActivateConcealment';
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
     Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddOpportunistAbility()
-{
-    local X2AbilityTemplate                 Template;
-
-    Template = PurePassive('Spook_Opportunist', "img:///UILibrary_PerkIcons.UIPerk_bladestorm", false, 'eAbilitySource_Perk');
-    Template.AdditionalAbilities.AddItem('Spook_OpportunistAttack');
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddOpportunistAttackAbility()
-{
-    local X2AbilityTemplate                 Template;
-    local X2AbilityTrigger_Event            Trigger;
-    local X2Effect_Persistent               OpportunistTargetEffect;
-    local X2Condition_UnitEffectsWithAbilitySource OpportunistTargetCondition;
-    //local X2AbilityTrigger_EventListener    EventListener;
-    local X2Condition_UnitProperty          SourceConcealedCondition;
-    local X2Condition_UnitProperty          TargetPropertyCondition;
-    local X2Condition_Visibility            TargetVisibilityCondition;
-    //local array<name>                     SkipExclusions;
-    //local X2Effect_Persistent             UnconsciousEffect;
-    local X2Effect_SpookUngroupAI           UngroupEffect;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_OpportunistAttack');
-
-    Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bladestorm";
-    Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.CLASS_CAPTAIN_PRIORITY;
-
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SimpleSingleMeleeTarget;
-
-    //  trigger on movement
-    Trigger = new class'X2AbilityTrigger_Event';
-    Trigger.EventObserverClass = class'X2TacticalGameRuleset_MovementObserver';
-    Trigger.MethodName = 'InterruptGameState';
-    Template.AbilityTriggers.AddItem(Trigger);
-    Trigger = new class'X2AbilityTrigger_Event';
-    Trigger.EventObserverClass = class'X2TacticalGameRuleset_MovementObserver';
-    Trigger.MethodName = 'PostBuildGameState';
-    Template.AbilityTriggers.AddItem(Trigger);
-    //  trigger on an attack
-    Trigger = new class'X2AbilityTrigger_Event';
-    Trigger.EventObserverClass = class'X2TacticalGameRuleset_AttackObserver';
-    Trigger.MethodName = 'InterruptGameState';
-    Template.AbilityTriggers.AddItem(Trigger);
-
-    // Retain Concealment
-    Template.ConcealmentRule = eConceal_Always;
-
-    // No Alert Through Sound
-    Template.bSilentAbility = true;
-
-    // Inoffensive
-    Template.Hostility = eHostility_Neutral;
-
-    // No Robots
-    TargetPropertyCondition = new class'X2Condition_UnitProperty';
-    TargetPropertyCondition.ExcludeRobotic = true;
-    Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
-
-    Template.AbilityTargetConditions.AddItem(default.LivingHostileUnitDisallowMindControlProperty);
-    TargetVisibilityCondition = new class'X2Condition_Visibility';
-    TargetVisibilityCondition.bRequireGameplayVisible = true;
-    TargetVisibilityCondition.bRequireBasicVisibility = true;
-    TargetVisibilityCondition.bDisablePeeksOnMovement = true; // Don't use peek tiles for overwatch shots
-    Template.AbilityTargetConditions.AddItem(TargetVisibilityCondition);
-
-    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
-    //SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
-    Template.AddShooterEffectExclusions(); //SkipExclusions);
-
-    // ONLY trigger when the source is concealed
-    SourceConcealedCondition = new class'X2Condition_UnitProperty';
-    SourceConcealedCondition.IsConcealed = true;
-    Template.AbilityShooterConditions.AddItem(SourceConcealedCondition);
-
-    Template.bAllowBonusWeaponEffects = false;
-    //Template.AddTargetEffect(new class'X2Effect_ApplyWeaponDamage');
-
-    //// Unconscious Effect
-    ////
-    //UnconsciousEffect = class'X2StatusEffects'.static.CreateUnconsciousStatusEffect();
-    //Template.AddTargetEffect(UnconsciousEffect);
-
-    // Don't break your patrol by dying on them later, especially if you're in charge.
-    UngroupEffect = new class'X2Effect_SpookUngroupAI';
-    UngroupEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    UngroupEffect.bRemoveWhenTargetDies = true;
-    Template.AddTargetEffect(UngroupEffect);
-
-    // Bleed
-    Template.AddTargetEffect(class'X2Effect_SpookBleeding'.static.CreateBleedingStatusEffect(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName, default.OPPORTUNIST_BLEED_TURNS, default.OPPORTUNIST_BLEED_DAMAGE_PER_TICK, default.OPPORTUNIST_BLEED_DAMAGE_SPREAD_PER_TICK, default.OPPORTUNIST_BLEED_DAMAGE_PLUSONE_PER_TICK));
-
-    // Prevent repeatedly hammering on a unit with Opportunist triggers.
-    //(This effect does nothing, but enables many-to-many marking of which Opportunist attacks have already occurred each turn.)
-    OpportunistTargetEffect = new class'X2Effect_Persistent';
-    OpportunistTargetEffect.BuildPersistentEffect(`BPE_TickAtEndOfNAnyTurns(1));
-    OpportunistTargetEffect.EffectName = 'OpportunistTarget';
-    OpportunistTargetEffect.bApplyOnMiss = true; //Only one chance, even if you miss (prevents crazy flailing counter-attack chains with a Muton, for example)
-    Template.AddTargetEffect(OpportunistTargetEffect);
-
-    OpportunistTargetCondition = new class'X2Condition_UnitEffectsWithAbilitySource';
-    OpportunistTargetCondition.AddExcludeEffect('OpportunistTarget', 'AA_DuplicateEffectIgnored');
-
-    // Don't keep darting the same enemies.
-    OpportunistTargetCondition.AddExcludeEffect('SpookBleeding', 'AA_DuplicateEffectIgnored');
-
-    // Apply the above two.
-    Template.AbilityTargetConditions.AddItem(OpportunistTargetCondition);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-    Template.BuildVisualizationFn = Opportunist_BuildSimpleVisualization;
-
-    return Template;
-}
-
-static function Opportunist_BuildSimpleVisualization(XComGameState VisualizeGameState, out array<VisualizationTrack> OutVisualizationTracks)
-{
-    local XComGameStateHistory          History;
-    local XComGameStateContext_Ability  Context;
-    local AbilityInputContext           AbilityContext;
-    local X2AbilityTemplate             AbilityTemplate;
-    local StateObjectReference          ShootingUnitRef;
-    local Actor                         ShooterVisualizer;
-    local X2VisualizerInterface         ShooterVisualizerInterface;
-    local StateObjectReference          TargetUnitRef;
-    local Actor                         TargetVisualizer;
-
-    local VisualizationTrack            SourceTrack;
-    local X2Action_SpookFaceUnit        FaceUnit;
-    local X2Action_PlaySoundAndFlyOver  SoundAndFlyOver;
-    local X2Action_PlayAnimation        PlayAnimation;
-    local X2Action_Delay                Delay;
-
-    local VisualizationTrack            TargetTrack;
-
-    // Find various things
-    History = `XCOMHISTORY;
-    Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
-    AbilityContext = Context.InputContext;
-    AbilityTemplate = class'XComGameState_Ability'.static.GetMyTemplateManager().FindAbilityTemplate(AbilityContext.AbilityTemplateName);
-    ShootingUnitRef = Context.InputContext.SourceObject;
-    ShooterVisualizer = History.GetVisualizer(ShootingUnitRef.ObjectID);
-    ShooterVisualizerInterface = X2VisualizerInterface(ShooterVisualizer);
-    TargetUnitRef = AbilityContext.PrimaryTarget;
-    TargetVisualizer = History.GetVisualizer(AbilityContext.PrimaryTarget.ObjectID);
-
-    // Prepare the source (shooter) track
-    SourceTrack.StateObject_OldState = History.GetGameStateForObjectID(ShootingUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
-    SourceTrack.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(ShootingUnitRef.ObjectID);
-    if (SourceTrack.StateObject_NewState == none)
-    {
-        SourceTrack.StateObject_NewState = SourceTrack.StateObject_OldState;
-    }
-    SourceTrack.TrackActor = ShooterVisualizer;
-    SourceTrack.AbilityName = AbilityTemplate.DataName;
-
-    // Prepare the target track
-    TargetTrack.StateObject_OldState = History.GetGameStateForObjectID(TargetUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
-    TargetTrack.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(TargetUnitRef.ObjectID);
-    if (TargetTrack.StateObject_NewState == none)
-    {
-        TargetTrack.StateObject_NewState = TargetTrack.StateObject_OldState;
-    }
-    TargetTrack.TrackActor = TargetVisualizer;
-    TargetTrack.AbilityName = AbilityTemplate.DataName;
-
-    // Now the actual visuals we wish to have on the source.
-    FaceUnit = X2Action_SpookFaceUnit(class'X2Action_SpookFaceUnit'.static.AddToVisualizationTrack(SourceTrack, VisualizeGameState.GetContext()));
-    FaceUnit.FaceActor = TargetVisualizer;
-    SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTrack(SourceTrack, VisualizeGameState.GetContext()));
-    SoundAndFlyOver.SetSoundAndFlyOverParameters(SoundCue(DynamicLoadObject("Spook.SpookSilencedPistolMono_Cue", class'SoundCue')), default.OpportunistFriendlyName, '', eColor_Good,,0,false);
-    PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTrack(SourceTrack, VisualizeGameState.GetContext()));
-    PlayAnimation.Params.AnimName = 'NO_GrappleFire'; // from Soldier_ANIM.Anims.AS_Solider. Or 'HL_SendGremlin'. See AS_xxxx.
-
-    // Now the visuals for the target.
-    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(TargetTrack, VisualizeGameState.GetContext()));
-    Delay.Duration = 2.8f;
-    Delay.bIgnoreZipMode = true;
-    SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTrack(TargetTrack, VisualizeGameState.GetContext()));
-    SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'X2Effect_SpookBleeding'.default.BleedingFriendlyName, '', eColor_Bad,,0,false);
-
-    // Apparently one does this.
-    if (ShooterVisualizerInterface != none)
-    {
-        ShooterVisualizerInterface.BuildAbilityEffectsVisualization(VisualizeGameState, SourceTrack);
-    }
-
-    // Hopefully that's all we need.
-    OutVisualizationTracks.AddItem(SourceTrack);
-    OutVisualizationTracks.AddItem(TargetTrack);
-}
-
-static function X2AbilityTemplate AddWiredAbility()
-{
-    local X2AbilityTemplate                 Template;
-    local X2Effect_DamageImmunity           ImmunityEffect;
-    //local X2Effect_PersistentStatChange     SightEffect;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, WiredAbilityName);
-    Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mentalstrength";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SelfTarget;
-    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.bCrossClassEligible = true;
-    Template.bDisplayInUITooltip = true;
-    Template.bDisplayInUITacticalText = true;
-
-    ImmunityEffect = new class'X2Effect_DamageImmunity';
-    ImmunityEffect.ImmuneTypes.AddItem('Stun');
-    ImmunityEffect.ImmuneTypes.AddItem('Unconscious');
-    ImmunityEffect.ImmuneTypes.AddItem('Panic');
-    ImmunityEffect.ImmuneTypes.AddItem(class'X2Item_DefaultDamageTypes'.default.DisorientDamageType);
-    ImmunityEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, , , Template.AbilitySourceName);
-    ImmunityEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    Template.AddTargetEffect(ImmunityEffect);
-
-//  SightEffect = new class'X2Effect_PersistentStatChange';
-//  SightEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-//  SightEffect.AddPersistentStatChange(eStat_SightRadius, default.WIRED_SIGHT_RANGE_INCREASE);
-//  Template.AddTargetEffect(SightEffect);
-
-    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesName);
-    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesCancelName);
-    Template.AdditionalAbilities.AddItem('Spook_StatOverride');
-    Template.AdditionalAbilities.AddItem('Spook_StatOverrideCancel');
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
     return Template;
 }

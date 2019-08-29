@@ -9,11 +9,8 @@ var localized string StealthKilledFriendlyName;
 
 var config array<name> SHADOW_EFFECTS;
 var config array<name> WIRED_NOT_REVEALED_BY_CLASSES;
-var config bool SHADOW_NOT_REVEALED_BY_DETECTOR;
 var config array<name> UNITS_NOT_REVEALED_ABILITIES;
 var config array<name> UNITS_NOT_REVEALED_EFFECTS;
-
-var float StatOverrideSpecialDetectionModifier;
 
 enum EConcealBreakReason
 {
@@ -39,31 +36,12 @@ function OnInit()
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
-    `SPOOKLOG("StatOverrideSpecialDetectionModifier is " $ default.StatOverrideSpecialDetectionModifier);
     `XCOMVISUALIZATIONMGR.RegisterObserver(self);
 }
 
 function float GetUnitDetectionModifier(XComGameState_Unit Unit)
 {
-    local array<XComGameState_Effect> Mods;
-    local X2Effect_Persistent Effect;
-    local array<float> ModValues;
-    local int i;
-    local float Value;
-
-    Value = Unit.GetBaseStat(eStat_DetectionModifier);
-
-    Unit.GetStatModifiers(eStat_DetectionModifier, Mods, ModValues);
-    for (i = 0; i < Mods.Length; ++i)
-    {
-        Effect = (Mods[i] != none) ? Mods[i].GetX2Effect() : none;
-        if (Effect == none || Effect.EffectName != 'SpookStatOverrideEffect')
-        {
-            Value += ModValues[i];
-        }
-    }
-
-    return Value;
+    return Unit.GetCurrentStat(eStat_DetectionModifier);
 }
 
 function float GetConcealmentDetectionDistanceMeters(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
@@ -116,10 +94,6 @@ function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState
     Tower = XComGameState_InteractiveObject(Detector);
     if (Tower != none)
     {
-        if (UnitHasShadowEffect(Victim) && default.SHADOW_NOT_REVEALED_BY_DETECTOR)
-        {
-            return false;
-        }
         return Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked;
     }
 
@@ -405,15 +379,16 @@ function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TT
     local XComGameState_InteractiveObject InteractiveObject;
     local int i;
 
-    if (!UnitHasShadowEffect(Unit))
-    {
-        return false;
-    }
-
     if (Reason == eCBR_UnitMoveIntoDetectionRange)
     {
         // If we move into detection range, our tile won't protect us.
         // (We're doing this because it means we don't have to replace default concealment tile handling!)
+        return false;
+    }
+
+    if (!Unit.IsUnitAffectedByEffectName('Spook_Meld'))
+    {
+        // Only units who can meld get special treatment.
         return false;
     }
 
@@ -502,28 +477,6 @@ function bool UnitHasShadowEffect(XComGameState_Unit Unit)
     return false;
 }
 
-static function X2Effect_Persistent UnitHasEffect(XComGameState_Unit Unit, name EffectName)
-{
-    local StateObjectReference EffectRef;
-    local XComGameState_Effect EffectState;
-    local X2Effect_Persistent EffectTemplate;
-    local XComGameStateHistory History;
-
-    History = `XCOMHISTORY;
-
-    foreach Unit.AffectedByEffects(EffectRef)
-    {
-        EffectState = XComGameState_Effect(History.GetGameStateForObjectID(EffectRef.ObjectID));
-        EffectTemplate = EffectState.GetX2Effect();
-
-        if (EffectTemplate != none && EffectTemplate.EffectName == EffectName)
-        {
-            return EffectTemplate;
-        }
-    }
-    return none;
-}
-
 function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
     local XComGameStateHistory History;
@@ -561,7 +514,7 @@ function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object Eve
     {
         if (Damager == None)
         {
-            if (UnitHasEffect(Damagee, 'SpookBleeding') != none)
+            if (Damagee.IsUnitAffectedByEffectName('SpookBleeding'))
             {
                 `SPOOKLOG("No damager, and damagee suffering from SpookBleeding. Sweeping assumption: no reaction");
                 `SPOOKLOG("OnUnitTakeEffectDamage ends");
@@ -778,9 +731,4 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
         `SPOOKLOG("Triggering event " $ ApplyName $ " for active unit " $ NewActiveUnit.GetMyTemplateName() $ " " $ NewActiveUnit.GetFullName());
         `XEVENTMGR.TriggerEvent(ApplyName, NewActiveUnit, NewActiveUnit, GameState);
     }
-}
-
-defaultproperties
-{
-    StatOverrideSpecialDetectionModifier=666.0
 }

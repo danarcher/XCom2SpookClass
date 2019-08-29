@@ -5,7 +5,6 @@ class UIScreenListener_UITacticalHUD_Spook
 `include(XCom2SpookClass\Src\Spook.uci)
 
 var SpookDetectionManager DetectionManager;
-var SpookTileManager TileManager;
 
 event OnInit(UIScreen Screen)
 {
@@ -17,9 +16,6 @@ event OnInit(UIScreen Screen)
 
     DetectionManager = new class'SpookDetectionManager';
     DetectionManager.OnInit();
-
-    TileManager = new class'SpookTileManager';
-    TileManager.OnInit(DetectionManager);
 }
 
 function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object EventSource, XComGameState GameState, Name EventID)

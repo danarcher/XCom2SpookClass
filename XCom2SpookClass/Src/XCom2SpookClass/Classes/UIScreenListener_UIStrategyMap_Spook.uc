@@ -5,7 +5,6 @@ class UIScreenListener_UIStrategyMap_Spook
 `include(XCom2SpookClass\Src\Spook.uci)
 
 var SpookDetectionManager DetectionManager;
-var SpookTileManager TileManager;
 
 const POIName = 'POI_SpookRecruit';
 
