@@ -17,8 +17,7 @@ var config float VEIL_MSGT_DETECTION_RANGE_REDUCTION;
 
 var config int DISTRACT_COOLDOWN_TURNS;
 var config float DISTRACT_RANGE_TILES;
-var config float DISTRACT_ALERT_RANGE_TILES;
-var config float DISTRACT_SHOOTER_AI_RANGE_TILES;
+var config float DISTRACT_RADIUS_TILES;
 
 var config int VANISH_CHARGES;
 var config float VANISH_RADIUS;
@@ -52,6 +51,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddWiredNotRevealedByClassesAbility());
     Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
     Templates.AddItem(AddDistractAbility());
+    Templates.AddItem(AddDistractThrowGrenadeAbility());
     Templates.AddItem(AddMeldAbility());
 
     Templates.AddItem(CarryUnitAbility());
@@ -120,7 +120,6 @@ static function X2AbilityTemplate AddWiredAbility()
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTargetStyle = default.SelfTarget;
     Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.bCrossClassEligible = true;
     Template.bDisplayInUITooltip = true;
     Template.bDisplayInUITacticalText = true;
 
@@ -165,7 +164,6 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTargetStyle = default.SimpleSingleTarget;
     Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
     Template.bDisplayInUITooltip = false;
     Template.bDisplayInUITacticalText = false;
 
@@ -212,7 +210,6 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTargetStyle = default.SimpleSingleTarget;
     Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bCrossClassEligible = false;
     Template.bDisplayInUITooltip = false;
     Template.bDisplayInUITacticalText = false;
 
@@ -236,13 +233,47 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
 static function X2AbilityTemplate AddDistractAbility()
 {
     local X2AbilityTemplate             Template;
+    local X2Effect_SpookTemporaryItem   ItemEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Distract');
+
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mimicbeacon";
+    Template.AbilitySourceName = 'eAbilitySource_Perk';
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.Hostility = eHostility_Neutral;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+    Template.bIsPassive = true;
+
+    ItemEffect = new class'X2Effect_SpookTemporaryItem';
+    ItemEffect.bIgnoreItemEquipRestrictions = true;
+    ItemEffect.EffectName = 'SpookDistractGrenadeEffect';
+    ItemEffect.ItemName = 'SpookDistractGrenade';
+    ItemEffect.bIgnoreItemEquipRestrictions = true;
+    ItemEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    ItemEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, ,Template.AbilitySourceName);
+    ItemEffect.DuplicateResponse = eDupe_Ignore;
+    Template.AddTargetEffect(ItemEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
+{
+    local X2AbilityTemplate             Template;
     local X2AbilityCost_ActionPoints    ActionPointCost;
     local X2AbilityCooldown             Cooldown;
 
     local X2AbilityTarget_Cursor        CursorTarget;
     local X2AbilityMultiTarget_Radius   RadiusMultiTarget;
+    local X2Condition_UnitProperty      MultiTargetPropertyCondition;
+    local X2Effect_Stunned              StunEffect;
+    local X2Effect_SpookDistract        DistractEffect;
 
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Distract');
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'SpookThrowDistractGrenade');
 
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_mimicbeacon";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
@@ -255,29 +286,41 @@ static function X2AbilityTemplate AddDistractAbility()
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
+    CursorTarget = new class'X2AbilityTarget_Cursor';
+    CursorTarget.bRestrictToWeaponRange = true;
+    Template.AbilityTargetStyle = CursorTarget;
+
+    RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
+    RadiusMultiTarget.bUseWeaponRadius = true;
+    RadiusMultiTarget.bIgnoreBlockingCover = true;
+    Template.AbilityMultiTargetStyle = RadiusMultiTarget;
+    Template.TargetingMethod = class'X2TargetingMethod_Grenade';
+
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 1;
+    //ActionPointCost.iNumPoints = 1;
+ActionPointCost.iNumPoints = 0;
     ActionPointCost.bFreeCost = true;
-    ActionPointCost.bConsumeAllPoints = true;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     Cooldown = new class'X2AbilityCooldown';
     Cooldown.iNumTurns = default.DISTRACT_COOLDOWN_TURNS;
-    Template.AbilityCooldown = Cooldown;
+    //Template.AbilityCooldown = Cooldown;
 
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
     Template.AddShooterEffectExclusions();
 
-    CursorTarget = new class'X2AbilityTarget_Cursor';
-    CursorTarget.FixedAbilityRange = `UNITSTOMETERS(`TILESTOUNITS(default.DISTRACT_RANGE_TILES));
-    Template.AbilityTargetStyle = CursorTarget;
+    MultiTargetPropertyCondition = new class'X2Condition_UnitProperty';
+    MultiTargetPropertyCondition.FailOnNonUnits = true; // plus defaults
+    Template.AbilityMultiTargetConditions.AddItem(MultiTargetPropertyCondition);
 
-    RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
-    RadiusMultiTarget.fTargetRadius = 0.25; // small amount so it just grabs one tile
-    Template.AbilityMultiTargetStyle = RadiusMultiTarget;
+    StunEffect = class'X2StatusEffects'.static.CreateStunnedStatusEffect(4, 100, false);
+    StunEffect.SetDisplayInfo(ePerkBuff_Penalty, class'X2StatusEffects'.default.StunnedFriendlyName, class'X2StatusEffects'.default.StunnedFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun");
+    Template.AddMultiTargetEffect(StunEffect);
 
-    Template.TargetingMethod = class'X2TargetingMethod_MimicBeacon';
-    Template.SkipRenderOfTargetingTemplate = true;
+    DistractEffect = new class'X2Effect_SpookDistract';
+    DistractEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(3));
+    DistractEffect.DuplicateResponse = eDupe_Refresh;
+    Template.AddMultiTargetEffect(DistractEffect);
 
     Template.BuildNewGameStateFn = BuildDistractGameState;
     Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
@@ -287,108 +330,10 @@ static function X2AbilityTemplate AddDistractAbility()
 
 static function XComGameState BuildDistractGameState(XComGameStateContext Context)
 {
-    local XComGameStateHistory History;
     local XComGameState NewGameState;
-    local XComGameStateContext_Ability AbilityContext;
-    local XComWorldData World;
-    local vector TargetPosition, ShooterPosition;
-    local TTile TargetTile;
-    local XComGameState_Unit Shooter, Unit;
-    local vector UnitPosition;
-    local int AIID;
-    local XComGameState_AIUnitData AI;
-    local AlertAbilityInfo AlertInfo;
-
     `SPOOKSLOG("BuildDistractGameState");
-    History = `XCOMHISTORY;
-    World = `XWORLD;
-
-    NewGameState = History.CreateNewGameState(true, Context);
-
-    // First do what typical abilities do.
+    NewGameState = `XCOMHISTORY.CreateNewGameState(true, Context);
     TypicalAbility_FillOutGameState(NewGameState);
-
-    // Then if we hit, we want to do some other things.
-    AbilityContext = XComGameStateContext_Ability(NewGameState.GetContext());
-    if (!AbilityContext.IsResultContextHit())
-    {
-        `SPOOKSLOG("Distract missed!");
-        return NewGameState;
-    }
-
-    Shooter = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
-    if (Shooter == none)
-    {
-        `SPOOKSLOG("Distract has no shooter!");
-    }
-
-    if (AbilityContext.ResultContext.ProjectileHitLocations.Length < 1)
-    {
-        `SPOOKSLOG("Distract has no projectile hit locations!");
-        return NewGameState;
-    }
-
-    ShooterPosition = World.GetPositionFromTileCoordinates(Shooter.TileLocation);
-    TargetPosition = AbilityContext.ResultContext.ProjectileHitLocations[0];
-    if (!World.GetFloorTileForPosition(TargetPosition, TargetTile))
-    {
-        `SPOOKSLOG("Projectile hit location has no floor tile!");
-        return NewGameState;
-    }
-
-    foreach History.IterateByClassType(class'XComGameState_Unit', Unit)
-    {
-        if (Unit.GetTeam() != eTeam_Alien || !Unit.IsAlive())
-        {
-            // Not a live alien.
-            continue;
-        }
-
-        AIID = Unit.GetAIUnitDataID();
-        if (AIID <= 0)
-        {
-            // Not an AI.
-            continue;
-        }
-
-        UnitPosition = World.GetPositionFromTileCoordinates(Unit.TileLocation);
-        if (VSizeSq(TargetPosition - UnitPosition) > Square(`TILESTOUNITS(default.DISTRACT_ALERT_RANGE_TILES)))
-        {
-            `SPOOKSLOG(Unit.GetMyTemplateName() $ " too far from target");
-            continue;
-        }
-
-        if (VSizeSq(ShooterPosition - UnitPosition) > Square(`TILESTOUNITS(default.DISTRACT_SHOOTER_AI_RANGE_TILES)))
-        {
-            `SPOOKSLOG(Unit.GetMyTemplateName() $ " too far from shooter");
-            continue;
-        }
-
-        `SPOOKSLOG("Alerting " $ Unit.GetMyTemplateName());
-        AlertInfo.AlertTileLocation = TargetTile;
-        AlertInfo.AlertRadius = 1;
-        AlertInfo.AlertUnitSourceID = 0;
-        AlertInfo.AnalyzingHistoryIndex = History.GetCurrentHistoryIndex();
-
-        AI = XComGameState_AIUnitData(NewGameState.GetGameStateForObjectID(AIID));
-        if (AI == none)
-        {
-            AI = XComGameState_AIUnitData(NewGameState.CreateStateObject(class'XComGameState_AIUnitData', AIID));
-            if (AI.AddAlertData(AI.m_iUnitObjectID, eAC_SeesAlertedAllies, AlertInfo, NewGameState))
-            {
-                NewGameState.AddStateObject(AI);
-            }
-            else
-            {
-                NewGameState.PurgeGameStateForObjectID(AI.ObjectID);
-            }
-        }
-        else
-        {
-            AI.AddAlertData(AI.m_iUnitObjectID, eAC_SeesAlertedAllies, AlertInfo, NewGameState);
-        }
-    }
-
     return NewGameState;
 }
 
@@ -854,7 +799,6 @@ static function X2AbilityTemplate AddVeilAbility()
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTargetStyle = default.SelfTarget;
     Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
-    Template.bCrossClassEligible = false;
     Template.bDisplayInUITooltip = true;
     Template.bDisplayInUITacticalText = true;
 
@@ -896,7 +840,6 @@ static function X2AbilityTemplate AddVanishAbility()
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.Hostility = eHostility_Neutral;
     Template.bDisplayInUITacticalText = true;
-    Template.bCrossClassEligible = false;
 
     // Cost
     ActionPointCost = new class'X2AbilityCost_ActionPoints';

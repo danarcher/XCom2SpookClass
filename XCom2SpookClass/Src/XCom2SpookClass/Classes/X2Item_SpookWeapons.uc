@@ -66,6 +66,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(CreatePistolMG());
     Templates.AddItem(CreatePistolCG());
     Templates.AddItem(CreatePistolBM());
+    Templates.AddItem(CreateSpookDistractGrenade());
     return Templates;
 }
 
@@ -254,6 +255,33 @@ static function X2DataTemplate CreatePistolBM()
     Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
 
     Template.GameArchetype = "WP_Pistol_BM.WP_Pistol_BM";
+
+    return Template;
+}
+
+static function X2DataTemplate CreateSpookDistractGrenade()
+{
+    local X2GrenadeTemplate Template;
+
+    `CREATE_X2TEMPLATE(class'X2GrenadeTemplate', Template, 'SpookDistractGrenade');
+
+    Template.strImage = "img:///UILibrary_StrategyImages.X2InventoryIcons..Inv_Flashbang_Grenade";
+    Template.EquipSound = "StrategyUI_Grenade_Equip";
+    Template.iRange = `UNITSTOMETERS(`TILESTOUNITS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RANGE_TILES));
+    Template.iRadius = `UNITSTOMETERS(`TILESTOUNITS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RADIUS_TILES));
+
+    Template.bFriendlyFire = false;
+    Template.bFriendlyFireWarning = false;
+    Template.bAllowVolatileMix = false;
+    Template.bCanBeDodged = false;
+    Template.Abilities.AddItem('SpookThrowDistractGrenade');
+
+    Template.LaunchedGrenadeEffects = Template.ThrownGrenadeEffects;
+
+    Template.GameArchetype = "Spook.WP_Grenade_Distract";
+
+    Template.SetUIStatMarkup(class'XLocalizedData'.default.RangeLabel, , Template.iRange);
+    Template.SetUIStatMarkup(class'XLocalizedData'.default.RadiusLabel, , Template.iRadius);
 
     return Template;
 }
