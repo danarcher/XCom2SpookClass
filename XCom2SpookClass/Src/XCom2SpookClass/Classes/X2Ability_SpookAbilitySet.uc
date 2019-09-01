@@ -52,6 +52,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
     Templates.AddItem(AddDistractAbility());
     Templates.AddItem(AddDistractThrowGrenadeAbility());
+    Templates.AddItem(AddDistractAISetDestinationAbility());
     Templates.AddItem(AddMeldAbility());
 
     Templates.AddItem(CarryUnitAbility());
@@ -270,7 +271,7 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
     local X2AbilityTarget_Cursor        CursorTarget;
     local X2AbilityMultiTarget_Radius   RadiusMultiTarget;
     local X2Condition_UnitProperty      MultiTargetPropertyCondition;
-    local X2Effect_Stunned              StunEffect;
+    //local X2Effect_Stunned            StunEffect;
     local X2Effect_SpookDistract        DistractEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'SpookThrowDistractGrenade');
@@ -313,13 +314,15 @@ ActionPointCost.iNumPoints = 0;
     MultiTargetPropertyCondition.FailOnNonUnits = true; // plus defaults
     Template.AbilityMultiTargetConditions.AddItem(MultiTargetPropertyCondition);
 
-    StunEffect = class'X2StatusEffects'.static.CreateStunnedStatusEffect(4, 100, false);
-    StunEffect.SetDisplayInfo(ePerkBuff_Penalty, class'X2StatusEffects'.default.StunnedFriendlyName, class'X2StatusEffects'.default.StunnedFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun");
-    Template.AddMultiTargetEffect(StunEffect);
+//  StunEffect = class'X2StatusEffects'.static.CreateStunnedStatusEffect(4, 100, false);
+//  StunEffect.SetDisplayInfo(ePerkBuff_Penalty, class'X2StatusEffects'.default.StunnedFriendlyName, class'X2StatusEffects'.default.StunnedFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun");
+//  Template.AddMultiTargetEffect(StunEffect);
 
     DistractEffect = new class'X2Effect_SpookDistract';
     DistractEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(3));
     DistractEffect.DuplicateResponse = eDupe_Refresh;
+    DistractEffect.EffectName = 'SpookDistracted';
+    DistractEffect.GameStateEffectClass = class'XComGameState_SpookDistractEffect';
     Template.AddMultiTargetEffect(DistractEffect);
 
     Template.BuildNewGameStateFn = BuildDistractGameState;
@@ -337,6 +340,133 @@ static function XComGameState BuildDistractGameState(XComGameStateContext Contex
     return NewGameState;
 }
 
+static function X2AbilityTemplate AddDistractAISetDestinationAbility()
+{
+    local X2AbilityTemplate             Template;
+    local array<name>                   SkipExclusions;
+    local X2AbilityCost_ActionPoints    ActionPointCost;
+    local X2Effect_PersistentStatChange TestEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Distract_AISetDestination');
+
+    Template.AbilitySourceName = 'eAbilitySource_Standard';
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.Hostility = eHostility_Neutral;
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+    Template.bDisplayInUITacticalText = true;
+    Template.bDisplayInUITooltip = true;
+    Template.bHideOnClassUnlock = true;
+    Template.bCrossClassEligible = false;
+
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 1;
+    ActionPointCost.bFreeCost = true;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.ConfusedName);
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.DisorientedName);
+    Template.AddShooterEffectExclusions(SkipExclusions);
+
+    TestEffect = new class'X2Effect_PersistentStatChange';
+    TestEffect.EffectName = 'DistractMobilityChange';
+    TestEffect.DuplicateResponse = eDupe_Ignore;
+    TestEffect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(3));
+    TestEffect.AddPersistentStatChange(eStat_Mobility, 3);
+    Template.AddTargetEffect(TestEffect);
+
+    Template.BuildNewGameStateFn = BuildDistractAISetDestinationGameState;
+    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+
+    return Template;
+}
+
+static function XComGameState BuildDistractAISetDestinationGameState(XComGameStateContext Context)
+{
+    local XComGameState NewGameState;
+
+    `SPOOKSLOG("BuildDistractAISetDestinationGameState");
+    NewGameState = `XCOMHISTORY.CreateNewGameState(true, Context);
+    TypicalAbility_FillOutGameState(NewGameState);
+    SetDistractAIDestination(Context, NewGameState);
+    return NewGameState;
+}
+
+static function SetDistractAIDestination(XComGameStateContext Context, XComGameState NewGameState)
+{
+    local XComGameStateContext_Ability AbilityContext;
+    local XComGameState_Unit Unit;
+    local XComGameState_Effect EffectState;
+    local XComGameState_SpookDistractEffect DistractEffectState;
+    local XGUnit kUnit;
+    local XGAIBehavior kBehavior;
+    local XComWorldData World;
+    local TTile DestinationTile;
+    local vector DestinationPosition;
+
+    `SPOOKSLOG("SetDistractAIDestination");
+    AbilityContext = XComGameStateContext_Ability(Context);
+    if (AbilityContext == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no ability context");
+        return;
+    }
+    Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
+    if (Unit == none)
+    {
+        Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
+    }
+    if (Unit == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no unit");
+        return;
+    }
+    EffectState = Unit.GetUnitAffectedByEffectState('SpookDistracted');
+    if (EffectState == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no distracted effect");
+        return;
+    }
+    DistractEffectState = XComGameState_SpookDistractEffect(EffectState);
+    if (DistractEffectState == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: distracted effect is base class");
+        return;
+    }
+    kUnit = XGUnit(Unit.GetVisualizer());
+    if (kUnit == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no visualizer");
+        return;
+    }
+    kBehavior = kUnit.m_kBehavior;
+    if (kBehavior == none)
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no behavior");
+        return;
+    }
+
+    World = `XWORLD;
+    World.GetFloorTileForPosition(DistractEffectState.TargetPosition, DestinationTile);
+    DestinationPosition = World.GetPositionFromTileCoordinates(DestinationTile);
+    if (!kBehavior.HasValidDestinationToward(DestinationPosition, DestinationPosition, kBehavior.m_bBTCanDash))
+    {
+        `SPOOKSLOG("Can't set distract AI destination: no valid destination toward target");
+        return;
+    }
+
+    if (kBehavior.CanUseCover())
+    {
+        kBehavior.GetClosestCoverLocation(DestinationPosition, DestinationPosition);
+    }
+
+    kBehavior.m_vBTDestination = DestinationPosition;
+    kBehavior.m_bBTDestinationSet = true;
+}
 
 static function X2AbilityTemplate AddMeldAbility()
 {

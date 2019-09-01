@@ -35,6 +35,48 @@ static event OnPostTemplatesCreated()
     `SPOOKSLOG("OnPostTemplatesCreated");
     UpdateWeaponTemplates();
     UpdateAbilityTemplates();
+    UpdateCharacterTemplates();
+}
+
+static function FinalizeUnitAbilitiesForInit(XComGameState_Unit Unit, out array<AbilitySetupData> SetupData, optional XComGameState StartState, optional XComGameState_Player Player, optional bool bMultiplayerDisplay)
+{
+    local AbilitySetupData Item;
+    local bool bFound;
+    local X2AbilityTemplateManager AbilityManager;
+    local X2AbilityTemplate Template;
+    `SPOOKSLOG("FinalizeUnitAbilitiesForInit with " $ Unit.GetMyTemplateName());
+    foreach SetupData(Item)
+    {
+        //`SPOOKSLOG("TemplateName=" $ Item.TemplateName $ " Template.DataName=" $ Item.Template.DataName);
+        if (Item.TemplateName == 'Spook_Distract_AISetDestination')
+        {
+            bFound = true;
+            //break;
+        }
+    }
+    if (!bFound)
+    {
+        AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+        Template = AbilityManager.FindAbilityTemplate('Spook_Distract_AISetDestination');
+        if (Template != none)
+        {
+            // Set TemplateName, Template, SourceWeaponRef, SourceAmmoRef.
+            Item.TemplateName = Template.DataName;
+            Item.Template = Template;
+            Item.SourceWeaponRef.ObjectID = 0;
+            Item.SourceAmmoRef.ObjectID = 0;
+            SetupData.AddItem(Item);
+            `SPOOKSLOG("Spook_Distract_AISetDestination added as not found");
+        }
+        else
+        {
+            `SPOOKSLOG("Spook_Distract_AISetDestination not found and could not be added!");
+        }
+    }
+    else
+    {
+        `SPOOKSLOG("Spook_Distract_AISetDestination found");
+    }
 }
 
 static function UpdateWeaponTemplates()
@@ -127,6 +169,26 @@ static function UpdateRevealAbilityTemplate(X2AbilityTemplate Template)
     UnitPropertyCondition.ExcludeConcealed = true;
     Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
     `SPOOKSLOG("Updated " @ Template.DataName @ " to exclude concealed units");
+}
+
+static function UpdateCharacterTemplates()
+{
+    local X2CharacterTemplateManager CharManager;
+    local X2DataTemplate Template;
+    local X2CharacterTemplate CharTemplate;
+
+    `SPOOKSLOG("Updating character templates");
+    CharManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
+    foreach CharManager.IterateTemplates(Template, None)
+    {
+        CharTemplate = X2CharacterTemplate(Template);
+        if (CharTemplate == none)
+        {
+            continue;
+        }
+        CharTemplate.Abilities.AddItem('Spook_Distract_AISetDestination');
+        `SPOOKSLOG("Added Spook_Distract_AISetDestination to " $ CharTemplate.DataName);
+    }
 }
 
 exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)
