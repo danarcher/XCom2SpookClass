@@ -30,6 +30,7 @@ var config WeaponDamageValue DART_MAGNETIC_DAMAGE;
 var config WeaponDamageValue DART_COIL_DAMAGE;
 var config WeaponDamageValue DART_BEAM_DAMAGE;
 
+var config int DART_CHARGES;
 var config int DART_BLEED_TURNS;
 var config int DART_BLEED_DAMAGE_PER_TICK;
 var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
@@ -696,10 +697,13 @@ static function X2AbilityTemplate AddVanishAbility()
     SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);                     // Can be on fire
     Template.AddShooterEffectExclusions(SkipExclusions);
 
-    Charges = new class'X2AbilityCharges';
-    Charges.InitialCharges = default.VANISH_CHARGES;
-    Template.AbilityCharges = Charges;
-    Template.AbilityCosts.AddItem(new class'X2AbilityCost_Charges');
+    if (default.VANISH_CHARGES > 0)
+    {
+        Charges = new class'X2AbilityCharges';
+        Charges.InitialCharges = default.VANISH_CHARGES;
+        Template.AbilityCharges = Charges;
+        Template.AbilityCosts.AddItem(new class'X2AbilityCost_Charges');
+    }
 
     RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
     RadiusMultiTarget.bUseWeaponRadius = false;
@@ -770,6 +774,7 @@ static function X2AbilityTemplate AddDartAbility()
     local X2Condition_Visibility                RequireVisibleCondition;
     local X2Condition_UnitProperty              NoRobotsCondition;
     local X2AbilityCost_ActionPoints            ActionPointCost;
+    local X2AbilityCharges                      Charges;
     local X2Effect_ApplyWeaponDamage_SpookDart  DamageEffect;
     local X2Effect_SpookUngroupAI               UngroupEffect;
 
@@ -822,6 +827,14 @@ static function X2AbilityTemplate AddDartAbility()
     ActionPointCost.iNumPoints = 1;
     ActionPointCost.bConsumeAllPoints = false;
     Template.AbilityCosts.AddItem(ActionPointCost);
+
+    if (default.DART_CHARGES > 0)
+    {
+        Charges = new class'X2AbilityCharges';
+        Charges.InitialCharges = default.DART_CHARGES;
+        Template.AbilityCharges = Charges;
+        Template.AbilityCosts.AddItem(new class'X2AbilityCost_Charges');
+    }
 
     // Can cause a holotarget to be applied
     Template.AddTargetEffect(class'X2Ability_GrenadierAbilitySet'.static.HoloTargetEffect());
