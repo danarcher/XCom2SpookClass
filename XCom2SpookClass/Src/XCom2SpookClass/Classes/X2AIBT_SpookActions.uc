@@ -8,6 +8,9 @@ static event bool FindBTActionDelegate(name strName, optional out delegate<BTAct
 
     switch (strName)
     {
+        case 'SpookIsDistracted':
+            dOutFn = IsDistracted;
+            return true;
         case 'SpookSetDestinationToDistraction':
             dOutFn = SetDestinationToDistraction;
             return true;
@@ -19,6 +22,20 @@ static event bool FindBTActionDelegate(name strName, optional out delegate<BTAct
 
     }
     return super.FindBTActionDelegate(strName, dOutFn, NameParam, MoveProfile);
+}
+
+function bt_status IsDistracted()
+{
+    local XComGameState_Unit Unit;
+    local XComGameState_Effect EffectState;
+
+    Unit = m_kBehavior.m_kUnit.GetVisualizedGameState();
+    EffectState = Unit.GetUnitAffectedByEffectState('SpookDistracted');
+    if (EffectState == none)
+    {
+        return BTS_FAILURE;
+    }
+    return BTS_SUCCESS;
 }
 
 function bt_status SetDestinationToDistraction()
@@ -44,6 +61,7 @@ function bt_status SetDestinationToDistraction()
         return BTS_FAILURE;
     }
 
+    `SPOOKSLOG("AI found distract destination at " $ DistractEffectState.TargetPosition);
     World = `XWORLD;
     World.GetFloorTileForPosition(DistractEffectState.TargetPosition, DestinationTile);
     DestinationPosition = World.GetPositionFromTileCoordinates(DestinationTile);

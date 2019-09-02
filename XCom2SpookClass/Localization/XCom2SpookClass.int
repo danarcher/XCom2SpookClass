@@ -1,6 +1,11 @@
 [X2Ability_SpookAbilitySet]
 WiredNotRevealedByClassesFriendlyName="Scrambled"
 WiredNotRevealedByClassesHelpText="Unable to detect some concealed soldiers."
+DistractedFriendlyName="Distracted"
+DistractedHelpText="Distracted by a Spook. Would like to investigate."
+DistractedAcquiredString="<XGParam:StrValue0/!UnitName/> is distracted."
+DistractedTickedString="<XGParam:StrValue0/!UnitName/> is still distracted."
+DistractedLostString="<XGParam:StrValue0/!UnitName/> is no longer distracted."
 
 [SpookDetectionManager]
 StealthKilledFriendlyName="Stealth Kill"

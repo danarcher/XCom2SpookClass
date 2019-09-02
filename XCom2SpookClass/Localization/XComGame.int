@@ -45,9 +45,15 @@ LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Enemies have a re
 [Spook_Distract X2AbilityTemplate]
 LocFriendlyName="Distract"
 LocFlyOverText="Distract"
-LocLongDescription=""
-LocHelpText=""
-LocPromotionPopupText=""
+LocLongDescription="Distract nearby enemies toward a target location. Does not break concealment."
+LocHelpText="Distract nearby enemies toward a target location. Does not break concealment."
+LocPromotionPopupText="<Bullet/> Distracts enemies within a large radius to move towards the centre of that radius.<br/><Bullet/> Lasts for several turns at which point enemies return to their previous behavior.<br/><Bullet/> Does not break concealment.<br/><Bullet/> Enemies already engaged in combat are unaffected."
+
+[SpookThrowDistractGrenade X2AbilityTemplate]
+LocFriendlyName="Distract"
+LocFlyOverText="Distract"
+LocLongDescription="Distract nearby enemies toward a target location. Does not break concealment."
+LocHelpText="Distract nearby enemies toward a target location. Does not break concealment."
 
 [Spook_Meld X2AbilityTemplate]
 LocFriendlyName="Meld"
