@@ -304,7 +304,7 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
 
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
     ActionPointCost.iNumPoints = 1;
-    ActionPointCost.bFreeCost = true;
+    ActionPointCost.bFreeCost = false;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     if (default.DISTRACT_CHARGES > 0)
