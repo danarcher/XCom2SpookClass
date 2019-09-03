@@ -23,6 +23,16 @@ static function UpdateAbilityTemplates()
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'BurrowedAttack');
     FindAndUpdateRevealAbilityTemplate(AbilityManager, 'UnburrowSawEnemy');
 
+    if (class'X2Ability_SpookAbilitySet'.default.DISTRACT_EXCLUDE_RED_ALERT)
+    {
+        `SPOOKSLOG("Distract excludes red alert and hence is cancelled by it");
+        RedAlertCancelsDistract(AbilityManager);
+    }
+    else
+    {
+        `SPOOKSLOG("Distract does NOT exclude red alert");
+    }
+
     `SPOOKSLOG("Ability template updates completed");
 }
 
@@ -54,6 +64,69 @@ static function UpdateRevealAbilityTemplate(X2AbilityTemplate Template)
     UnitPropertyCondition.ExcludeConcealed = true;
     Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
     `SPOOKSLOG("Updated " @ Template.DataName @ " to exclude concealed units");
+}
+
+static function RedAlertCancelsDistract(X2AbilityTemplateManager AbilityManager)
+{
+    local X2DataTemplate DataTemplate;
+    local X2AbilityTemplate Template;
+    local SpookRedAlertVisualizer Visualizer;
+    local bool bModified;
+    foreach AbilityManager.IterateTemplates(DataTemplate, none)
+    {
+        Template = X2AbilityTemplate(DataTemplate);
+        if (Template == none)
+        {
+            continue;
+        }
+
+        bModified = false;
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityShooterEffects))
+        {
+            Template.AddShooterEffect(CreateDistractRemover(Template, "AbilityShooterEffects"));
+            bModified = true;
+        }
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityTargetEffects))
+        {
+            Template.AddTargetEffect(CreateDistractRemover(Template, "AbilityTargetEffects"));
+            bModified = true;
+        }
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityMultiTargetEffects))
+        {
+            Template.AddMultiTargetEffect(CreateDistractRemover(Template, "AbilityMultiTargetEffects"));
+            bModified = true;
+        }
+        if (bModified)
+        {
+            Visualizer = new class'SpookRedAlertVisualizer';
+            Visualizer.AttachTo(Template);
+        }
+    }
+}
+
+static function bool RedAlertCancelsDistractHere(X2AbilityTemplate Template, out const array<X2Effect> Effects)
+{
+    local X2Effect Effect;
+    local X2Effect_RedAlert RedAlert;
+
+    foreach Effects(Effect)
+    {
+        RedAlert = X2Effect_RedAlert(Effect);
+        if (RedAlert != none)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+static function X2Effect CreateDistractRemover(X2AbilityTemplate Template, string ListName)
+{
+    local X2Effect_SpookRemoveEffects Effect;
+    Effect = new class'X2Effect_SpookRemoveEffects';
+    Effect.EffectNamesToRemove.AddItem(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
+    `SPOOKSLOG("Modifying ability " $ Template.DataName $ " to cancel Distract when it adds Red Alert via " $ ListName);
+    return Effect;
 }
 
 exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)

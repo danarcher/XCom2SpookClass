@@ -1,6 +1,8 @@
 [X2Ability_SpookAbilitySet]
 WiredNotRevealedByClassesFriendlyName="Scrambled"
 WiredNotRevealedByClassesHelpText="Unable to detect some concealed soldiers."
+
+[XComGameState_SpookDistractEffect]
 DistractedFriendlyName="Distracted"
 DistractedHelpText="Distracted by a Spook. Would like to investigate."
 DistractedAcquiredString="<XGParam:StrValue0/!UnitName/> is distracted."

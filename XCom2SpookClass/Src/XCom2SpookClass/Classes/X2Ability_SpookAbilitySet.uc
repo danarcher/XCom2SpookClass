@@ -20,6 +20,8 @@ var config int DISTRACT_COOLDOWN_TURNS;
 var config float DISTRACT_RANGE_TILES;
 var config float DISTRACT_RADIUS_TILES;
 var config int DISTRACT_TURNS;
+var config float DISTRACT_MOBILITY_ADJUST;
+var config bool DISTRACT_EXCLUDE_RED_ALERT;
 
 var config int VANISH_CHARGES;
 var config float VANISH_RADIUS;
@@ -38,12 +40,6 @@ var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var localized string WiredNotRevealedByClassesFriendlyName;
 var localized string WiredNotRevealedByClassesHelpText;
-
-var localized string DistractedFriendlyName;
-var localized string DistractedHelpText;
-var localized string DistractedAcquiredString;
-var localized string DistractedTickedString;
-var localized string DistractedLostString;
 
 const ExeuntAbilityName = 'Spook_Exeunt';
 const WiredAbilityName = 'Spook_Wired';
@@ -278,7 +274,8 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
     local X2AbilityTarget_Cursor        CursorTarget;
     local X2AbilityMultiTarget_Radius   RadiusMultiTarget;
     local X2Condition_UnitProperty      MultiTargetPropertyCondition;
-    local X2Effect_Persistent           DistractEffect;
+    local X2Condition_UnitAlertStatus   MultiTargetAlertStatusCondition;
+    local X2Effect_PersistentStatChange DistractEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'SpookThrowDistractGrenade');
 
@@ -330,17 +327,19 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
     MultiTargetPropertyCondition.FailOnNonUnits = true; // plus defaults
     Template.AbilityMultiTargetConditions.AddItem(MultiTargetPropertyCondition);
 
-    DistractEffect = new class'X2Effect_Persistent';
-    DistractEffect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(default.DISTRACT_TURNS));
-    DistractEffect.DuplicateResponse = eDupe_Refresh;
-    DistractEffect.EffectName = 'SpookDistracted';
-    DistractEffect.GameStateEffectClass = class'XComGameState_SpookDistractEffect';
-    DistractEffect.SetDisplayInfo(ePerkBuff_Penalty, default.DistractedFriendlyName, default.DistractedHelpText, Template.IconImage);
-    DistractEffect.VisualizationFn = class'XComGameState_SpookDistractEffect'.static.DistractedVisualization;
-    DistractEffect.EffectTickedVisualizationFn = class'XComGameState_SpookDistractEffect'.static.DistractedVisualizationTicked;
-    DistractEffect.EffectRemovedVisualizationFn = class'XComGameState_SpookDistractEffect'.static.DistractedVisualizationRemoved;
-    DistractEffect.DelayVisualizationSec = 1;
+    if (default.DISTRACT_EXCLUDE_RED_ALERT)
+    {
+        `SPOOKSLOG("Distract excludes red alert and hence is prevented by it");
+        MultiTargetAlertStatusCondition = new class'X2Condition_UnitAlertStatus';
+        MultiTargetAlertStatusCondition.RequiredAlertStatusMaximum = 1;
+        Template.AbilityMultiTargetConditions.AddItem(MultiTargetAlertStatusCondition);
+    }
+    else
+    {
+        `SPOOKSLOG("Distract does NOT exclude red alert");
+    }
 
+    DistractEffect = class'XComGameState_SpookDistractEffect'.static.CreateDistractEffect(default.DISTRACT_TURNS, default.DISTRACT_MOBILITY_ADJUST, Template.IconImage);
     Template.AddMultiTargetEffect(DistractEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;

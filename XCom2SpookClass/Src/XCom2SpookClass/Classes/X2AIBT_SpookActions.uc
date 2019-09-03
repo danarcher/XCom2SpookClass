@@ -30,7 +30,7 @@ function bt_status IsDistracted()
     local XComGameState_Effect EffectState;
 
     Unit = m_kBehavior.m_kUnit.GetVisualizedGameState();
-    EffectState = Unit.GetUnitAffectedByEffectState('SpookDistracted');
+    EffectState = Unit.GetUnitAffectedByEffectState(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
     if (EffectState == none)
     {
         return BTS_FAILURE;
@@ -48,7 +48,7 @@ function bt_status SetDestinationToDistraction()
     local vector DestinationPosition;
 
     Unit = m_kBehavior.m_kUnit.GetVisualizedGameState();
-    EffectState = Unit.GetUnitAffectedByEffectState('SpookDistracted');
+    EffectState = Unit.GetUnitAffectedByEffectState(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
     if (EffectState == none)
     {
         `SPOOKSLOG("Can't set distract AI destination: no distracted effect");
