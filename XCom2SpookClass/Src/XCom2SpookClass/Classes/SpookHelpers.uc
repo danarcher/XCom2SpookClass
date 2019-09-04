@@ -6,6 +6,10 @@ class SpookHelpers
 static function XComGameState_Unit FindUnitState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
 {
     local XComGameState_Unit Unit;
+    if (ObjectID == 0)
+    {
+        return none;
+    }
     if (NewGameState != none)
     {
         Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(ObjectID));
@@ -24,6 +28,10 @@ static function XComGameState_Unit FindUnitState(int ObjectID, optional XComGame
 static function XComGameState_Unit FindOrAddUnitState(int ObjectID, XComGameState NewGameState)
 {
     local XComGameState_Unit Unit;
+    if (ObjectID == 0)
+    {
+        return none;
+    }
     if (NewGameState != none)
     {
         Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(ObjectID));
@@ -39,6 +47,10 @@ static function XComGameState_Unit FindOrAddUnitState(int ObjectID, XComGameStat
 static function XComGameState_Ability FindAbilityState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
 {
     local XComGameState_Ability Ability;
+    if (ObjectID == 0)
+    {
+        return none;
+    }
     if (NewGameState != none)
     {
         Ability = XComGameState_Ability(NewGameState.GetGameStateForObjectID(ObjectID));

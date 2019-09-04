@@ -2,6 +2,8 @@ class X2Item_SpookWeapons
     extends X2Item
     config(Spook);
 
+`include(XCom2SpookClass\Src\Spook.uci)
+
 var config WeaponDamageValue PISTOL_CONVENTIONAL_BASEDAMAGE;
 var config WeaponDamageValue PISTOL_LASER_BASEDAMAGE;
 var config WeaponDamageValue PISTOL_MAGNETIC_BASEDAMAGE;
@@ -229,8 +231,8 @@ static function X2DataTemplate CreateSpookDistractGrenade()
 
     Template.strImage = "img:///UILibrary_StrategyImages.X2InventoryIcons..Inv_Flashbang_Grenade";
     Template.EquipSound = "StrategyUI_Grenade_Equip";
-    Template.iRange = `UNITSTOMETERS(`TILESTOUNITS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RANGE_TILES));
-    Template.iRadius = `UNITSTOMETERS(`TILESTOUNITS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RADIUS_TILES));
+    Template.iRange = `TILESTOMETERS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RANGE_TILES);
+    Template.iRadius = `TILESTOMETERS(class'X2Ability_SpookAbilitySet'.default.DISTRACT_RADIUS_TILES);
 
     Template.bFriendlyFire = false;
     Template.bFriendlyFireWarning = false;

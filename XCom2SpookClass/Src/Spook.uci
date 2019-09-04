@@ -11,6 +11,8 @@
 `define FindOrAddUnitState(id, newgamestate) class'SpookHelpers'.static.FindOrAddUnitState(`id, `newgamestate);
 `define FindAbilityState(id, newgamestate, history) class'SpookHelpers'.static.FindAbilityState(`id, `newgamestate, `history);
 
+`define TILESTOMETERS(x) (`UNITSTOMETERS(`TILESTOUNITS(`x)))
+
 // BPE_xxx are flags for X2Effect_Persistent.BuildPersistentEffect().
 //
 // function BuildPersistentEffect(

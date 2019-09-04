@@ -7,9 +7,7 @@
     <SteamPublishID>0</SteamPublishID>
     <AssemblyName>XCom2SpookClass</AssemblyName>
     <RootNamespace>XCom2SpookClass</RootNamespace>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <OutputPath>bin\Debug\</OutputPath>
+    <ProjectGuid>{32eb891c-dd4f-4965-9e3f-9eb0ab2871cd}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Config" />
@@ -62,15 +60,13 @@
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIStrategyMap_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UITacticalHUD_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Ability_SpookAbilitySet.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Action_SpookFaceUnit.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2AIBT_SpookActions.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Condition_SpookEclipse.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Condition_SpookWiredNotRevealedByClasses.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2Condition_UnitIsShooter_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2DownloadableContentInfo_Spook.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Effect_ApplyWeaponDamage_SpookDart.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookBleeding.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookBonusMove.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookFallBack.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookPersistentRankedStatChange.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookRemoveEffects.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookTemporaryItem.uc" />

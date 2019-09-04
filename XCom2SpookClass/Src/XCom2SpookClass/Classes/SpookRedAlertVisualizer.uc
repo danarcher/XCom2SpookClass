@@ -64,7 +64,7 @@ simulated function BuildVisualization(XComGameState VisualizeGameState, out arra
         If (EffectNeedsVisualizer(Effect))
         {
             `SPOOKLOG("Shooter effect " $ Effect $ " needs visualization");
-            FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, VisualizeGameState, History, OutVisualizationTracks, Track);
+            FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
             Effect.AddX2ActionsForVisualization(VisualizeGameState, Track, CheckResult(Context.FindShooterEffectApplyResult(Effect)));
             OutVisualizationTracks.AddItem(Track);
         }
@@ -77,10 +77,10 @@ simulated function BuildVisualization(XComGameState VisualizeGameState, out arra
         {
             `SPOOKLOG("Target effect " $ Effect $ " needs visualization");
             ApplyResult = CheckResult(Context.FindTargetEffectApplyResult(Effect));
-            FindAndRemoveOrCreateTrackFor(Context.InputContext.PrimaryTarget.ObjectID, VisualizeGameState, History, OutVisualizationTracks, Track);
+            FindAndRemoveOrCreateTrackFor(Context.InputContext.PrimaryTarget.ObjectID, AbilityTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
             Effect.AddX2ActionsForVisualization(VisualizeGameState, Track, ApplyResult);
             OutVisualizationTracks.AddItem(Track);
-            FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, VisualizeGameState, History, OutVisualizationTracks, Track);
+            FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
             Effect.AddX2ActionsForVisualizationSource(VisualizeGameState, Track, ApplyResult);
             OutVisualizationTracks.AddItem(Track);
         }
@@ -95,10 +95,10 @@ simulated function BuildVisualization(XComGameState VisualizeGameState, out arra
             {
                 `SPOOKLOG("Multitarget effect " $ Effect $ " needs visualization for target " $ TargetIndex);
                 ApplyResult = CheckResult(Context.FindMultiTargetEffectApplyResult(Effect, TargetIndex));
-                FindAndRemoveOrCreateTrackFor(Context.InputContext.MultiTargets[TargetIndex].ObjectID, VisualizeGameState, History, OutVisualizationTracks, Track);
+                FindAndRemoveOrCreateTrackFor(Context.InputContext.MultiTargets[TargetIndex].ObjectID, AbilityTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
                 OutVisualizationTracks.AddItem(Track);
                 Effect.AddX2ActionsForVisualization(VisualizeGameState, Track, ApplyResult);
-                FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, VisualizeGameState, History, OutVisualizationTracks, Track);
+                FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
                 Effect.AddX2ActionsForVisualizationSource(VisualizeGameState, Track, ApplyResult);
                 OutVisualizationTracks.AddItem(Track);
             }
@@ -148,7 +148,7 @@ simulated function bool EffectNeedsVisualizer(X2Effect Effect)
     return Effect.IsA('X2Effect_RemoveEffects') || Effect.IsA('X2Effect_SpookRemoveEffects');
 }
 
-simulated function FindAndRemoveOrCreateTrackFor(int ObjectID, XComGameState VisualizeGameState, XComGameStateHistory History, out array<VisualizationTrack> Tracks, out VisualizationTrack Track)
+static simulated function FindAndRemoveOrCreateTrackFor(int ObjectID, X2AbilityTemplate AbilityStateTemplate, XComGameState VisualizeGameState, XComGameStateHistory History, out array<VisualizationTrack> Tracks, out VisualizationTrack Track)
 {
     local VisualizationTrack EmptyTrack;
     local int TrackIndex;
@@ -158,12 +158,12 @@ simulated function FindAndRemoveOrCreateTrackFor(int ObjectID, XComGameState Vis
         if (Track.StateObject_NewState.ObjectID == ObjectID)
         {
             Tracks.Remove(TrackIndex, 1);
-            `SPOOKLOG("Existing track found for " $ ObjectID $ ", removing and using that");
+            `SPOOKSLOG("Existing track found for " $ ObjectID $ ", removing and using that");
             return;
         }
     }
 
-    `SPOOKLOG("No existing track found for " $ ObjectID $ ", creating new track");
+    `SPOOKSLOG("No existing track found for " $ ObjectID $ ", creating new track");
     Track = EmptyTrack;
     Track.StateObject_OldState = History.GetGameStateForObjectID(ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
     Track.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(ObjectID);
@@ -172,5 +172,5 @@ simulated function FindAndRemoveOrCreateTrackFor(int ObjectID, XComGameState Vis
         Track.StateObject_NewState = Track.StateObject_OldState;
     }
     Track.TrackActor = History.GetVisualizer(ObjectID);
-    Track.AbilityName = AbilityTemplate.DataName;
+    Track.AbilityName = AbilityStateTemplate.DataName;
 }
