@@ -769,13 +769,13 @@ static function X2AbilityTemplate AddPistolStatBonusAbility()
 
 static function X2AbilityTemplate AddDartAbility()
 {
-    local X2AbilityTemplate                     Template;
-    local X2Condition_Visibility                RequireVisibleCondition;
-    local X2Condition_UnitProperty              NoRobotsCondition;
-    local X2AbilityCost_ActionPoints            ActionPointCost;
-    local X2AbilityCharges                      Charges;
-    local X2Effect_ApplyWeaponDamage_SpookDart  DamageEffect;
-    local X2Effect_SpookUngroupAI               UngroupEffect;
+    local X2AbilityTemplate             Template;
+    local X2Condition_Visibility        RequireVisibleCondition;
+    local X2Condition_UnitProperty      NoRobotsCondition;
+    local X2AbilityCost_ActionPoints    ActionPointCost;
+    local X2AbilityCharges              Charges;
+    local X2Effect_ApplyWeaponDamage    DamageEffect;
+    local X2Effect_SpookUngroupAI       UngroupEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Dart');
 
@@ -841,7 +841,7 @@ static function X2AbilityTemplate AddDartAbility()
     // (Cannot shred even if the shooter can, so we don't add that effect.)
 
     // Damage
-    DamageEffect = new class'X2Effect_ApplyWeaponDamage_SpookDart';
+    DamageEffect = new class'X2Effect_ApplyWeaponDamage';
     DamageEffect.bIgnoreBaseDamage = true;
     DamageEffect.bAllowWeaponUpgrade = false;
     DamageEffect.DamageTag = 'Spook_Dart';

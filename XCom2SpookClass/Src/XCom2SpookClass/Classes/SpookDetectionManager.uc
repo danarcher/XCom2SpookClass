@@ -7,7 +7,6 @@ class SpookDetectionManager
 
 var localized string StealthKilledFriendlyName;
 
-var config array<name> SHADOW_EFFECTS;
 var config array<name> WIRED_NOT_REVEALED_BY_CLASSES;
 var config array<name> UNITS_NOT_REVEALED_ABILITIES;
 var config array<name> UNITS_NOT_REVEALED_EFFECTS;
@@ -461,19 +460,6 @@ function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, 
     }
 
     `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " not staying concealed");
-    return false;
-}
-
-function bool UnitHasShadowEffect(XComGameState_Unit Unit)
-{
-    local name EffectName;
-    foreach default.SHADOW_EFFECTS(EffectName)
-    {
-        if (Unit.IsUnitAffectedByEffectName(EffectName))
-        {
-            return true;
-        }
-    }
     return false;
 }
 

@@ -14,7 +14,6 @@ var localized string BleedingEffectLost;
 static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTypeName, int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick, int PlusOnePerTick)
 {
     local X2Effect_SpookBleeding Effect;
-    //local X2Condition_UnitProperty UnitPropCondition;
 
     Effect = new class'X2Effect_SpookBleeding';
     Effect.EffectName = 'SpookBleeding';
@@ -28,17 +27,6 @@ static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTyp
     Effect.DamageTypes.AddItem(DamageTypeName);
     Effect.DuplicateResponse = eDupe_Refresh;
     Effect.bCanTickEveryAction = true;
-
-    //if (default.FireEnteredParticle_Name != "")
-    //{
-        //Effect.VFXTemplateName = default.FireEnteredParticle_Name;
-        //Effect.VFXSocket = default.FireEnteredSocket_Name;
-        //Effect.VFXSocketsArrayName = default.FireEnteredSocketsArray_Name;
-    //}
-
-    //UnitPropCondition = new class'X2Condition_UnitProperty';
-    //UnitPropCondition.ExcludeFriendlyToSource = false;
-    //Effect.TargetConditions.AddItem(UnitPropCondition);
 
     return Effect;
 }

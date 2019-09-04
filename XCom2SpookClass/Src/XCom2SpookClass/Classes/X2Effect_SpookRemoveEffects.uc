@@ -1,11 +1,11 @@
+// As per X2Effect_RemoveEffects but with added logging.
 class X2Effect_SpookRemoveEffects extends X2Effect;
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
 var array<name> EffectNamesToRemove;
-var bool        bCleanse;               //  Indicates the effect was removed "safely" for gameplay purposes so any bad "wearing off" effects should not trigger
-                                        //  e.g. Bleeding Out normally kills the soldier it is removed from, but if cleansed, it won't.
-var bool        bCheckSource;           //  Match the source of each effect to the target of this one, rather than the target.
+var bool bCleanse;
+var bool bCheckSource;
 
 simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
@@ -47,7 +47,7 @@ simulated function AddX2ActionsForVisualization(XComGameState VisualizeGameState
         return;
     }
 
-    //  We are assuming that any removed effects were cleansed by this RemoveEffects. If this turns out to not be a good assumption, something will have to change.
+    // We are assuming that any removed effects were removed by *this* RemoveEffects. If this turns out to not be a good assumption, something will have to change.
     foreach VisualizeGameState.IterateByClassType(class'XComGameState_Effect', EffectState)
     {
         if (EffectState.bRemoved)

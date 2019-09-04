@@ -92,8 +92,6 @@ static function X2WeaponTemplate CreatePistolBase(name TemplateName, int Tier)
     Template.fKnockbackDamageRadius = 0.0f;
     Template.DamageTypeTemplateName = class'X2Item_SpookDamageTypes'.const.PrecisionProjectileDamageTypeName;
 
-    //Template.OverwatchActionPoint = class'X2CharacterTemplateManager'.default.PistolOverwatchReserveActionPoint;
-
     Template.Abilities.AddItem('StandardShot_NoEnd');
     Template.Abilities.AddItem('Overwatch');
     Template.Abilities.AddItem('OverwatchShot');
@@ -104,40 +102,9 @@ static function X2WeaponTemplate CreatePistolBase(name TemplateName, int Tier)
     Template.SetUIStatMarkup(class'XLocalizedData'.default.MobilityLabel, eStat_Mobility, default.PISTOL_MOBILITY_BONUS);
 
     Template.UIArmoryCameraPointTag = 'UIPawnLocation_WeaponUpgrade_AssaultRifle';
-    //Template.SetAnimationNameForAbility('FanFire', 'FF_FireMultiShotConvA');
 
     return Template;
 }
-
-//static function MakeBuildable(X2WeaponTemplate Template, name RequiredTech, int SupplyCost, int AlloyCost, int CrystalCost)
-//{
-//    local ArtifactCost Supplies, Alloys, Crystals;
-//
-//    Template.StartingItem = false;
-//    Template.CanBeBuilt = true;
-//    Template.bInfiniteItem = false;
-//
-//    Template.Requirements.RequiredTechs.AddItem(RequiredTech); // LaserWeapons, MagnetizedWeapons, PlasmaRifle
-//
-//    if (SupplyCost > 0)
-//    {
-//        Supplies.ItemTemplateName = 'Supplies';
-//        Supplies.Quantity = SupplyCost;
-//        Template.Cost.ResourceCosts.AddItem(Supplies);
-//    }
-//    if (AlloyCost > 0)
-//    {
-//        Alloys.ItemTemplateName = 'AlienAlloy';
-//        Alloys.Quantity = AlloyCost;
-//        Template.Cost.ResourceCosts.AddItem(Alloys);
-//    }
-//    if (CrystalCost > 0)
-//    {
-//        Crystals.ItemTemplateName = 'EleriumDust';
-//        Crystals.Quantity = CrystalCost;
-//        Template.Cost.ResourceCosts.AddItem(Crystals);
-//    }
-//}
 
 static function X2DataTemplate CreatePistolCV()
 {
@@ -157,9 +124,7 @@ static function X2DataTemplate CreatePistolCV()
     Template.iEnvironmentDamage = default.PISTOL_CONVENTIONAL_IENVIRONMENTDAMAGE;
     Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_CONVENTIONAL_DAMAGE);
 
-    // This all the resources; sounds, animations, models, physics, the works.
     Template.GameArchetype = "Spook.WP_SpookPistol_CV";
-
 
     return Template;
 }
@@ -184,7 +149,6 @@ static function X2DataTemplate CreatePistolLS()
 
     Template.GameArchetype = "LWPistol_LS.Archetype.WP_Pistol_LS";
 
-
     return Template;
 }
 
@@ -208,7 +172,6 @@ static function X2DataTemplate CreatePistolMG()
 
     Template.GameArchetype = "WP_Pistol_MG.WP_Pistol_MG";
 
-
     return Template;
 }
 
@@ -231,7 +194,6 @@ static function X2DataTemplate CreatePistolCG()
     Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_COIL_DAMAGE);
 
     Template.GameArchetype = "LWPistol_CG.Archetypes.WP_Pistol_CG";
-
 
     return Template;
 }

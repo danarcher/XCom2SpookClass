@@ -1,6 +1,6 @@
 [Spook X2SoldierClassTemplate]
 +DisplayName="Spook"
-ClassSummary="Spooks conduct black bag operations in enemy territory."
+ClassSummary="Spooks conduct black bag operations in enemy territory. Experts at stealth, they prefer not to engage enemies directly."
 LeftAbilityTreeTitle="Footpad"
 RightAbilityTreeTitle="Diplomat"
 
@@ -17,7 +17,7 @@ LocFlyOverText=Put Down Unit
 [Spook_Dart X2AbilityTemplate]
 LocFriendlyName="Dart"
 LocLongDescription="Fire a dart which causes bleeding. Does not break concealment."
-LocHelpText="Fire a dart at the target which causes bleeding."
+LocHelpText="Fire a dart at the target which causes bleeding. Does not break concealment."
 LocFlyOverText="Dart"
 LocPromotionPopupText="<Bullet/> Cannot be used versus robotic targets."
 
@@ -26,41 +26,42 @@ LocFriendlyName="Wired"
 LocLongDescription="Cannot be panicked, stunned, disoriented or rendered unconscious. Drones can rarely detect you."
 LocHelpText="Cannot be panicked, stunned, disoriented or rendered unconscious. Drones can rarely detect you."
 LocFlyOverText="Wired"
-LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> You cannot be panicked, stunned, disoriented or rendered unconscious.<br/><Bullet/> Drones sensors are scrambled and so can rarely detect you when concealed."
+LocPromotionPopupText="<Bullet/> You cannot be panicked, stunned, disoriented or rendered unconscious.<br/><Bullet/> Drones sensors are scrambled and so can rarely detect you when concealed."
 
 [Spook_Exeunt X2AbilityTemplate]
 LocFriendlyName="Exeunt"
 LocLongDescription="Evac times are reduced by 1 turn for each Spook on a mission, to a minimum of 1 turn. If only Spooks are on a mission, evac is 1 turn."
 LocHelpText=""
 LocFlyOverText="Exeunt"
-LocPromotionPopupText="<Bullet/> Passive effect."
+LocPromotionPopupText=""
 
 [Spook_Veil X2AbilityTemplate]
 LocFriendlyName="Veil"
 LocFlyOverText="Veil"
 LocLongDescription="Enemies' detection range is reduced, depending on your rank."
 LocHelpText="Enemies have greatly reduced detection range against you."
-LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Enemies have a reduced detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence.<br/><Bullet/> The detection range reduction does not apply to ADVENT security towers."
+LocPromotionPopupText="<Bullet/> Enemies have a reduced detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence.<br/><Bullet/> The detection range reduction does not apply to ADVENT security towers."
 
 [Spook_Distract X2AbilityTemplate]
 LocFriendlyName="Distract"
 LocFlyOverText="Distract"
 LocLongDescription="Distract nearby enemies toward a target location. Does not break concealment."
 LocHelpText="Distract nearby enemies toward a target location. Does not break concealment."
-LocPromotionPopupText="<Bullet/> Distracts enemies within a large radius to move towards the centre of that radius.<br/><Bullet/> Lasts for several turns at which point enemies return to their previous behavior.<br/><Bullet/> Does not break concealment.<br/><Bullet/> Enemies already engaged in combat are unaffected."
+LocPromotionPopupText="<Bullet/> Distracts enemies within a large radius to move towards the centre of that radius.<br/><Bullet/> Lasts for several turns, at which time enemies return to their previous behavior.<br/><Bullet/> Does not break concealment.<br/><Bullet/> Enemies already engaged in combat are unaffected."
 
 [SpookThrowDistractGrenade X2AbilityTemplate]
 LocFriendlyName="Distract"
 LocFlyOverText="Distract"
 LocLongDescription="Distract nearby enemies toward a target location. Does not break concealment."
 LocHelpText="Distract nearby enemies toward a target location. Does not break concealment."
+LocPromotionPopupText=""
 
 [Spook_Meld X2AbilityTemplate]
 LocFriendlyName="Meld"
 LocFlyOverText="Meld"
 LocLongDescription="Retain concealment next to high cover and objectives."
-LocHelpText=""
-LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> When in high cover, or next to chests and similar objectives, your concealment cannot be broken from any angle, even by enemies in close proximity."
+LocHelpText="Retain concealment next to high cover and objectives."
+LocPromotionPopupText="<Bullet/> When in high cover, or next to chests and similar objectives, your concealment cannot be broken from any angle, even by enemies in close proximity."
 
 [Spook_Eclipse X2AbilityTemplate]
 LocFriendlyName="Eclipse"
@@ -71,10 +72,10 @@ LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include sci
 
 [Spook_Operator X2AbilityTemplate]
 LocFriendlyName="Operator"
-LocLongDescription="Some tactical environmental actions will not consume an action, break concealment or end your turn."
-LocHelpText="Some tactical environmental actions will not consume an action, break concealment or end your turn."
+LocLongDescription="Some tactical environmental actions will not consume an action or end your turn."
+LocHelpText="Some tactical environmental actions will not consume an action or end your turn."
 LocFlyOverText="Operator"
-LocPromotionPopupText="<Bullet/> Passive effect.<br/><Bullet/> Affects planting X4 charges, opening loot boxes, punching out VIPs, Eclipse, and picking up and putting down bodies."
+LocPromotionPopupText="<Bullet/> Affects planting X4 charges, opening loot boxes, punching out VIPs, and picking up and putting down bodies."
 
 [Spook_Exfil X2AbilityTemplate]
 LocFriendlyName="Exfil"
@@ -92,10 +93,10 @@ LocPromotionPopupText="<Bullet/> The targets return to the Avenger without requi
 
 [Spook_Vanish X2AbilityTemplate]
 LocFriendlyName="Vanish"
-LocLongDescription="Release a smoke cloud, gain concealment and gain a free concealed move action."
-LocHelpText=""
+LocLongDescription="Release a smoke cloud, gain concealment and a free concealed move action."
+LocHelpText="Release a smoke cloud, gain concealment and a free concealed move action."
 LocFlyOverText="Vanish"
-LocPromotionPopupText="<Bullet/> During the concealed bonus move, the soldier cannot be detected by any means. <Bullet/> 2 uses per mission."
+LocPromotionPopupText="<Bullet/> During the concealed bonus move, the soldier cannot be detected by any means.<br/><Bullet/> 2 uses per mission."
 
 [Spook_Dummy0 X2AbilityTemplate]
 LocFriendlyName="Unknown"
