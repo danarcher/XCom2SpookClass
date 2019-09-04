@@ -133,18 +133,8 @@ simulated function DumpResults(string ResultsName, int Number, out EffectResults
 
 simulated function name CheckResult(name Result)
 {
-    // For some reason Context.FindXXXEffectApplyResult (Shooter, Target,
-    // MultiTarget) fail, in fact because (as diagnostic dumps indicate) the
-    // underlying result arrays are empty. The cause has not been established,
-    // though I am mildly and perhaps erroneously suspicious of
-    // X2Ability_AlertMechanics.NewAlertState_BuildVisualization() perhaps
-    // doing something non-obviously dubious with contexts and game states.
-    // However, it turns out that the visualiser(s) added by
-    // X2ffect_(Spook)RemoveEffect (those for the removal of the affects in
-    // question) do adequate checking in any case - so there are no
-    // "I didn't remove this effect, it wasn't there" errors or similar -
-    // so we can just force AA_UnknownError into AA_Success and carry on
-    // regardless, whistling, if disconcerted.
+    // X2Ability_AlertMechanicsNewAlertState_BuildGameState does not correctly
+    // populate effect results, so Context.FindXXXEffectApplyResult fails.
     if (Result == 'AA_UnknownError')
     {
         `SPOOKLOG("Effect result is " $ Result $ ", converting to AA_Success");
