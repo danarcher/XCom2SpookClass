@@ -192,7 +192,8 @@ function XComGameState_Unit TryDetectorSeeingVictim(XComGameState_BaseObject Det
 
     if (Detector == none || Victim == none || GameState == none
         || Detector.ObjectID == Victim.ObjectID
-        || Victim.GetMyTemplate().bIsCosmetic)
+        || Victim.GetMyTemplate().bIsCosmetic
+        || Victim.bRemovedFromPlay)
     {
         return Victim;
     }

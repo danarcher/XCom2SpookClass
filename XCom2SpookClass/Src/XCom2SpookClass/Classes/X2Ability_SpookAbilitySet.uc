@@ -483,21 +483,37 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
 {
     local X2AbilityTemplate                 Template;
     local X2AbilityCost_ActionPoints        ActionPointCost;
-    local array<name>                       SkipExclusions;
-    local X2AbilityMultiTarget_Radius       RadiusMultiTarget;
     local X2Effect_ApplySmokeGrenadeToWorld SmokeEffect;
+    local X2AbilityMultiTarget_Radius       RadiusMultiTarget;
+    local array<name>                       SkipExclusions;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, AbilityName);
     Template.IconImage = IconImage;
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.Hostility = eHostility_Neutral;
+    Template.bDisplayInUITacticalText = true;
+
+    // Cost
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 0; // 1 = require an action point left, 0 = anytime, like Evac.
+    ActionPointCost.bFreeCost = true;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    // Activation
+    Template.bIsPassive = false;
     Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
     Template.bSkipFireAction = true;
-    Template.AbilityTargetStyle = default.SelfTarget;
     Template.AbilityToHitCalc = default.DeadEye;
-    Template.bIsPassive = false;
-    Template.bDisplayInUITacticalText = true;
+    Template.AbilityTargetStyle = default.SelfTarget;
+
+    // Shooter conditions
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);               // Must be alive
+    SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);         // Can be carrying someone
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.ConfusedName);           // Can be disoriented (by a sectoid)
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.DisorientedName);        // Can be disoriented (by something else)
+    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);                     // Can be on fire
+    Template.AddShooterEffectExclusions(SkipExclusions);
 
     RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
     RadiusMultiTarget.bUseWeaponRadius = false;
@@ -505,26 +521,12 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
     RadiusMultiTarget.fTargetRadius = `TILESTOMETERS(SmokeRadius);
     Template.AbilityMultiTargetStyle = RadiusMultiTarget;
 
-    ActionPointCost = new class'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 1;
-    ActionPointCost.bFreeCost = true;
-    Template.AbilityCosts.AddItem(ActionPointCost);
-
-    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);           // Must be alive
-    SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);     // Can be carrying someone
-    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.ConfusedName);       // Can be disoriented (by a sectoid)
-    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.DisorientedName);    // Can be disoriented (by something else)
-    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);                 // Can be on fire
-    Template.AddShooterEffectExclusions(SkipExclusions);
-
     SmokeEffect = new class'X2Effect_ApplySmokeGrenadeToWorld';
     Template.AddTargetEffect(SmokeEffect);
     Template.AddMultiTargetEffect(class'X2Item_DefaultGrenades'.static.SmokeGrenadeEffect());
 
     Template.BuildNewGameStateFn = BuildExfilGameState;
     Template.BuildVisualizationFn = BuildExfilVisualization;
-
-    Template.ActivationSpeech = 'EVAC';
 
     return Template;
 }
@@ -552,8 +554,6 @@ static function X2AbilityTemplate AddExodusAbility()
 
     Template.BuildNewGameStateFn = BuildExodusGameState;
 
-    Template.ActivationSpeech = 'EVAC';
-
     return Template;
 }
 
@@ -575,8 +575,8 @@ static function XComGameState BuildExfilGameState(XComGameStateContext Context)
     Unit = `FindOrAddUnitState(AbilityContext.InputContext.SourceObject.ObjectID, NewGameState);
     if (Unit != none)
     {
-        `XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState); // Before UnitRemovedFromPlay.
-        Unit.EvacuateUnit(NewGameState);
+        //`XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState); // Before UnitRemovedFromPlay.
+        //Unit.EvacuateUnit(NewGameState);
     }
 
     return NewGameState;
@@ -624,9 +624,16 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
     local XComGameStateContext_Ability Context;
     local XComGameState_Ability AbilityState;
     local X2AbilityTemplate AbilityStateTemplate;
-    local VisualizationTrack Track;
+    local VisualizationTrack Track, OtherTrack;
+    local X2Action_PlaySoundAndFlyover SoundAndFlyOver;
+    local X2Action_PlayAnimation PlayAnimation;
     local X2Action_Delay Delay;
+    local X2Action_SpookSetMaterial SetMaterial;
+    local X2Action_SendInterTrackMessage Message;
+    local X2Action_WaitForAbilityEffect Wait;
+    local int TrackIndex, ActionIndex;
 
+    //  Start off with the defaults.
     TypicalAbility_BuildVisualization(VisualizeGameState, OutVisualizationTracks);
 
     History = `XCOMHISTORY;
@@ -634,10 +641,75 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
     AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID));
     AbilityStateTemplate = AbilityState.GetMyTemplate();
 
+    // Find and remove the shooter's visualization track.
     class'SpookRedAlertVisualizer'.static.FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityStateTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
 
+    // Announce their exit.
+    SoundAndFlyOver = X2Action_PlaySoundAndFlyover(class'X2Action_PlaySoundAndFlyover'.static.AddToVisualizationTrack(Track, Context));
+    SoundAndFlyOver.SetSoundAndFlyOverParameters(None, "", 'EVAC', eColor_Good);
+    Track.TrackActions.RemoveItem(SoundAndFlyOver);
+    Track.TrackActions.InsertItem(ActionIndex++, SoundAndFlyOver);
+
+    // First play the halt animation.
+    PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTrack(Track, Context));
+    PlayAnimation.Params.AnimName = 'HL_SignalHaltA';
+    Track.TrackActions.RemoveItem(PlayAnimation);
+    Track.TrackActions.InsertItem(ActionIndex++, PlayAnimation);
+
+    // Then wait a while.
+    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
+    Delay.Duration = 1.0;
+    Delay.bIgnoreZipMode = true;
+    Track.TrackActions.RemoveItem(Delay);
+    Track.TrackActions.InsertItem(ActionIndex++, Delay);
+
+    // Set material.
+    SetMaterial = X2Action_SpookSetMaterial(class'X2Action_SpookSetMaterial'.static.AddToVisualizationTrack(Track, Context));
+    Track.TrackActions.RemoveItem(SetMaterial);
+    Track.TrackActions.InsertItem(ActionIndex++, SetMaterial);
+
+//    // Then wait a while.
+//    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
+//    Delay.Duration = 3.0;
+//    Delay.bIgnoreZipMode = true;
+//    Track.TrackActions.RemoveItem(Delay);
+//    Track.TrackActions.InsertItem(ActionIndex++, Delay);
+//
+//    // Reset material.
+//    SetMaterial = X2Action_SpookSetMaterial(class'X2Action_SpookSetMaterial'.static.AddToVisualizationTrack(Track, Context));
+//    SetMaterial.bResetMaterial = true;
+//    Track.TrackActions.RemoveItem(SetMaterial);
+//    Track.TrackActions.InsertItem(ActionIndex++, SetMaterial);
+
+    // Then message other tracks, which will wait for this before they start.
+    for (TrackIndex = 0; TrackIndex < OutVisualizationTracks.Length; ++TrackIndex)
+    {
+        OtherTrack = OutVisualizationTracks[TrackIndex];
+
+        if (OtherTrack.StateObject_NewState.ObjectID == Track.StateObject_NewState.ObjectID)
+        {
+            continue;
+        }
+
+        Message = X2Action_SendInterTrackMessage(class'X2Action_SendInterTrackMessage'.static.AddToVisualizationTrack(Track, Context));
+        Message.SendTrackMessageToRef.ObjectID = OtherTrack.StateObject_NewState.ObjectID;
+        Track.TrackActions.RemoveItem(Message);
+        Track.TrackActions.InsertItem(ActionIndex++, Message);
+
+        Wait = X2Action_WaitForAbilityEffect(class'X2Action_WaitForAbilityEffect'.static.AddToVisualizationTrack(OtherTrack, Context));
+        Wait.bWaitingForActionMessage = true;
+        OtherTrack.TrackActions.RemoveItem(Wait);
+        OtherTrack.TrackActions.InsertItem(0, Wait);
+
+        OutVisualizationTracks[TrackIndex] = OtherTrack;
+    }
+
+    // Finally, wait a while.
     Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
     Delay.Duration = 2.0;
+    Delay.bIgnoreZipMode = true;
+
+    // Re/add the (new, or removed) shooter track.
     OutVisualizationTracks.AddItem(Track);
 }
 
