@@ -1,20 +1,33 @@
 // Adapted from code by Amineri (Pavonis Interactive)
 class XComGameState_Effect_SpookTemporaryItem extends XComGameState_BaseObject dependson(X2Effect_SpookTemporaryItem);
 
+`include(XCom2SpookClass\Src\Spook.uci)
+
 var array<StateObjectReference> TemporaryItems; // temporary items granted only for the duration of the tactical mission
-//var array<UnequippedItem> UnequippedItems;  // items that are removed only for the duration of the tactical mission
 
 function EventListenerReturn OnTacticalGameEnd(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
+    CleanUpTemporaryItems(none);
+    return ELR_NoInterrupt;
+}
+
+function CleanUpTemporaryItems(XComGameState NewGameState)
+{
     local XComGameStateHistory      History;
-    local XComGameState             NewGameState;
     local StateObjectReference      ItemRef;
     local XComGameState_Item        ItemState;
     local XComGameState_Unit        UnitState;
+    local Object                    ThisObj;
+    local bool                      bSubmit;
 
     History = `XCOMHISTORY;
-    //XComHQ = `XCOMHQ;
-    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Temporary Item Cleanup");
+
+    if (NewGameState == none)
+    {
+        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Temporary Item Cleanup");
+        bSubmit = true;
+    }
+
     foreach TemporaryItems(ItemRef)
     {
         if (ItemRef.ObjectID > 0)
@@ -22,22 +35,28 @@ function EventListenerReturn OnTacticalGameEnd(Object EventData, Object EventSou
             ItemState = XComGameState_Item(History.GetGameStateForObjectID(ItemRef.ObjectID));
             if (ItemState != none)
             {
-                UnitState = XComGameState_Unit(History.GetGameStateForObjectID(ItemState.OwnerStateObject.ObjectID));
+                UnitState = `FindOrAddUnitState(ItemState.OwnerStateObject.ObjectID, NewGameState);
                 if (UnitState != none)
+                {
+                    // Technically this tramples ItemState, but it may be a read-only copy.
                     UnitState.RemoveItemFromInventory(ItemState); // Remove the item from the unit's inventory
+                }
 
                 // Remove the temporary item's gamestate object from history
                 NewGameState.RemoveStateObject(ItemRef.ObjectID);
             }
         }
     }
-    // Remove this gamestate object from history
+
+    // Remove ourselves from history
     NewGameState.RemoveStateObject(ObjectID);
 
-    //if( NewGameState.GetNumGameStateObjects() > 0 )
-        `GAMERULES.SubmitGameState(NewGameState);
-    //else
-        //History.CleanupPendingGameState(NewGameState);
+    // We don't need to receive further events
+    ThisObj = self;
+    `XEVENTMGR.UnRegisterFromAllEvents(ThisObj);
 
-    return ELR_NoInterrupt;
+    if (bSubmit)
+    {
+        `TACTICALRULES.SubmitGameState(NewGameState);
+    }
 }

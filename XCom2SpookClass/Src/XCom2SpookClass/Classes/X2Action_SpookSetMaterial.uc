@@ -79,6 +79,6 @@ Begin:
 
 defaultproperties
 {
-    MaterialToSet="Spook.M_Meld3"
+    MaterialToSet="Spook.M_Meld5"
     bSaveMaterials=true
 }

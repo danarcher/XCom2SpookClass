@@ -645,74 +645,42 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     // as usual.
     //
     // We officially handle this in DetectionManager.BreaksConcealment().
-    // But this doesn't affect concealment-breaking *visuals* (tiles, and
-    // raised-on-a-stick stepping-on-this-tile-is-bad indicators such as those
-    // built in and further provided by e.g. the "Gotcha Again" mod). When
-    // it's time to move a spook, we want zero red tiles around these units,
-    // and no on-a-stick indicators if we walk right up to them.
+    // But this doesn't affect concealment-breaking *visuals* (tiles and Gotcha
+    // Again indicators).  When it's time to move a spook, we don't want these
+    // indicators visible.
     //
-    // So, we use special abilities to debuff WIRED_NOT_REVEALED_BY_CLASSES
-    // units during the spook unit's turn; specifically we toggle on the debuff
-    // when the spook becomes active, and toggle it off again if the user tabs
-    // to another unit. This is highly unusual since, like console cheats, we're
-    // changing the game state (applying effects to units) outside of normal
-    // unit actions, and all of this is written into game state history.
-    //
-    // Only spooks possess these special abilities, only triggered by us not
-    // the player (who isn't even aware they exist), and they go hand in hand
-    // with the Wired ability, though they're only triggered by us, in response
-    // to active unit changes as the player tabs between units.
-    //
-    // This should stop all visual indicators as we want, which it does.
-    // It should also mean our GetConcealmentDetectionDistanceMeters() sees
-    // zero for eStat_DetectionRadius during our turn when moving a spook, which
-    // didn't appear to be the case in brief testing, however, we don't care,
-    // since we deliberately handle the mechanic in
-    // DetectionManager.BreaksConcealment() anyway (and were doing so before we
-    // started fretting about visuals) and hence avoid relying on this radius
-    // being zero during the spook's turn, other than to suppress
-    // concealment-breaking visuals, which is working fine.
-    //
-    // We can't and don't want to rely on the enemy detection radius being zero
-    // during the enemy turn, "can't" because a) it may be bugged, see above and
-    // "don't want to" because b) we don't want this zero radius applying to all
-    // units. So...
-    //
-    // We've also set these debuffs to expire at the end of the turn (via
-    // BuildPersistentEffect parameters), so that eStat_DetectionRadius returns
-    // to normal, in case the game gets over its apparent radius bug by the
-    // following turn. We want it normal anyway, so that *other* (ie. non-spook)
-    // units *can* be detected by WIRED_NOT_REVEALED_BY_CLASSES units (we don't
-    // want their detection radius zero other than when we're moving a spook),
-    // but we *also* don't want spooks detected by WIRED_NOT_REVEALED_BY_CLASSES
-    // units, so it's handy our DetectionManager.BreaksConcealment() code is
-    // handling that anyway.
-    //
-    // All in all, if we didn't care about visuals, we could remove these
-    // special abilities completely and rely on
-    // DetectionManager.BreaksConcealment() to handle this 100% reliably.
-    //
-    // Yes, it's confounding. This game behaves strangely when modded.
-    //
-    // Addendum: I may have found the bug of which I accused the game. If the
-    // game isn't capping eStat_DetectionRadius at a minimum of zero, then
-    // actually it's worth noting what we did is add a massive negative
-    // modifier. This will very, very likely make it massively negative.
-    // Since we *square it* and then test whether the square of the unit's
-    // distance is less than this, and the squaring removes the sign, we
-    // may have tripped ourselves up! I've hence put a fix into the function
-    // GetConcealmentDetectionDistanceMeters() to clamp the value at zero if
-    // below zero, via FMax(n, 0). Cough.
-    local XComGameState GameState;
-    local name ApplyName, CancelName;
+    // Hence we use a special ability to debuff WIRED_NOT_REVEALED_BY_CLASSES
+    // units during the spook unit's turn; specifically we apply a debuff effect
+    // when the spook becomes active, and remove it if the user tabs to another
+    // unit. The debuff also expires at the end of the turn.
+    local XComGameStateHistory History;
+    local XComGameState GameState, NewGameState;
+    local XComGameState_Effect EffectState;
+    local X2Effect_Persistent PersistentEffect;
+    local XComGameState_Unit Unit;
+    local XComGameStateContext_EffectRemoved Context;
+    local name ApplyName;
 
-    ApplyName = class'X2Ability_SpookAbilitySet'.const.WiredNotRevealedByClassesName;
-    CancelName = class'X2Ability_SpookAbilitySet'.const.WiredNotRevealedByClassesCancelName;
-
-    GameState = `XCOMHISTORY.GetGameStateFromHistory(-1);
     `SPOOKLOG("OnActiveUnitChanged");
-    `SPOOKLOG("Triggering event " $ CancelName);
-    `XEVENTMGR.TriggerEvent(CancelName, none, none, GameState);
+    History = `XCOMHISTORY;
+    ApplyName = class'X2Ability_SpookAbilitySet'.const.WiredNotRevealedByClassesName;
+
+    foreach History.IterateByClassType(class'XComGameState_Effect', EffectState)
+    {
+        PersistentEffect = EffectState.GetX2Effect();
+        if (PersistentEffect.EffectName == ApplyName)
+        {
+            Unit = `FindUnitState(EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID, , History);
+            `SPOOKLOG("Removing " $ ApplyName $ " from " $ Unit.GetMyTemplateName() $ " " $ Unit.ObjectID);
+
+            Context = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);
+            NewGameState = History.CreateNewGameState(true, Context);
+            EffectState.RemoveEffect(NewGameState, NewGameState, true);
+            `TACTICALRULES.SubmitGameState(NewGameState);
+        }
+    }
+
+    GameState = History.GetGameStateFromHistory(-1);
     if (NewActiveUnit != none && NewActiveUnit.FindAbility(ApplyName).ObjectID != 0)
     {
         `SPOOKLOG("Triggering event " $ ApplyName $ " for active unit " $ NewActiveUnit.GetMyTemplateName() $ " " $ NewActiveUnit.GetFullName());

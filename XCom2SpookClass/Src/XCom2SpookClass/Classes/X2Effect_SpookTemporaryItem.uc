@@ -331,27 +331,15 @@ function array<X2AbilityTemplate> AddAbilityToUnit(name AbilityName, XComGameSta
 
 simulated function OnEffectRemoved(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState, bool bCleansed, XComGameState_Effect RemovedEffectState)
 {
-    local XComGameState_BaseObject EffectComponent;
-    local XComGameState_Effect_SpookTemporaryItem TempItemComponent;
-    local Object EffectComponentObj;
+    local XComGameState_Effect_SpookTemporaryItem EffectComponent;
 
     super.OnEffectRemoved(ApplyEffectParameters, NewGameState, bCleansed, RemovedEffectState);
 
     EffectComponent = GetEffectComponent(RemovedEffectState);
-    if (EffectComponent == none)
-        return;
-
-    TempItemComponent = XComGameState_Effect_SpookTemporaryItem(EffectComponent);
-    if (TempItemComponent == none)
-        return;
-
-    //manually clean up the temporary items
-    TempItemComponent.OnTacticalGameEnd(none, none, none, '');
-
-    EffectComponentObj = EffectComponent;
-    `XEVENTMGR.UnRegisterFromAllEvents(EffectComponentObj);
-
-    NewGameState.RemoveStateObject(EffectComponent.ObjectID);
+    if (EffectComponent != none)
+    {
+        EffectComponent.CleanUpTemporaryItems(NewGameState);
+    }
 }
 
 defaultProperties

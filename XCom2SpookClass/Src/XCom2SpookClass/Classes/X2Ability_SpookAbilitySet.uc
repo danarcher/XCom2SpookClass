@@ -26,6 +26,7 @@ var config bool DISTRACT_EXCLUDE_RED_ALERT;
 var config int VANISH_CHARGES;
 var config float VANISH_RADIUS;
 
+var config float EXFIL_RADIUS;
 var config float EXODUS_RADIUS;
 
 var config WeaponDamageValue DART_CONVENTIONAL_DAMAGE;
@@ -48,7 +49,6 @@ const WiredAbilityName = 'Spook_Wired';
 
 // These names are used for related abilities, effects, and events!
 const WiredNotRevealedByClassesName = 'Spook_WiredNotRevealedByClasses';
-const WiredNotRevealedByClassesCancelName = 'Spook_WiredNotRevealedByClassesCancel';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -56,7 +56,6 @@ static function array<X2DataTemplate> CreateTemplates()
 
     Templates.AddItem(AddWiredAbility());
     Templates.AddItem(AddWiredNotRevealedByClassesAbility());
-    Templates.AddItem(AddWiredNotRevealedByClassesCancelAbility());
     Templates.AddItem(AddVeilAbility());
     Templates.AddItem(AddDistractAbility());
     Templates.AddItem(AddDistractThrowGrenadeAbility());
@@ -139,7 +138,6 @@ static function X2AbilityTemplate AddWiredAbility()
     Template.AddTargetEffect(ImmunityEffect);
 
     Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesName);
-    Template.AdditionalAbilities.AddItem(WiredNotRevealedByClassesCancelName);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -187,48 +185,6 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
     DetectionChangeEffect.AddPersistentStatChange(eStat_DetectionRadius, -100);
     DetectionChangeEffect.SetDisplayInfo(ePerkBuff_Penalty, default.WiredNotRevealedByClassesFriendlyName, default.WiredNotRevealedByClassesHelpText, "img:///UILibrary_PerkIcons.UIPerk_adventpsiwitch_confuse");
     Template.AddTargetEffect(DetectionChangeEffect);
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddWiredNotRevealedByClassesCancelAbility()
-{
-    local X2AbilityTemplate                 Template;
-    local X2AbilityTrigger_EventListener    EventTrigger;
-    local X2Condition_UnitEffects           TargetEffectCondition;
-    local X2Effect_RemoveEffects            RemoveEffects;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesCancelName);
-
-    EventTrigger = new class'X2AbilityTrigger_EventListener';
-    EventTrigger.ListenerData.EventID = WiredNotRevealedByClassesCancelName;
-    EventTrigger.ListenerData.EventFn = class'XComGameState_Ability'.static.SolaceCleanseListener; // Handy.
-    EventTrigger.ListenerData.Filter = eFilter_None;
-    EventTrigger.ListenerData.Deferral = ELD_Immediate;
-
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
-    Template.Hostility = eHostility_Neutral;
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
-    Template.AbilityToHitCalc = default.DeadEye;
-    Template.AbilityTargetStyle = default.SimpleSingleTarget;
-    Template.AbilityTriggers.AddItem(EventTrigger);
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-
-    // Don't care if we're dead.
-    //Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
-    AbilityRequiresSpookShooter(Template);
-
-    TargetEffectCondition = new class'X2Condition_UnitEffects';
-    TargetEffectCondition.AddRequireEffect(WiredNotRevealedByClassesName, 'AA_UnitDetectionUnchanged');
-    Template.AbilityTargetConditions.AddItem(TargetEffectCondition);
-
-    RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.EffectNamesToRemove.AddItem(WiredNotRevealedByClassesName);
-    Template.AddTargetEffect(RemoveEffects);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 
@@ -445,6 +401,7 @@ static function X2AbilityTemplate AddVanishAbility()
     RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
     RadiusMultiTarget.bUseWeaponRadius = false;
     RadiusMultiTarget.bUseSourceWeaponLocation = false;
+    RadiusMultiTarget.bIgnoreBlockingCover = true;
     RadiusMultiTarget.fTargetRadius = `TILESTOMETERS(default.VANISH_RADIUS);
     Template.AbilityMultiTargetStyle = RadiusMultiTarget;
 
@@ -476,16 +433,24 @@ static function X2AbilityTemplate AddVanishAbility()
 
 static function X2AbilityTemplate AddExfilAbility()
 {
-    return BuildExfilAbility('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_launch", default.VANISH_RADIUS);
+    return BuildExfilAbility('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_launch", default.EXFIL_RADIUS);
+}
+
+static function X2AbilityTemplate AddExodusAbility()
+{
+    return BuildExfilAbility('Spook_Exodus', "img:///UILibrary_PerkIcons.UIPerk_flight", default.EXODUS_RADIUS);
 }
 
 static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string IconImage, float SmokeRadius)
 {
     local X2AbilityTemplate                 Template;
     local X2AbilityCost_ActionPoints        ActionPointCost;
-    local X2Effect_ApplySmokeGrenadeToWorld SmokeEffect;
+    local X2Condition_UnitProperty          MultiTargetPropertyCondition;
+    local X2Condition_AbilityProperty       MultiTargetEvacCondition;
     local X2AbilityMultiTarget_Radius       RadiusMultiTarget;
     local array<name>                       SkipExclusions;
+    local X2Effect_ApplySmokeGrenadeToWorld SmokeEffect;
+    local X2Effect_PersistentStatChange     SightRadiusEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, AbilityName);
     Template.IconImage = IconImage;
@@ -507,6 +472,13 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
     Template.AbilityToHitCalc = default.DeadEye;
     Template.AbilityTargetStyle = default.SelfTarget;
 
+    RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
+    RadiusMultiTarget.bUseWeaponRadius = false;
+    RadiusMultiTarget.bUseSourceWeaponLocation = false;
+    RadiusMultiTarget.bIgnoreBlockingCover = true;
+    RadiusMultiTarget.fTargetRadius = `TILESTOMETERS(SmokeRadius);
+    Template.AbilityMultiTargetStyle = RadiusMultiTarget;
+
     // Shooter conditions
     Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);               // Must be alive
     SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);         // Can be carrying someone
@@ -514,30 +486,6 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
     SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.DisorientedName);        // Can be disoriented (by something else)
     SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);                     // Can be on fire
     Template.AddShooterEffectExclusions(SkipExclusions);
-
-    RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
-    RadiusMultiTarget.bUseWeaponRadius = false;
-    RadiusMultiTarget.bUseSourceWeaponLocation = false;
-    RadiusMultiTarget.fTargetRadius = `TILESTOMETERS(SmokeRadius);
-    Template.AbilityMultiTargetStyle = RadiusMultiTarget;
-
-    SmokeEffect = new class'X2Effect_ApplySmokeGrenadeToWorld';
-    Template.AddTargetEffect(SmokeEffect);
-    Template.AddMultiTargetEffect(class'X2Item_DefaultGrenades'.static.SmokeGrenadeEffect());
-
-    Template.BuildNewGameStateFn = BuildExfilGameState;
-    Template.BuildVisualizationFn = BuildExfilVisualization;
-
-    return Template;
-}
-
-static function X2AbilityTemplate AddExodusAbility()
-{
-    local X2AbilityTemplate Template;
-    local X2Condition_UnitProperty MultiTargetPropertyCondition;
-    local X2Condition_AbilityProperty MultiTargetEvacCondition;
-
-    Template = BuildExfilAbility('Spook_Exodus', "img:///UILibrary_PerkIcons.UIPerk_flight", default.EXODUS_RADIUS);
 
     // Only evac living, friendly player-controlled units.
     MultiTargetPropertyCondition = new class'X2Condition_UnitProperty';
@@ -552,7 +500,20 @@ static function X2AbilityTemplate AddExodusAbility()
     MultiTargetEvacCondition.OwnerHasSoldierAbilities.AddItem('Evac');
     Template.AbilityMultiTargetConditions.AddItem(MultiTargetEvacCondition);
 
-    Template.BuildNewGameStateFn = BuildExodusGameState;
+    SmokeEffect = new class'X2Effect_ApplySmokeGrenadeToWorld';
+    Template.AddTargetEffect(SmokeEffect);
+    Template.AddMultiTargetEffect(class'X2Item_DefaultGrenades'.static.SmokeGrenadeEffect());
+
+    // Compensate for a vanilla bug which leaves evacuated units with vision of the area they left.
+    SightRadiusEffect = new class'X2Effect_PersistentStatChange';
+    SightRadiusEffect.DuplicateResponse = eDupe_Ignore;
+    SightRadiusEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
+    SightRadiusEffect.AddPersistentStatChange(eStat_SightRadius, -100);
+    Template.AddTargetEffect(SightRadiusEffect);
+    Template.AddMultiTargetEffect(SightRadiusEffect);
+
+    Template.BuildNewGameStateFn = BuildExfilGameState;
+    Template.BuildVisualizationFn = BuildExfilVisualization;
 
     return Template;
 }
@@ -562,60 +523,49 @@ static function XComGameState BuildExfilGameState(XComGameStateContext Context)
     local XComGameStateHistory History;
     local XComGameState NewGameState;
     local XComGameStateContext_Ability AbilityContext;
-    local XComGameState_Unit Unit;
     local XComGameState_Ability AbilityState;
+    local StateObjectReference UnitRef;
+    local XComGameState_Unit Unit;
+    local array<int> EvacObjectIDs;
+    local int EvacObjectID;
 
     History = `XCOMHISTORY;
-    NewGameState = History.CreateNewGameState(true, Context);
     AbilityContext = XComGameStateContext_Ability(Context);
     AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
 
-    TypicalAbility_FillOutGameState(NewGameState);
-
-    Unit = `FindOrAddUnitState(AbilityContext.InputContext.SourceObject.ObjectID, NewGameState);
-    if (Unit != none)
+    EvacObjectIDs.AddItem(AbilityContext.InputContext.SourceObject.ObjectID);
+    foreach AbilityContext.InputContext.MultiTargets(UnitRef)
     {
-        //`XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState); // Before UnitRemovedFromPlay.
-        //Unit.EvacuateUnit(NewGameState);
+        if (EvacObjectIDs.Find(UnitRef.ObjectID) == INDEX_NONE)
+        {
+            EvacObjectIDs.AddItem(UnitRef.ObjectID);
+        }
     }
+
+    // We can only safely evacuate one unit per game-state without issues.
+    // So, we evacuate each unit in its own game state.
+    foreach EvacObjectIDs(EvacObjectID)
+    {
+        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Per-Unit Evac");
+        Unit = `FindOrAddUnitState(EvacObjectID, NewGameState);
+        `XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState);
+        Unit.EvacuateUnit(NewGameState);
+        Unit.SetIndividualConcealment(false, NewGameState);
+        `TACTICALRULES.SubmitGameState(NewGameState);
+    }
+
+    // Then the ability runs in another new game state.
+    NewGameState = History.CreateNewGameState(true, Context);
+    TypicalAbility_FillOutGameState(NewGameState);
 
     return NewGameState;
 }
 
-static function XComGameState BuildExodusGameState(XComGameStateContext Context)
+static function EvacuateUnitAddingToGameState(XComGameState_Unit Unit, XComGameState NewGameState, XComGameState_Ability AbilityState)
 {
-    local XComGameStateHistory History;
-    local XComGameState NewGameState;
-    local XComGameStateContext_Ability AbilityContext;
-    local StateObjectReference UnitRef;
-    local XComGameState_Unit Unit;
-    local XComGameState_Ability AbilityState;
-
-    History = `XCOMHISTORY;
-    NewGameState = History.CreateNewGameState(true, Context);
-    AbilityContext = XComGameStateContext_Ability(Context);
-    AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
-
-    TypicalAbility_FillOutGameState(NewGameState);
-
-    Unit = `FindOrAddUnitState(AbilityContext.InputContext.SourceObject.ObjectID, NewGameState);
-    if (Unit != none)
-    {
-        `XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState); // Before UnitRemovedFromPlay.
-        Unit.EvacuateUnit(NewGameState);
-    }
-
-    foreach AbilityContext.InputContext.MultiTargets(UnitRef)
-    {
-        Unit = `FindOrAddUnitState(UnitRef.ObjectID, NewGameState);
-        if (Unit != none && !Unit.bRemovedFromPlay)
-        {
-            `XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState); // Before UnitRemovedFromPlay.
-            Unit.EvacuateUnit(NewGameState);
-        }
-    }
-
-    return NewGameState;
+    Unit.EvacuateUnit(NewGameState);                    // Adds to NewGameState, along with any carried unit.
+    Unit.SetIndividualConcealment(false, NewGameState); // Concealment bug workaround.
+    //Unit.SetCurrentStat(eStat_SightRadius, 0);        // Sight bug workaround (introduces problems later).
 }
 
 function BuildExfilVisualization(XComGameState VisualizeGameState, out array<VisualizationTrack> OutVisualizationTracks)
@@ -627,11 +577,12 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
     local VisualizationTrack Track, OtherTrack;
     local X2Action_PlaySoundAndFlyover SoundAndFlyOver;
     local X2Action_PlayAnimation PlayAnimation;
+    local X2Action_SpookPlayAkEvent PlayAkEvent;
     local X2Action_Delay Delay;
-    local X2Action_SpookSetMaterial SetMaterial;
     local X2Action_SendInterTrackMessage Message;
     local X2Action_WaitForAbilityEffect Wait;
-    local int TrackIndex, ActionIndex;
+    local int TrackIndex, ActionIndex, TargetIndex;
+    local XComGameState_Unit OtherUnit;
 
     //  Start off with the defaults.
     TypicalAbility_BuildVisualization(VisualizeGameState, OutVisualizationTracks);
@@ -641,76 +592,119 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
     AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID));
     AbilityStateTemplate = AbilityState.GetMyTemplate();
 
-    // Find and remove the shooter's visualization track.
+    // Find and remove the shooter's visualization track; we'll add it (back) later once modified.
     class'SpookRedAlertVisualizer'.static.FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityStateTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
 
-    // Announce their exit.
-    SoundAndFlyOver = X2Action_PlaySoundAndFlyover(class'X2Action_PlaySoundAndFlyover'.static.AddToVisualizationTrack(Track, Context));
+    // Ensure we have tracks for everyone else, adding them (back).
+    for (TargetIndex = 0; TargetIndex < Context.InputContext.MultiTargets.Length; ++TargetIndex)
+    {
+        class'SpookRedAlertVisualizer'.static.FindAndRemoveOrCreateTrackFor(Context.InputContext.MultiTargets[TargetIndex].ObjectID, AbilityStateTemplate, VisualizeGameState, History, OutVisualizationTracks, OtherTrack);
+        OutVisualizationTracks.AddItem(OtherTrack);
+    }
+
+    // Announce the exit.
+    SoundAndFlyOver = X2Action_PlaySoundAndFlyover(InsertTrackAction(Track, ActionIndex++, class'X2Action_PlaySoundAndFlyover', Context));
     SoundAndFlyOver.SetSoundAndFlyOverParameters(None, "", 'EVAC', eColor_Good);
-    Track.TrackActions.RemoveItem(SoundAndFlyOver);
-    Track.TrackActions.InsertItem(ActionIndex++, SoundAndFlyOver);
 
-    // First play the halt animation.
-    PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTrack(Track, Context));
+    // First, the master track plays the halt animation.
+    PlayAnimation = X2Action_PlayAnimation(InsertTrackAction(Track, ActionIndex++, class'X2Action_PlayAnimation', Context));
     PlayAnimation.Params.AnimName = 'HL_SignalHaltA';
-    Track.TrackActions.RemoveItem(PlayAnimation);
-    Track.TrackActions.InsertItem(ActionIndex++, PlayAnimation);
 
-    // Then wait a while.
-    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
-    Delay.Duration = 1.0;
-    Delay.bIgnoreZipMode = true;
-    Track.TrackActions.RemoveItem(Delay);
-    Track.TrackActions.InsertItem(ActionIndex++, Delay);
-
-    // Set material.
-    SetMaterial = X2Action_SpookSetMaterial(class'X2Action_SpookSetMaterial'.static.AddToVisualizationTrack(Track, Context));
-    Track.TrackActions.RemoveItem(SetMaterial);
-    Track.TrackActions.InsertItem(ActionIndex++, SetMaterial);
-
-//    // Then wait a while.
-//    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
-//    Delay.Duration = 3.0;
-//    Delay.bIgnoreZipMode = true;
-//    Track.TrackActions.RemoveItem(Delay);
-//    Track.TrackActions.InsertItem(ActionIndex++, Delay);
-//
-//    // Reset material.
-//    SetMaterial = X2Action_SpookSetMaterial(class'X2Action_SpookSetMaterial'.static.AddToVisualizationTrack(Track, Context));
-//    SetMaterial.bResetMaterial = true;
-//    Track.TrackActions.RemoveItem(SetMaterial);
-//    Track.TrackActions.InsertItem(ActionIndex++, SetMaterial);
-
-    // Then message other tracks, which will wait for this before they start.
+    // Sync all tracks with where the master is now, including smoke tracks, since they can start now.
     for (TrackIndex = 0; TrackIndex < OutVisualizationTracks.Length; ++TrackIndex)
     {
         OtherTrack = OutVisualizationTracks[TrackIndex];
 
         if (OtherTrack.StateObject_NewState.ObjectID == Track.StateObject_NewState.ObjectID)
         {
+            // The master track does not message itself.
             continue;
         }
 
-        Message = X2Action_SendInterTrackMessage(class'X2Action_SendInterTrackMessage'.static.AddToVisualizationTrack(Track, Context));
+        // Master track sends message to this other track.
+        Message = X2Action_SendInterTrackMessage(InsertTrackAction(Track, ActionIndex++, class'X2Action_SendInterTrackMessage', Context));
         Message.SendTrackMessageToRef.ObjectID = OtherTrack.StateObject_NewState.ObjectID;
-        Track.TrackActions.RemoveItem(Message);
-        Track.TrackActions.InsertItem(ActionIndex++, Message);
 
-        Wait = X2Action_WaitForAbilityEffect(class'X2Action_WaitForAbilityEffect'.static.AddToVisualizationTrack(OtherTrack, Context));
+        // Other track waits for message from master track, then start.
+        Wait = X2Action_WaitForAbilityEffect(InsertTrackAction(OtherTrack, 0, class'X2Action_WaitForAbilityEffect', Context));
         Wait.bWaitingForActionMessage = true;
-        OtherTrack.TrackActions.RemoveItem(Wait);
-        OtherTrack.TrackActions.InsertItem(0, Wait);
 
+        // If the other track is a unit, it cloaks as the first action after the master track message.
+        OtherUnit = `FindUnitState(OtherTrack.StateObject_NewState.ObjectID, VisualizeGameState);
+        if (OtherUnit != none)
+        {
+            // Wait for smoke
+            Delay = X2Action_Delay(InsertTrackAction(OtherTrack, 1, class'X2Action_Delay', Context));
+            Delay.Duration = 1.5;
+            Delay.bIgnoreZipMode = true;
+
+            // Cloak.
+            InsertTrackAction(OtherTrack, 2, class'X2Action_SpookSetMaterial', Context);
+
+            // Wait for cloak.
+            Delay = X2Action_Delay(InsertTrackAction(OtherTrack, 3, class'X2Action_Delay', Context));
+            Delay.Duration = 1.5;
+            Delay.bIgnoreZipMode = true;
+        }
+
+        // Replace the modified track.
         OutVisualizationTracks[TrackIndex] = OtherTrack;
     }
 
-    // Finally, wait a while.
-    Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(Track, Context));
-    Delay.Duration = 2.0;
+    // Master track waits for smoke.
+    Delay = X2Action_Delay(InsertTrackAction(Track, ActionIndex++, class'X2Action_Delay', Context));
+    Delay.Duration = 1.5;
     Delay.bIgnoreZipMode = true;
 
-    // Re/add the (new, or removed) shooter track.
+    // Master track cloaks.
+    InsertTrackAction(Track, ActionIndex++, class'X2Action_SpookSetMaterial', Context);
+    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, ActionIndex++, class'X2Action_SpookPlayAkEvent', Context));
+    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+
+    // Master track waits for cloak.
+    Delay = X2Action_Delay(InsertTrackAction(Track, ActionIndex++, class'X2Action_Delay', Context));
+    Delay.Duration = 1.5;
+    Delay.bIgnoreZipMode = true;
+
+    // Re/add the (new, or removed) master track now we've made all local changes.
     OutVisualizationTracks.AddItem(Track);
+
+    // Everyone vanishes.
+    for (TrackIndex = 0; TrackIndex < OutVisualizationTracks.Length; ++TrackIndex)
+    {
+        OtherTrack = OutVisualizationTracks[TrackIndex];
+
+        OtherUnit = `FindUnitState(OtherTrack.StateObject_NewState.ObjectID, VisualizeGameState);
+        if (OtherUnit == none)
+        {
+            // Only units.
+            continue;
+        }
+
+        // Hide the pawn explicitly.
+        class'X2Action_RemoveUnit'.static.AddToVisualizationTrack(OtherTrack, Context);
+
+        // Then the master track pauses for effect.
+        if (OtherTrack.StateObject_NewState.ObjectID == Track.StateObject_NewState.ObjectID)
+        {
+            // OtherTrack *is* the master track here; the Track local variable is out of date.
+            Delay = X2Action_Delay(class'X2Action_Delay'.static.AddToVisualizationTrack(OtherTrack, Context));
+            Delay.Duration = 2.0;
+            Delay.bIgnoreZipMode = true;
+        }
+
+        // Replace the modified track.
+        OutVisualizationTracks[TrackIndex] = OtherTrack;
+    }
+}
+
+static function X2Action InsertTrackAction(out VisualizationTrack Track, int Index, class<X2Action> SpawnClass, XComGameStateContext Context)
+{
+    local X2Action Action;
+    Action = SpawnClass.static.AddToVisualizationTrack(Track, Context);
+    Track.TrackActions.RemoveItem(Action);
+    Track.TrackActions.InsertItem(Index, Action);
+    return Action;
 }
 
 // This is mostly the same as the base CarryUnit ability, but with a new name.
