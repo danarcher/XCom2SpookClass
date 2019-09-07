@@ -79,6 +79,6 @@ Begin:
 
 defaultproperties
 {
-    MaterialToSet="Spook.M_Meld5"
+    MaterialToSet="Spook.M_Meld5" // FX_CH_Seeker.M_Seeker_Cloaking_Master
     bSaveMaterials=true
 }

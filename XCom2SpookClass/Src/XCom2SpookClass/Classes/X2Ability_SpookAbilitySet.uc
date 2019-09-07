@@ -23,6 +23,8 @@ var config int DISTRACT_TURNS;
 var config float DISTRACT_MOBILITY_ADJUST;
 var config bool DISTRACT_EXCLUDE_RED_ALERT;
 
+var config bool MELD_SOUND_EFFECTS;
+
 var config int VANISH_CHARGES;
 var config float VANISH_RADIUS;
 
@@ -434,8 +436,11 @@ static function BuildMeldVisualization(XComGameState VisualizeGameState, out arr
 
     // Master track cloaks.
     InsertTrackAction(Track, 1, class'X2Action_SpookSetMaterial', Context);
-    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 2, class'X2Action_SpookPlayAkEvent', Context));
-    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+    if (default.MELD_SOUND_EFFECTS)
+    {
+        PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 2, class'X2Action_SpookPlayAkEvent', Context));
+        PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+    }
 
     // Add the master track now we've made all local changes.
     OutVisualizationTracks.AddItem(Track);
@@ -449,8 +454,11 @@ static function VisualizeMeldEffectRemoved(XComGameState VisualizeGameState, out
     SetMaterial = X2Action_SpookSetMaterial(InsertTrackAction(BuildTrack, 0, class'X2Action_SpookSetMaterial', VisualizeGameState.GetContext()));
     SetMaterial.bResetMaterial = true;
 
-    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(BuildTrack, 1, class'X2Action_SpookPlayAkEvent', VisualizeGameState.GetContext()));
-    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconDeactivate';
+    if (default.MELD_SOUND_EFFECTS)
+    {
+        PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(BuildTrack, 1, class'X2Action_SpookPlayAkEvent', VisualizeGameState.GetContext()));
+        PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconDeactivate';
+    }
 }
 
 static function X2AbilityTemplate AddVanishAbility()
@@ -765,8 +773,11 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
 
     // Master track cloaks.
     InsertTrackAction(Track, ActionIndex++, class'X2Action_SpookSetMaterial', Context);
-    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, ActionIndex++, class'X2Action_SpookPlayAkEvent', Context));
-    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+    if (default.MELD_SOUND_EFFECTS)
+    {
+        PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, ActionIndex++, class'X2Action_SpookPlayAkEvent', Context));
+        PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+    }
 
     // Master track waits for cloak.
     Delay = X2Action_Delay(InsertTrackAction(Track, ActionIndex++, class'X2Action_Delay', Context));
