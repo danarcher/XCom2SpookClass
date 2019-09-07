@@ -715,10 +715,10 @@ function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState
     `SPOOKLOG("HandleMeldAbilityOnPlayerTurnEnd");
 
     GetOwnTile(Unit, Tile);
-    if (IsTileUnbreakablyConcealingForUnit(Unit, Tile, eCBR_EndTurn))
+    if (Unit.IsConcealed() && IsTileUnbreakablyConcealingForUnit(Unit, Tile, eCBR_EndTurn))
     {
         MeldTrigger = `FindAbilityState(Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldTriggerName).ObjectID, GameState);
-        if (MeldTrigger != none && MeldTrigger.CanActivateAbility(Unit,,true) == 'AA_Success')
+        if (MeldTrigger != none)
         {
             `SPOOKLOG("Triggering " $ MeldTrigger.GetMyTemplateName());
             MeldTrigger.AbilityTriggerAgainstSingleTarget(MeldTrigger.OwnerStateObject, false);
