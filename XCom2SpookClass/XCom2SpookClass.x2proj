@@ -7,7 +7,6 @@
     <SteamPublishID>0</SteamPublishID>
     <AssemblyName>XCom2SpookClass</AssemblyName>
     <RootNamespace>XCom2SpookClass</RootNamespace>
-    <ProjectGuid>{32eb891c-dd4f-4965-9e3f-9eb0ab2871cd}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Config" />
@@ -15,9 +14,7 @@
     <Folder Include="Localization" />
     <Folder Include="Media" />
     <Folder Include="Src" />
-    <Folder Include="Src\LW_Tuple\" />
     <Folder Include="Src\LW_Tuple\Classes" />
-    <Folder Include="Src\XCom2SpookClass\" />
     <Folder Include="Src\XCom2SpookClass\Classes" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +50,7 @@
     <Content Include="Notes.txt" />
     <Content Include="Src\LW_Tuple\Classes\LWTuple.uc" />
     <Content Include="Src\Spook.uci" />
+    <Content Include="Src\XCom2SpookClass\Classes\ActorComponent_SpookSavedMaterials.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookDetectionManager.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookHelpers.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookRedAlertVisualizer.uc" />
@@ -60,10 +58,10 @@
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIStrategyMap_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UITacticalHUD_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Ability_SpookAbilitySet.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2Action_SpookPlayAkEvent.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2Action_SpookSetMaterial.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2AIBT_SpookActions.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Condition_SpookEclipse.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Condition_SpookWiredNotRevealedByClasses.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\X2Condition_UnitIsShooter_Spook.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2Condition_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2DownloadableContentInfo_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookBleeding.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Effect_SpookBonusMove.uc" />

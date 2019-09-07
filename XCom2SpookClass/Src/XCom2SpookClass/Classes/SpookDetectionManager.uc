@@ -18,6 +18,7 @@ enum EConcealBreakReason
     eCBR_UnitMoveIntoDetectionRange,
     eCBR_EnemyMoveIntoDetectionRange,
     eCBR_BrokenWindow,
+    eCBR_EndTurn,
 };
 
 enum ECoverHandling
@@ -33,6 +34,7 @@ function OnInit()
 
     `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
+    `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnEnded', OnPlayerTurnEnded, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
     `XCOMVISUALIZATIONMGR.RegisterObserver(self);
@@ -101,45 +103,61 @@ function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
-    // Ensure eg. reinforcement units have their movement events overridden by us;
-    // This does presume that units don't spawn during a player's turn and then
-    // move and see the player using their default logic, so we also check for
-    // spawns. Arguably this may be overkill (if we do the latter, the former is
-    // less relevant).
-    if (`TACTICALRULES.GetLocalClientPlayerObjectID() == XComGameState_Player(EventSource).ObjectID)
-    {
-        `SPOOKLOG("OnPlayerTurnBegun: Human");
-    }
-    else
-    {
-        `SPOOKLOG("OnPlayerTurnBegun: AI");
-    }
+    local XComGameState_Player Player;
+
+    Player = XComGameState_Player(EventSource);
+    `SPOOKLOG("OnPlayerTurnBegun: " $ (`IsHumanPlayer(Player) ? "Human" : "AI"));
+
+    // Hook any new enemies from last turn.
     ReplaceEventListeners();
+    return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnPlayerTurnEnded(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local XComGameState_Player Player;
+    local XComGameState_Ability Ability;
+    local XComGameState_Unit Unit;
+
+    Player = XComGameState_Player(EventSource);
+    `SPOOKLOG("OnPlayerTurnEnded: " $ (`IsHumanPlayer(Player) ? "Human" : "AI"));
+
+    foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_Ability', Ability)
+    {
+        if (Ability.GetMyTemplateName() != 'Spook_Meld')
+        {
+            continue;
+        }
+
+        Unit = `FindUnitState(Ability.OwnerStateObject.ObjectID);
+        if (Unit != none && Unit.ControllingPlayer.ObjectID == Player.ObjectID)
+        {
+            HandleMeldAbilityOnPlayerTurnEnd(Unit, Ability, GameState);
+        }
+    }
     return ELR_NoInterrupt;
 }
 
 function EventListenerReturn OnUnitSpawned(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
 {
     local X2EventManager EventMgr;
-    local XComGameState_Unit UnitState;
+    local XComGameState_Unit Unit;
+
     EventMgr = `XEVENTMGR;
-    UnitState = XComGameState_Unit(EventData);
-    if (UnitState != none)
+    Unit = XComGameState_Unit(EventData);
+    `SPOOKLOG("OnUnitSpawned: " $ (Unit != none ? "Valid" : "Invalid"));
+
+    if (Unit != none)
     {
-        `SPOOKLOG("OnUnitSpawned: Valid");
-        UnregisterUnitEvents(EventMgr, UnitState);
-    }
-    else
-    {
-        `SPOOKLOG("OnUnitSpawned: Invalid");
+        UnregisterUnitEvents(EventMgr, Unit);
     }
     return ELR_NoInterrupt;
 }
 
-function UnregisterUnitEvents(X2EventManager EventMgr, XComGameState_Unit UnitState)
+function UnregisterUnitEvents(X2EventManager EventMgr, XComGameState_Unit Unit)
 {
-    EventMgr.UnRegisterFromEvent(UnitState, 'ObjectMoved');
-    EventMgr.UnRegisterFromEvent(UnitState, 'UnitTakeEffectDamage');
+    EventMgr.UnRegisterFromEvent(Unit, 'ObjectMoved');
+    EventMgr.UnRegisterFromEvent(Unit, 'UnitTakeEffectDamage');
 }
 
 function ReplaceEventListeners()
@@ -147,7 +165,7 @@ function ReplaceEventListeners()
     local Object This;
     local X2EventManager EventMgr;
     local XComGameStateHistory History;
-    local XComGameState_Unit UnitState;
+    local XComGameState_Unit Unit;
     local XComGameState_Player PlayerState;
 
     History = `XCOMHISTORY;
@@ -156,9 +174,9 @@ function ReplaceEventListeners()
 
     `SPOOKLOG("ReplaceEventListeners");
 
-    foreach History.IterateByClassType(class'XComGameState_Unit', UnitState)
+    foreach History.IterateByClassType(class'XComGameState_Unit', Unit)
     {
-        UnregisterUnitEvents(EventMgr, UnitState);
+        UnregisterUnitEvents(EventMgr, Unit);
     }
 
     foreach History.IterateByClassType(class'XComGameState_Player', PlayerState)
@@ -561,7 +579,7 @@ function EventListenerReturn OnUnitDied(Object EventData, Object EventSource, XC
         // Also TODO: elevaysheeyon should prevent detection if we're going all Dishonored. So higher up = they can't see you. Nobody looks up, after all.
         // There'd still be roof drones to worry about. Maybe roof drones get instasmurdered, the askholes.
         `SPOOKLOG("Detected a stealth kill");
-        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Marking Spook Stealth Kill");
+        NewGameState = `CreateChangeState("Marking Spook Stealth Kill");
         Unit = XComGameState_Unit(NewGameState.CreateStateObject(class'XComGameState_Unit', Unit.ObjectID));
         Unit.KilledByDamageTypes.AddItem('SpookStealthKillMarker');
         NewGameState.AddStateObject(Unit);
@@ -639,20 +657,21 @@ event OnVisualizationIdle();
 // X2VisualizationMgrObserverInterface
 event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
 {
-    // We don't want WIRED_NOT_REVEALED_BY_CLASSES units to reveal spooks
-    // (strictly units with the Wired effect, but that's only spooks) on them.
-    // We do want WIRED_NOT_REVEALED_BY_CLASSES units to reveal everyone else
-    // as usual.
+    HandleWiredAbilityOnActiveUnitChanged(NewActiveUnit);
+}
+
+function HandleWiredAbilityOnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
+{
+    // We don't want WIRED_NOT_REVEALED_BY_CLASSES units to reveal Wired units,
+    // but we do want them to reveal everyone else.
     //
-    // We officially handle this in DetectionManager.BreaksConcealment().
-    // But this doesn't affect concealment-breaking *visuals* (tiles and Gotcha
-    // Again indicators).  When it's time to move a spook, we don't want these
-    // indicators visible.
+    // We handle gameplay in DetectionManager.BreaksConcealment(), but this
+    // doesn't affect concealment-breaking visuals (tiles and Gotcha Again).
+    // When it's time to move a spook, we don't want these visible.
     //
-    // Hence we use a special ability to debuff WIRED_NOT_REVEALED_BY_CLASSES
-    // units during the spook unit's turn; specifically we apply a debuff effect
-    // when the spook becomes active, and remove it if the user tabs to another
-    // unit. The debuff also expires at the end of the turn.
+    // We use a special ability to debuff WIRED_NOT_REVEALED_BY_CLASSES units
+    // when the Wired unit becomes active (tab/click). The debuff expires at
+    // the end of the turn and we remove it if the user tabs to another unit.
     local XComGameStateHistory History;
     local XComGameState GameState, NewGameState;
     local XComGameState_Effect EffectState;
@@ -685,5 +704,24 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     {
         `SPOOKLOG("Triggering event " $ ApplyName $ " for active unit " $ NewActiveUnit.GetMyTemplateName() $ " " $ NewActiveUnit.GetFullName());
         `XEVENTMGR.TriggerEvent(ApplyName, NewActiveUnit, NewActiveUnit, GameState);
+    }
+}
+
+function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState_Ability Ability, XComGameState GameState)
+{
+    local XComGameState_Ability MeldTrigger;
+    local TTile Tile;
+
+    `SPOOKLOG("HandleMeldAbilityOnPlayerTurnEnd");
+
+    GetOwnTile(Unit, Tile);
+    if (IsTileUnbreakablyConcealingForUnit(Unit, Tile, eCBR_EndTurn))
+    {
+        MeldTrigger = `FindAbilityState(Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldTriggerName).ObjectID, GameState);
+        if (MeldTrigger != none && MeldTrigger.CanActivateAbility(Unit,,true) == 'AA_Success')
+        {
+            `SPOOKLOG("Triggering " $ MeldTrigger.GetMyTemplateName());
+            MeldTrigger.AbilityTriggerAgainstSingleTarget(MeldTrigger.OwnerStateObject, false);
+        }
     }
 }

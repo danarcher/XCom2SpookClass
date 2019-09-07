@@ -20,7 +20,7 @@ event OnInit(UIScreen Screen)
     `SPOOKLOG("OnInit");
 
     History = `XCOMHISTORY;
-    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spawn Spook POI");
+    NewGameState = `CreateChangeState("Spawn Spook POI");
 
     foreach History.IterateByClassType(class'XComGameState_PointOfInterest', POIState)
     {

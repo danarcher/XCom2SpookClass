@@ -24,7 +24,7 @@ function CleanUpTemporaryItems(XComGameState NewGameState)
 
     if (NewGameState == none)
     {
-        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Temporary Item Cleanup");
+        NewGameState = `CreateChangeState("Spook Temporary Item Cleanup");
         bSubmit = true;
     }
 

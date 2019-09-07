@@ -140,7 +140,7 @@ exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)
 
     History = `XCOMHISTORY;
     XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
-    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Rankup Soldier Cheat");
+    NewGameState = `CreateChangeState("Spook Rankup Soldier Cheat");
     XComHQ = XComGameState_HeadquartersXCom(NewGameState.CreateStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
     NewGameState.AddStateObject(XComHQ);
 

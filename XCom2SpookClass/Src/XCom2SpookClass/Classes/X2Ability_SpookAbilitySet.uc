@@ -43,12 +43,14 @@ var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
 var localized string WiredNotRevealedByClassesFriendlyName;
 var localized string WiredNotRevealedByClassesHelpText;
+var localized string MeldFriendlyName;
 
 const ExeuntAbilityName = 'Spook_Exeunt';
 const WiredAbilityName = 'Spook_Wired';
 
-// These names are used for related abilities, effects, and events!
+// These names are used for related abilities, effects, and/or events!
 const WiredNotRevealedByClassesName = 'Spook_WiredNotRevealedByClasses';
+const MeldTriggerName = 'Spook_MeldTrigger';
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -60,6 +62,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddDistractAbility());
     Templates.AddItem(AddDistractThrowGrenadeAbility());
     Templates.AddItem(AddMeldAbility());
+    Templates.AddItem(AddMeldTriggerAbility());
     Templates.AddItem(AddVanishAbility());
     Templates.AddItem(AddExfilAbility());
     Templates.AddItem(AddExodusAbility());
@@ -149,7 +152,7 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
     local X2AbilityTemplate                            Template;
     local X2AbilityTrigger_EventListener               EventTrigger;
     local X2Condition_UnitProperty                     TargetPropertyCondition;
-    local X2Condition_SpookWiredNotRevealedByClasses   TargetSpecialCondition;
+    local X2Condition_Spook                            TargetSpecialCondition;
     local X2Effect_PersistentStatChange                DetectionChangeEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, WiredNotRevealedByClassesName);
@@ -175,7 +178,8 @@ static function X2AbilityTemplate AddWiredNotRevealedByClassesAbility()
 
     TargetPropertyCondition = new class'X2Condition_UnitProperty'; // Defaults are good; living enemy, etc.
     Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
-    TargetSpecialCondition = new class'X2Condition_SpookWiredNotRevealedByClasses';
+    TargetSpecialCondition = new class'X2Condition_Spook';
+    TargetSpecialCondition.bRequireCannotRevealWiredSource = true;
     Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
 
     DetectionChangeEffect = new class'X2Effect_PersistentStatChange';
@@ -267,7 +271,7 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
     local X2AbilityTarget_Cursor        CursorTarget;
     local X2AbilityMultiTarget_Radius   RadiusMultiTarget;
     local X2Condition_UnitProperty      MultiTargetPropertyCondition;
-    local X2Condition_UnitAlertStatus   MultiTargetAlertStatusCondition;
+    local X2Condition_Spook             MultiTargetSpecialCondition;
     local X2Effect_PersistentStatChange DistractEffect;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'SpookThrowDistractGrenade');
@@ -323,9 +327,9 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
     if (default.DISTRACT_EXCLUDE_RED_ALERT)
     {
         `SPOOKSLOG("Distract excludes red alert and hence is prevented by it");
-        MultiTargetAlertStatusCondition = new class'X2Condition_UnitAlertStatus';
-        MultiTargetAlertStatusCondition.RequiredAlertStatusMaximum = 1;
-        Template.AbilityMultiTargetConditions.AddItem(MultiTargetAlertStatusCondition);
+        MultiTargetSpecialCondition = new class'X2Condition_Spook';
+        MultiTargetSpecialCondition.bRequireCredulousAI = true;
+        Template.AbilityMultiTargetConditions.AddItem(MultiTargetSpecialCondition);
     }
     else
     {
@@ -344,7 +348,109 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
 static function X2AbilityTemplate AddMeldAbility()
 {
     // Handled by SpookDetectionManager.IsTileUnbreakablyConcealingForUnit().
-    return PurePassive('Spook_Meld', "img:///UILibrary_PerkIcons.UIPerk_height", true);
+    local X2AbilityTemplate Template;
+    Template = PurePassive('Spook_Meld', "img:///UILibrary_PerkIcons.UIPerk_height", true);
+    Template.AdditionalAbilities.AddItem(MeldTriggerName);
+    return Template;
+}
+
+static function X2AbilityTemplate AddMeldTriggerAbility()
+{
+    local X2AbilityTemplate             Template;
+    local array<name>                   SkipExclusions;
+    local X2Condition_UnitProperty      ConcealedShooterCondition;
+    local X2Effect_Persistent           MeldEffect;
+    local X2AbilityCost_ActionPoints    ActionPointCost;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, MeldTriggerName);
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_unknown";
+    Template.AbilitySourceName = 'eAbilitySource_Perk';
+    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+    Template.Hostility = eHostility_Neutral;
+    Template.bHideOnClassUnlock = true;
+    Template.bDisplayInUITooltip = false;
+    Template.bDisplayInUITacticalText = false;
+
+    // Cost
+    ActionPointCost = new class'X2AbilityCost_ActionPoints';
+    ActionPointCost.iNumPoints = 0;
+    ActionPointCost.bFreeCost = true;
+    ActionPointCost.bConsumeAllPoints = false;
+    Template.AbilityCosts.AddItem(ActionPointCost);
+
+    // Activation
+    Template.bIsPassive = false;
+    Template.AbilityTriggers.AddItem(new class'X2AbilityTrigger_Placeholder');
+    Template.bSkipFireAction = true;
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+
+    // Shooter conditions
+    Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);               // Must be alive
+    SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);         // Can be carrying someone
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.ConfusedName);           // Can be disoriented (by a sectoid)
+    SkipExclusions.AddItem(class'X2AbilityTemplateManager'.default.DisorientedName);        // Can be disoriented (by something else)
+    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);                     // Can be on fire
+    Template.AddShooterEffectExclusions(SkipExclusions);
+    ConcealedShooterCondition = new class'X2Condition_UnitProperty';
+    ConcealedShooterCondition.ExcludeFriendlyToSource = false;
+    ConcealedShooterCondition.IsConcealed = true;
+    Template.AbilityShooterConditions.AddItem(ConcealedShooterCondition);
+
+    MeldEffect = new class'X2Effect_Persistent';
+    MeldEffect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(1));
+    MeldEffect.DuplicateResponse = eDupe_Ignore;
+    MeldEffect.EffectName = MeldTriggerName;
+    MeldEffect.EffectRemovedVisualizationFn = VisualizeMeldEffectRemoved;
+    MeldEffect.CleansedVisualizationFn = VisualizeMeldEffectRemoved;
+    Template.AddTargetEffect(MeldEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+    Template.BuildVisualizationFn = BuildMeldVisualization;
+
+    return Template;
+}
+
+static function BuildMeldVisualization(XComGameState VisualizeGameState, out array<VisualizationTrack> OutVisualizationTracks)
+{
+    local XComGameStateHistory History;
+    local XComGameStateContext_Ability Context;
+    local XComGameState_Ability AbilityState;
+    local X2AbilityTemplate AbilityStateTemplate;
+    local VisualizationTrack Track;
+    local X2Action_PlaySoundAndFlyover SoundAndFlyOver;
+    local X2Action_SpookPlayAkEvent PlayAkEvent;
+
+    History = `XCOMHISTORY;
+    Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
+    AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID));
+    AbilityStateTemplate = AbilityState.GetMyTemplate();
+
+    class'SpookRedAlertVisualizer'.static.FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityStateTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
+
+    // Announce the exit.
+    SoundAndFlyOver = X2Action_PlaySoundAndFlyover(InsertTrackAction(Track, 0, class'X2Action_PlaySoundAndFlyover', Context));
+    SoundAndFlyOver.SetSoundAndFlyOverParameters(None, default.MeldFriendlyName, '', eColor_Good);
+
+    // Master track cloaks.
+    InsertTrackAction(Track, 1, class'X2Action_SpookSetMaterial', Context);
+    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 2, class'X2Action_SpookPlayAkEvent', Context));
+    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+
+    // Add the master track now we've made all local changes.
+    OutVisualizationTracks.AddItem(Track);
+}
+
+static function VisualizeMeldEffectRemoved(XComGameState VisualizeGameState, out VisualizationTrack BuildTrack, const name EffectApplyResult)
+{
+    local X2Action_SpookSetMaterial SetMaterial;
+    local X2Action_SpookPlayAkEvent PlayAkEvent;
+
+    SetMaterial = X2Action_SpookSetMaterial(InsertTrackAction(BuildTrack, 0, class'X2Action_SpookSetMaterial', VisualizeGameState.GetContext()));
+    SetMaterial.bResetMaterial = true;
+
+    PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(BuildTrack, 1, class'X2Action_SpookPlayAkEvent', VisualizeGameState.GetContext()));
+    PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconDeactivate';
 }
 
 static function X2AbilityTemplate AddVanishAbility()
@@ -461,8 +567,9 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
 
     // Cost
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 0; // 1 = require an action point left, 0 = anytime, like Evac.
-    ActionPointCost.bFreeCost = true;
+    ActionPointCost.iNumPoints = 1;
+    ActionPointCost.bFreeCost = false;
+    ActionPointCost.bConsumeAllPoints = true;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     // Activation
@@ -546,7 +653,7 @@ static function XComGameState BuildExfilGameState(XComGameStateContext Context)
     // So, we evacuate each unit in its own game state.
     foreach EvacObjectIDs(EvacObjectID)
     {
-        NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Spook Per-Unit Evac");
+        NewGameState = `CreateChangeState("Spook Per-Unit Evac");
         Unit = `FindOrAddUnitState(EvacObjectID, NewGameState);
         `XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, Unit, NewGameState);
         Unit.EvacuateUnit(NewGameState);
@@ -916,8 +1023,8 @@ static function X2AbilityTemplate AddEclipseAbility()
 {
     local X2AbilityTemplate                     Template;
     local X2AbilityCost_ActionPoints            ActionPointCost;
-    local X2Condition_UnitProperty              UnitPropertyCondition;
-    local X2Condition_SpookEclipse              EclipseCondition;
+    local X2Condition_UnitProperty              TargetPropertyCondition;
+    local X2Condition_Spook                     TargetSpecialCondition;
     local X2AbilityTarget_Single                SingleTarget;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Eclipse');
@@ -945,19 +1052,21 @@ static function X2AbilityTemplate AddEclipseAbility()
     SingleTarget = new class'X2AbilityTarget_Single';
     Template.AbilityTargetStyle = SingleTarget;
 
-    UnitPropertyCondition = new class'X2Condition_UnitProperty';
-    UnitPropertyCondition.ExcludeFriendlyToSource = false;
-    UnitPropertyCondition.FailOnNonUnits = true;
-    UnitPropertyCondition.ExcludeDead = true;
-    UnitPropertyCondition.ExcludeAlien = true;
-    UnitPropertyCondition.ExcludeRobotic = true;
-    UnitPropertyCondition.ExcludeHostileToSource = true;
-    UnitPropertyCondition.RequireWithinRange = true;
-    UnitPropertyCondition.WithinRange = 144; // 1 tile
-    Template.AbilityTargetConditions.AddItem(UnitPropertyCondition);
+    TargetPropertyCondition = new class'X2Condition_UnitProperty';
+    TargetPropertyCondition.ExcludeFriendlyToSource = false;
+    TargetPropertyCondition.FailOnNonUnits = true;
+    TargetPropertyCondition.ExcludeDead = true;
+    TargetPropertyCondition.ExcludeAlien = true;
+    TargetPropertyCondition.ExcludeRobotic = true;
+    TargetPropertyCondition.ExcludeHostileToSource = true;
+    TargetPropertyCondition.RequireWithinRange = true;
+    TargetPropertyCondition.WithinRange = 144; // 1 tile
+    Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
 
-    EclipseCondition = new class'X2Condition_SpookEclipse';
-    Template.AbilityTargetConditions.AddItem(EclipseCondition);
+    TargetSpecialCondition = new class'X2Condition_Spook';
+    TargetSpecialCondition.bRequireConscious = true;
+    TargetSpecialCondition.bRequireNotBleedingOut = true;
+    Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
 
     Template.AddTargetEffect(CreateEclipsedStatusEffect());
 

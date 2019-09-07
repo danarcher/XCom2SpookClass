@@ -11,7 +11,11 @@
 `define FindOrAddUnitState(id, newgamestate) class'SpookHelpers'.static.FindOrAddUnitState(`id, `newgamestate);
 `define FindAbilityState(id, newgamestate, history) class'SpookHelpers'.static.FindAbilityState(`id, `newgamestate, `history);
 
-`define TILESTOMETERS(x) (`UNITSTOMETERS(`TILESTOUNITS(`x)))
+`define CreateChangeState(desc) class'XComGameStateContext_ChangeContainer'.static.CreateChangeState(`desc)
+
+`define IsHumanPlayer(player) (`TACTICALRULES.GetLocalClientPlayerObjectID() == `player.ObjectID)
+
+`define TILESTOMETERS(n) (`UNITSTOMETERS(`TILESTOUNITS(`n)))
 
 // BPE_xxx are flags for X2Effect_Persistent.BuildPersistentEffect().
 //
