@@ -1143,10 +1143,11 @@ static function X2AbilityTemplate AddDartAbility()
     Template.bDisplayInUITooltip = true;
     Template.bDisplayInUITacticalText = true;
 
-    Template.AbilityTargetStyle = default.SimpleSingleTarget;
+    Template.AbilityTargetStyle = new class'X2AbilityTarget_Single'; // No destructibles.
     Template.AbilityToHitCalc = default.SimpleStandardAim;
     Template.AbilityToHitOwnerOnMissCalc = default.SimpleStandardAim;
     Template.TargetingMethod = class'X2TargetingMethod_OverTheShoulder';
+    Template.bLimitTargetIcons = true; // Just the ones we can dart.
     Template.bUsesFiringCamera = true;
     Template.CinescriptCameraType = "StandardGunFiring";
 
