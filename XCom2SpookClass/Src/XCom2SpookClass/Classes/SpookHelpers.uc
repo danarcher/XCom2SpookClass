@@ -3,87 +3,78 @@ class SpookHelpers
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-static function XComGameState_Unit FindUnitState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
+static function XComGameState_BaseObject FindObjectState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
 {
-    local XComGameState_Unit Unit;
+    local XComGameState_BaseObject Obj;
     if (ObjectID == 0)
     {
         return none;
     }
     if (NewGameState != none)
     {
-        Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(ObjectID));
+        Obj = NewGameState.GetGameStateForObjectID(ObjectID);
     }
-    if (Unit == none)
+    if (Obj == none)
     {
         if (History == none)
         {
             History = `XCOMHISTORY;
         }
-        Unit = XComGameState_Unit(History.GetGameStateForObjectID(ObjectID));
+        Obj = History.GetGameStateForObjectID(ObjectID);
     }
-    return Unit;
+    return Obj;
 }
 
-static function XComGameState_Unit FindOrAddUnitState(int ObjectID, XComGameState NewGameState)
+// This is FindOrAdd, not FindOrCreate, since it also adds the object to the game state.
+static function XComGameState_BaseObject FindOrAddObjectState(class<XComGameState_BaseObject> StateClass, int ObjectID, XComGameState NewGameState)
 {
-    local XComGameState_Unit Unit;
+    local XComGameState_BaseObject Obj;
     if (ObjectID == 0)
     {
         return none;
     }
     if (NewGameState != none)
     {
-        Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(ObjectID));
+        Obj = NewGameState.GetGameStateForObjectID(ObjectID);
     }
-    if (Unit == none)
+    if (Obj == none)
     {
-        Unit = XComGameState_Unit(NewGameState.CreateStateObject(class'XComGameState_Unit', ObjectID));
-        NewGameState.AddStateObject(Unit);
+        Obj = NewGameState.CreateStateObject(StateClass, ObjectID);
+        NewGameState.AddStateObject(Obj);
     }
-    return Unit;
+    return Obj;
 }
 
-static function XComGameState_Ability FindAbilityState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
+static function XComGameState_BaseObject FindHistoricObjectState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
 {
-    local XComGameState_Ability Ability;
+    local XComGameState_BaseObject Obj;
+    local int HistoryIndex;
     if (ObjectID == 0)
     {
         return none;
     }
     if (NewGameState != none)
     {
-        Ability = XComGameState_Ability(NewGameState.GetGameStateForObjectID(ObjectID));
+        Obj = NewGameState.GetGameStateForObjectID(ObjectID);
     }
-    if (Ability == none)
+    if (Obj == none)
     {
         if (History == none)
         {
             History = `XCOMHISTORY;
         }
-        Ability = XComGameState_Ability(History.GetGameStateForObjectID(ObjectID));
-    }
-    return Ability;
-}
-
-static function XComGameState_Item FindItemState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
-{
-    local XComGameState_Item Item;
-    if (ObjectID == 0)
-    {
-        return none;
-    }
-    if (NewGameState != none)
-    {
-        Item = XComGameState_Item(NewGameState.GetGameStateForObjectID(ObjectID));
-    }
-    if (Item == none)
-    {
-        if (History == none)
+        Obj = History.GetGameStateForObjectID(ObjectID);
+        if (Obj == none)
         {
-            History = `XCOMHISTORY;
+            for (HistoryIndex = History.GetCurrentHistoryIndex(); HistoryIndex >= 0; --HistoryIndex)
+            {
+                Obj = History.GetGameStateForObjectID(ObjectID,, HistoryIndex);
+                if (Obj != none)
+                {
+                    break;
+                }
+            }
         }
-        Item = XComGameState_Item(History.GetGameStateForObjectID(ObjectID));
     }
-    return Item;
+    return Obj;
 }

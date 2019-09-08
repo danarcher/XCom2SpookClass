@@ -4,21 +4,20 @@ class UIScreenListener_UITacticalHUD_Spook
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var SpookDetectionManager DetectionManager;
-var SpookLootManager LootManager;
+var SpookTacticalDetectionManager DetectionManager;
+var SpookTacticalLootManager LootManager;
 
 event OnInit(UIScreen Screen)
 {
     local Object This;
 
     This = self;
-    `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'GetEvacPlacementDelay', OnGetEvacPlacementDelay, ELD_Immediate);
 
-    DetectionManager = new class'SpookDetectionManager';
+    DetectionManager = new class'SpookTacticalDetectionManager';
     DetectionManager.OnInit();
 
-    LootManager = new class'SpookLootManager';
+    LootManager = new class'SpookTacticalLootManager';
     LootManager.OnInit();
 }
 

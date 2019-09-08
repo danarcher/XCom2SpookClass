@@ -36,7 +36,7 @@ event name CallMeetsConditionWithSource(XComGameState_BaseObject kTarget, XComGa
     {
         if (SourceUnit == none ||
             !SourceUnit.IsUnitAffectedByEffectName(class'X2Ability_SpookAbilitySet'.const.WiredAbilityName) ||
-            class'SpookDetectionManager'.default.WIRED_NOT_REVEALED_BY_CLASSES.Find(kTarget.GetMyTemplateName()) == INDEX_NONE)
+            class'SpookTacticalDetectionManager'.default.WIRED_NOT_REVEALED_BY_CLASSES.Find(kTarget.GetMyTemplateName()) == INDEX_NONE)
         {
             return 'AA_AbilityUnavailable';
         }

@@ -1,3 +1,4 @@
+// Allows several registrations for the same event with different deferrals.
 class SpookEventListener
     extends Object
     config(Spook);

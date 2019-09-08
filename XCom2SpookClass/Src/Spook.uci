@@ -7,16 +7,21 @@
 `define SPOOKASSERTLOG(cond) if (!(`cond)) { `SPOOKLOG("Assertion failed: `cond"); }
 `define SPOOKASSERTSLOG(cond) if (!(`cond)) { `SPOOKSLOG("Assertion failed: `cond"); }
 
-`define FindUnitState(id, newgamestate, history) class'SpookHelpers'.static.FindUnitState(`id, `newgamestate, `history)
-`define FindOrAddUnitState(id, newgamestate) class'SpookHelpers'.static.FindOrAddUnitState(`id, `newgamestate);
-`define FindAbilityState(id, newgamestate, history) class'SpookHelpers'.static.FindAbilityState(`id, `newgamestate, `history);
-`define FindItemState(id, newgamestate, history) class'SpookHelpers'.static.FindItemState(`id, `newgamestate, `history);
+`define FindUnitState(id, newgamestate, history) XComGameState_Unit(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
+`define FindOrAddUnitState(id, newgamestate, history) XComGameState_Unit(class'SpookHelpers'.static.FindOrAddObjectState(class'XComGameState_Unit', `id, `newgamestate))
+`define FindAbilityState(id, newgamestate, history) XComGameState_Ability(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
+`define FindItemState(id, newgamestate, history) XComGameState_Item(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
+`define FindHistoricItemState(id, newgamestate, history) XComGameState_Item(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
 
 `define CreateChangeState(desc) class'XComGameStateContext_ChangeContainer'.static.CreateChangeState(`desc)
 
 `define IsHumanPlayer(player) (`TACTICALRULES.GetLocalClientPlayerObjectID() == `player.ObjectID)
 
 `define TILESTOMETERS(n) (`UNITSTOMETERS(`TILESTOUNITS(`n)))
+
+`define XABILITYMANAGER class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager()
+`define XSTRATEGYELEMENTMANAGER class'X2StrategyElementTemplateManager'.static.GetStrategyElementTemplateManager()
+`define XCHARACTERMANAGER class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager()
 
 // BPE_xxx are flags for X2Effect_Persistent.BuildPersistentEffect().
 //

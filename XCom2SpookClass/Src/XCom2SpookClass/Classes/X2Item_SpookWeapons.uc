@@ -244,8 +244,8 @@ static function X2DataTemplate CreateSpookDistractGrenade()
 
     Template.GameArchetype = "Spook.WP_Grenade_Distract";
 
-    Template.SetUIStatMarkup(class'XLocalizedData'.default.RangeLabel, , Template.iRange);
-    Template.SetUIStatMarkup(class'XLocalizedData'.default.RadiusLabel, , Template.iRadius);
+    Template.SetUIStatMarkup(class'XLocalizedData'.default.RangeLabel,, Template.iRange);
+    Template.SetUIStatMarkup(class'XLocalizedData'.default.RadiusLabel,, Template.iRadius);
 
     return Template;
 }

@@ -13,8 +13,6 @@ event OnInit(UIScreen Screen)
     local UIInventory_ListItem ListItem;
     local int i;
 
-    `SPOOKLOG("OnInit");
-
     SoldierClassTemplateManager = class'X2SoldierClassTemplateManager'.static.GetSoldierClassTemplateManager();
     SpookClass = SoldierClassTemplateManager.FindSoldierClassTemplate('Spook');
 
@@ -26,6 +24,7 @@ event OnInit(UIScreen Screen)
         if (ExistingClass.DataName == SpookClass.DataName)
         {
             // We're already listed.
+            `SPOOKLOG("Spooks can already be trained");
             return;
         }
     }
@@ -39,7 +38,8 @@ event OnInit(UIScreen Screen)
     ChooseClass.arrItems.AddItem(Commodity);
 
     ListItem = ChooseClass.Spawn(class'UIInventory_ClassListItem', ChooseClass.List.itemContainer);
-    ListItem.InitInventoryListCommodity(Commodity, , ChooseClass.GetButtonString(i), ChooseClass.m_eStyle, , 126);
+    ListItem.InitInventoryListCommodity(Commodity,, ChooseClass.GetButtonString(i), ChooseClass.m_eStyle,, 126);
+    `SPOOKLOG("Added Spook as a trainable class");
 }
 
 defaultProperties

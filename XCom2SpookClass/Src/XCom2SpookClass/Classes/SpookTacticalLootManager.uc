@@ -1,4 +1,4 @@
-class SpookLootManager
+class SpookTacticalLootManager
     extends Object
     config(Spook);
 
@@ -11,7 +11,6 @@ var int BonusLoot;
 
 function OnInit()
 {
-    `SPOOKLOG("OnInit");
     EvacActivatingListener = new class'SpookEventListener';
     EvacActivatingListener.RegisterForEvent('EvacActivated', OnEvacActivating, ELD_Immediate);
 
@@ -72,6 +71,7 @@ function OnEvacActivated(Object EventData, Object EventSource, XComGameState Gam
         for (Index = 0; Index < Items.Length; ++Index)
         {
             Unit.RemoveItemFromInventory(Items[Index], NewGameState);
+            NewGameState.RemoveStateObject(Items[Index].ObjectID);
         }
         `TACTICALRULES.SubmitGameState(NewGameState);
     }

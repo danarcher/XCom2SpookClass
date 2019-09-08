@@ -1,4 +1,4 @@
-class SpookDetectionManager
+class SpookTacticalDetectionManager
     extends Object
     implements(X2VisualizationMgrObserverInterface)
     config(Spook);
@@ -32,12 +32,19 @@ function OnInit()
     local Object This;
     This = self;
 
-    `SPOOKLOG("OnInit");
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnBegun', OnPlayerTurnBegun, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'PlayerTurnEnded', OnPlayerTurnEnded, ELD_OnStateSubmitted);
     `XEVENTMGR.RegisterForEvent(This, 'UnitSpawned', OnUnitSpawned, ELD_OnStateSubmitted);
     ReplaceEventListeners();
     `XCOMVISUALIZATIONMGR.RegisterObserver(self);
+}
+
+// X2VisualizationMgrObserverInterface
+event OnVisualizationBlockComplete(XComGameState AssociatedGameState);
+event OnVisualizationIdle();
+event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
+{
+    HandleWiredAbilityOnActiveUnitChanged(NewActiveUnit);
 }
 
 function float GetUnitDetectionModifier(XComGameState_Unit Unit)
@@ -648,16 +655,113 @@ function CleanseBurningIfInWater(XComGameState_Unit Unit)
     }
 }
 
-// X2VisualizationMgrObserverInterface
-event OnVisualizationBlockComplete(XComGameState AssociatedGameState);
-
-// X2VisualizationMgrObserverInterface
-event OnVisualizationIdle();
-
-// X2VisualizationMgrObserverInterface
-event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
+static function OnPostTemplatesCreated()
 {
-    HandleWiredAbilityOnActiveUnitChanged(NewActiveUnit);
+    // ChangeForm, BurrowedAttack, UnburrowSawEnemy, ChangeFormSawEnemy
+    UpdateRevealAbilityTemplate('ChangeForm');
+    UpdateRevealAbilityTemplate('ChangeFormSawEnemy');
+    UpdateRevealAbilityTemplate('BurrowedAttack');
+    UpdateRevealAbilityTemplate('UnburrowSawEnemy');
+
+    if (class'X2Ability_SpookAbilitySet'.default.DISTRACT_EXCLUDE_RED_ALERT)
+    {
+        `SPOOKSLOG("Distract excludes red alert and hence is cancelled by it");
+        RedAlertCancelsDistract();
+    }
+    else
+    {
+        `SPOOKSLOG("Distract does NOT exclude red alert");
+    }
+}
+
+static function UpdateRevealAbilityTemplate(name AbilityName)
+{
+    local X2AbilityTemplate Template;
+    local X2Condition_UnitProperty UnitPropertyCondition;
+
+    Template = `XABILITYMANAGER.FindAbilityTemplate(AbilityName);
+    if (Template == none)
+    {
+        return;
+    }
+
+    // Concealed units cannot be targeted for e.g. concealment removal, nor can
+    // concealed movement set off alarms.
+    //
+    //  i) Prevent X2Effect_BreakUnitConcealment from being applied as a
+    //     multi-target effect via this template.
+    //
+    // ii) Prevents CheckForVisibleMovementIn[..]Radius_Self from counting
+    //     concealed units, since that function delegates back to the ability's
+    //     multi-target conditions to check target suitability.
+    //
+    UnitPropertyCondition = new class'X2Condition_UnitProperty';
+    UnitPropertyCondition.ExcludeConcealed = true;
+    Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
+    `SPOOKSLOG("Updated " $ Template.DataName $ " to exclude concealed units");
+}
+
+static function RedAlertCancelsDistract()
+{
+    local X2DataTemplate DataTemplate;
+    local X2AbilityTemplate Template;
+    local SpookRedAlertVisualizer Visualizer;
+    local bool bModified;
+    foreach `XABILITYMANAGER.IterateTemplates(DataTemplate, none)
+    {
+        Template = X2AbilityTemplate(DataTemplate);
+        if (Template == none)
+        {
+            continue;
+        }
+
+        bModified = false;
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityShooterEffects))
+        {
+            Template.AddShooterEffect(CreateDistractRemover(Template, "AbilityShooterEffects"));
+            bModified = true;
+        }
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityTargetEffects))
+        {
+            Template.AddTargetEffect(CreateDistractRemover(Template, "AbilityTargetEffects"));
+            bModified = true;
+        }
+        if (RedAlertCancelsDistractHere(Template, Template.AbilityMultiTargetEffects))
+        {
+            Template.AddMultiTargetEffect(CreateDistractRemover(Template, "AbilityMultiTargetEffects"));
+            bModified = true;
+        }
+        if (bModified)
+        {
+            Visualizer = new class'SpookRedAlertVisualizer';
+            Visualizer.AttachTo(Template);
+        }
+    }
+}
+
+static function bool RedAlertCancelsDistractHere(X2AbilityTemplate Template, out const array<X2Effect> Effects)
+{
+    local X2Effect Effect;
+    local X2Effect_RedAlert RedAlert;
+
+    foreach Effects(Effect)
+    {
+        RedAlert = X2Effect_RedAlert(Effect);
+        if (RedAlert != none)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+static function X2Effect CreateDistractRemover(X2AbilityTemplate Template, string ListName)
+{
+    local X2Effect_SpookRemoveEffects Effect;
+    Effect = new class'X2Effect_SpookRemoveEffects';
+    Effect.EffectNamesToRemove.AddItem(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
+    `SPOOKSLOG("Modifying ability " $ Template.DataName $ " to cancel Distract when it adds Red Alert via " $ ListName);
+    return Effect;
 }
 
 function HandleWiredAbilityOnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
@@ -689,7 +793,7 @@ function HandleWiredAbilityOnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
         PersistentEffect = EffectState.GetX2Effect();
         if (PersistentEffect.EffectName == ApplyName)
         {
-            Unit = `FindUnitState(EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID, , History);
+            Unit = `FindUnitState(EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID,, History);
             `SPOOKLOG("Removing " $ ApplyName $ " from " $ Unit.GetMyTemplateName() $ " " $ Unit.ObjectID);
 
             Context = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);

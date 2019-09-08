@@ -4,8 +4,6 @@ class UIScreenListener_UIStrategyMap_Spook
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var SpookDetectionManager DetectionManager;
-
 const POIName = 'POI_SpookRecruit';
 
 event OnInit(UIScreen Screen)
@@ -13,11 +11,9 @@ event OnInit(UIScreen Screen)
     local XComGameStateHistory History;
     local XComGameState NewGameState;
     local XComGameState_PointOfInterest POIState;
-    local X2StrategyElementTemplateManager TemplateManager;
+    local X2StrategyElementTemplateManager StrategyElementManager;
     local X2PointOfInterestTemplate POITemplate;
     local bool bFound, bSpawn;
-
-    `SPOOKLOG("OnInit");
 
     History = `XCOMHISTORY;
     NewGameState = `CreateChangeState("Spawn Spook POI");
@@ -45,8 +41,8 @@ event OnInit(UIScreen Screen)
     if(!bFound)
     {
         `SPOOKLOG(POIName $ " not found in history, creating one");
-        TemplateManager = class'X2StrategyElementTemplateManager'.static.GetStrategyElementTemplateManager();
-        POITemplate = X2PointOfInterestTemplate(TemplateManager.FindStrategyElementTemplate(POIName));
+        StrategyElementManager = `XSTRATEGYELEMENTMANAGER;
+        POITemplate = X2PointOfInterestTemplate(StrategyElementManager.FindStrategyElementTemplate(POIName));
         if (POITemplate != none)
         {
             `SPOOKLOG(POIName $ " created, will spawn");

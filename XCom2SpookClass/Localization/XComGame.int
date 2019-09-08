@@ -72,10 +72,10 @@ LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include sci
 
 [Spook_Operator X2AbilityTemplate]
 LocFriendlyName="Operator"
-LocLongDescription="Some tactical environmental actions will not consume an action or end your turn."
-LocHelpText="Some tactical environmental actions will not consume an action or end your turn."
+LocLongDescription="Interacting with objects and objectives, knocking people out, and picking up and putting down bodies are free actions and will not end your turn."
+LocHelpText="Interacting with objects and objectives, knocking people out, and picking up and putting down bodies are free actions and will not end your turn."
 LocFlyOverText="Operator"
-LocPromotionPopupText="<Bullet/> Affects planting X4 charges, opening loot boxes, punching out VIPs, and picking up and putting down bodies."
+LocPromotionPopupText="<Bullet/> Operator interactions will not break concealment unless they are part of a critical mission objective."
 
 [Spook_Exfil X2AbilityTemplate]
 LocFriendlyName="Exfil"
@@ -289,3 +289,11 @@ TacticalText="<Bullet/> Plasma pistols are the most powerful handguns on Earth.\
 DisplayNames[0]="Coded Signal"
 CompletedSummaries[0]="Upon arrival at this clearly improvised beacon, we were approached by a shadowy individual presenting valid pre-invasion military credentials."
 POIImages[0]="img:///UILibrary_StrategyImages.X2StrategyMap.POI_MysteriousStranger"
+
+[Spook_ExeuntUnlock X2SoldierAbilityUnlockTemplate]
+DisplayName="Spook: Exeunt"
+Summary="Evac times are reduced by 1 turn for each Spook on a mission, to a minimum of 1 turn. If only Spooks are on a mission, evac is 1 turn."
+
+[Spook_OperatorUnlock X2SoldierAbilityUnlockTemplate]
+DisplayName="Spook: Operator"
+Summary="Interacting with objects and objectives, knocking people out, and picking up and putting down bodies are free actions and will not end your turn."

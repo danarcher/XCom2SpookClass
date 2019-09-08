@@ -69,39 +69,34 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddExfilAbility());
     Templates.AddItem(AddExodusAbility());
 
-    Templates.AddItem(CarryUnitAbility());
-    Templates.AddItem(PutDownUnitAbility());
-
     Templates.AddItem(AddDartAbility());
     Templates.AddItem(AddPistolStatBonusAbility());
 
     Templates.AddItem(AddEclipseAbility());
 
-    // This is a PurePassive since the work is done in UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
-    Templates.AddItem(PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height", true));
-    Templates.AddItem(/*TODO:*/PurePassive('Spook_Operator', "img:///UILibrary_PerkIcons.UIPerk_psychosis", true));
+    Templates.AddItem(AddExeuntAbility());
 
-    Templates.AddItem(PurePassive('Spook_Dummy0', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy1', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy2', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy3', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy4', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy5', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy6', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy7', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy8', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy9', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy10', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy11', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy12', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy13', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy14', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy15', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy16', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy17', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy18', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy19', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
-    Templates.AddItem(PurePassive('Spook_Dummy20', "img:///UILibrary_PerkIcons.UIPerk_unknown", true));
+    Templates.AddItem(PurePassive('Spook_Dummy0', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy1', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy2', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy3', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy4', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy5', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy6', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy7', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy8', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy9', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy10', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy11', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy12', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy13', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy14', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy15', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy16', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy17', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy18', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy19', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
+    Templates.AddItem(PurePassive('Spook_Dummy20', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
 
     return Templates;
 }
@@ -138,7 +133,7 @@ static function X2AbilityTemplate AddWiredAbility()
     ImmunityEffect.ImmuneTypes.AddItem('Panic');
     ImmunityEffect.ImmuneTypes.AddItem('Mental');
     ImmunityEffect.ImmuneTypes.AddItem(class'X2Item_DefaultDamageTypes'.default.DisorientDamageType);
-    ImmunityEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, , , Template.AbilitySourceName);
+    ImmunityEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage,,, Template.AbilitySourceName);
     ImmunityEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
     Template.AddTargetEffect(ImmunityEffect);
 
@@ -254,7 +249,7 @@ static function X2AbilityTemplate AddDistractAbility()
     ItemEffect.ItemName = 'SpookDistractGrenade';
     ItemEffect.bIgnoreItemEquipRestrictions = true;
     ItemEffect.BuildPersistentEffect(`BPE_TickNever_LastForever);
-    ItemEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, ,Template.AbilitySourceName);
+    ItemEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
     ItemEffect.DuplicateResponse = eDupe_Ignore;
     Template.AddTargetEffect(ItemEffect);
 
@@ -351,7 +346,7 @@ static function X2AbilityTemplate AddMeldAbility()
 {
     // Handled by SpookDetectionManager.IsTileUnbreakablyConcealingForUnit().
     local X2AbilityTemplate Template;
-    Template = PurePassive('Spook_Meld', "img:///UILibrary_PerkIcons.UIPerk_height", true);
+    Template = PurePassive('Spook_Meld', "img:///UILibrary_PerkIcons.UIPerk_height");
     Template.AdditionalAbilities.AddItem(MeldTriggerName);
     return Template;
 }
@@ -575,9 +570,8 @@ static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string Ico
 
     // Cost
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 1;
-    ActionPointCost.bFreeCost = false;
-    ActionPointCost.bConsumeAllPoints = true;
+    ActionPointCost.iNumPoints = 0;
+    ActionPointCost.bFreeCost = true;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     // Activation
@@ -825,173 +819,6 @@ static function X2Action InsertTrackAction(out VisualizationTrack Track, int Ind
     return Action;
 }
 
-// This is mostly the same as the base CarryUnit ability, but with a new name.
-// This is because LW2 forces CarryUnit to break concealment.
-// We don't want to change that for all classes, but we do want to change that for spooks.
-// We do remove the mobility penalty.
-static function X2AbilityTemplate CarryUnitAbility()
-{
-    local X2AbilityTemplate             Template;
-    local X2Condition_UnitProperty      TargetCondition, ShooterCondition;
-    local X2AbilityTarget_Single        SingleTarget;
-    local X2AbilityTrigger_PlayerInput  PlayerInput;
-    local X2Effect_PersistentStatChange CarryUnitEffect;
-    local X2Effect_Persistent           BeingCarriedEffect;
-    local X2Condition_UnitEffects       ExcludeEffects;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_CarryUnit');
-
-    Template.RemoveTemplateAvailablility(Template.BITFIELD_GAMEAREA_Multiplayer); // Do not allow "Carrying" in MP!
-
-    Template.AbilityCosts.AddItem(default.FreeActionCost);
-
-    Template.AbilityToHitCalc = default.DeadEye;
-
-    ShooterCondition = new class'X2Condition_UnitProperty';
-    ShooterCondition.ExcludeDead = true;
-    Template.AbilityShooterConditions.AddItem(ShooterCondition);
-
-    Template.AddShooterEffectExclusions();
-    AbilityRequiresSpookShooter(Template);
-
-    TargetCondition = new class'X2Condition_UnitProperty';
-    TargetCondition.CanBeCarried = true;
-    TargetCondition.ExcludeAlive = false;
-    TargetCondition.ExcludeDead = false;
-    TargetCondition.ExcludeFriendlyToSource = false;
-    TargetCondition.ExcludeHostileToSource = false;
-    TargetCondition.RequireWithinRange = true;
-    TargetCondition.WithinRange = class'X2Ability_CarryUnit'.default.CARRY_UNIT_RANGE;
-    Template.AbilityTargetConditions.AddItem(TargetCondition);
-
-    // The target must not have a cocoon on top of it
-    ExcludeEffects = new class'X2Condition_UnitEffects';
-    ExcludeEffects.AddExcludeEffect(class'X2Ability_ChryssalidCocoon'.default.GestationStage1EffectName, 'AA_UnitHasCocoonOnIt');
-    ExcludeEffects.AddExcludeEffect(class'X2Ability_ChryssalidCocoon'.default.GestationStage2EffectName, 'AA_UnitHasCocoonOnIt');
-    Template.AbilityTargetConditions.AddItem(ExcludeEffects);
-
-    SingleTarget = new class'X2AbilityTarget_Single';
-    Template.AbilityTargetStyle = SingleTarget;
-
-    PlayerInput = new class'X2AbilityTrigger_PlayerInput';
-    Template.AbilityTriggers.AddItem(PlayerInput);
-
-    Template.Hostility = eHostility_Neutral;
-
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_carry_unit";
-    Template.CinescriptCameraType = "Soldier_CarryPickup";
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-    Template.bDontDisplayInAbilitySummary = true;
-
-    Template.ActivationSpeech = 'PickingUpBody';
-
-    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-    Template.BuildVisualizationFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildVisualization;
-    Template.BuildAppliedVisualizationSyncFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildAppliedVisualization;
-    Template.BuildAffectedVisualizationSyncFn = class'X2Ability_CarryUnit'.static.CarryUnit_BuildAffectedVisualization;
-
-    CarryUnitEffect = new class'X2Effect_PersistentStatChange';
-    CarryUnitEffect.BuildPersistentEffect(1, true, true);
-    CarryUnitEffect.SetDisplayInfo(ePerkBuff_Penalty, class'X2Ability_CarryUnit'.default.CarryUnitEffectFriendlyName, class'X2Ability_CarryUnit'.default.CarryUnitEffectFriendlyDesc, Template.IconImage, true);
-    //CarryUnitEffect.AddPersistentStatChange(eStat_Mobility, class'X2Ability_CarryUnit'.default.CARRY_UNIT_MOBILITY_ADJUST);
-    CarryUnitEffect.DuplicateResponse = eDupe_Ignore;
-    CarryUnitEffect.EffectName = class'X2Ability_CarryUnit'.default.CarryUnitEffectName;
-    Template.AddShooterEffect(CarryUnitEffect);
-
-    BeingCarriedEffect = new class'X2Effect_Persistent';
-    BeingCarriedEffect.BuildPersistentEffect(1, true, true);
-    BeingCarriedEffect.DuplicateResponse = eDupe_Ignore;
-    BeingCarriedEffect.EffectName = class'X2AbilityTemplateManager'.default.BeingCarriedEffectName;
-    BeingCarriedEffect.EffectAddedFn = class'X2Ability_CarryUnit'.static.BeingCarried_EffectAdded;
-    Template.AddTargetEffect(BeingCarriedEffect);
-
-    Template.AddAbilityEventListener('UnitMoveFinished', class'XComGameState_Ability'.static.CarryUnitMoveFinished, ELD_OnStateSubmitted);
-    Template.bLimitTargetIcons = true; //When selected, show carry-able units, rather than typical targets
-
-    Template.OverrideAbilities.AddItem('CarryUnit');
-
-    return Template;
-}
-
-// This is mostly the same as the base ability, but free.
-static function X2DataTemplate PutDownUnitAbility()
-{
-    local X2AbilityTemplate             Template;
-    local X2AbilityCost_ActionPoints    ActionPointCost;
-    local X2Condition_UnitProperty      TargetCondition, ShooterCondition;
-    local X2AbilityTarget_Single        SingleTarget;
-    local X2AbilityTrigger_PlayerInput  PlayerInput;
-    local X2Effect_RemoveEffects        RemoveEffects;
-    local array<name>                   SkipExclusions;
-
-    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_PutDownUnit');
-
-    ActionPointCost = new class 'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 1;
-    ActionPointCost.bFreeCost = true;
-    Template.AbilityCosts.AddItem(ActionPointCost);
-
-    Template.AbilityToHitCalc = default.DeadEye;
-
-    ShooterCondition = new class'X2Condition_UnitProperty';
-    ShooterCondition.ExcludeDead = true;
-    Template.AbilityShooterConditions.AddItem(ShooterCondition);
-
-    Template.AbilityShooterConditions.AddItem(new class'X2Condition_UnblockedNeighborTile');
-
-    AbilityRequiresSpookShooter(Template);
-
-    TargetCondition = new class'X2Condition_UnitProperty';
-    TargetCondition.BeingCarriedBySource = true;
-    TargetCondition.ExcludeAlive = false;
-    TargetCondition.ExcludeDead = false;
-    TargetCondition.ExcludeFriendlyToSource = false;
-    TargetCondition.ExcludeHostileToSource = false;
-    Template.AbilityTargetConditions.AddItem(TargetCondition);
-
-    SingleTarget = new class'X2AbilityTarget_Single';
-    Template.AbilityTargetStyle = SingleTarget;
-
-    PlayerInput = new class'X2AbilityTrigger_PlayerInput';
-    Template.AbilityTriggers.AddItem(PlayerInput);
-
-    Template.Hostility = eHostility_Neutral;
-    Template.CinescriptCameraType = "Soldier_CarryPutdown";
-
-    Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
-    Template.AbilitySourceName = 'eAbilitySource_Standard';
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_drop_unit";
-    Template.bDisplayInUITooltip = false;
-    Template.bDisplayInUITacticalText = false;
-    Template.bDontDisplayInAbilitySummary = true;
-
-    Template.ActivationSpeech = 'DroppingBody';
-
-    Template.BuildNewGameStateFn = class'X2Ability_CarryUnit'.static.PutDownUnit_BuildGameState;
-    Template.BuildVisualizationFn = class'X2Ability_CarryUnit'.static.PutDownUnit_BuildVisualization;
-
-    RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.EffectNamesToRemove.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);
-    Template.AddShooterEffect(RemoveEffects);
-
-    RemoveEffects = new class'X2Effect_RemoveEffects';
-    RemoveEffects.bCleanse = true;
-    RemoveEffects.EffectNamesToRemove.AddItem(class'X2AbilityTemplateManager'.default.BeingCarriedEffectName);
-    Template.AddTargetEffect(RemoveEffects);
-
-    SkipExclusions.AddItem(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);
-    Template.AddShooterEffectExclusions(SkipExclusions);
-
-    Template.bLimitTargetIcons = true; //When selected, show only the unit we can put down, rather than typical targets
-
-    Template.OverrideAbilities.AddItem('PutDownUnit');
-
-    return Template;
-}
-
 static function X2Effect_Persistent CreateEclipsedStatusEffect()
 {
     local X2Effect_Persistent PersistentEffect;
@@ -1057,7 +884,6 @@ static function X2AbilityTemplate AddEclipseAbility()
 
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
     ActionPointCost.iNumPoints = 1; // 1 = require an action point left, 0 = anytime, like Evac.
-    ActionPointCost.bFreeCost = true;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     SingleTarget = new class'X2AbilityTarget_Single';
@@ -1111,7 +937,7 @@ static function X2AbilityTemplate AddPistolStatBonusAbility()
     // Bonus to Mobility and DetectionRange stat effects
     PersistentStatChangeEffect = new class'X2Effect_PersistentStatChange';
     PersistentStatChangeEffect.BuildPersistentEffect(1, true, false, false);
-    PersistentStatChangeEffect.SetDisplayInfo(ePerkBuff_Passive, "", "", Template.IconImage, false, ,Template.AbilitySourceName);
+    PersistentStatChangeEffect.SetDisplayInfo(ePerkBuff_Passive, "", "", Template.IconImage, false,, Template.AbilitySourceName);
     PersistentStatChangeEffect.AddPersistentStatChange(eStat_Mobility, class'X2Item_SpookWeapons'.default.PISTOL_MOBILITY_BONUS);
     PersistentStatChangeEffect.AddPersistentStatChange(eStat_DetectionModifier, class'X2Item_SpookWeapons'.default.PISTOL_DETECTION_MODIFIER);
     Template.AddTargetEffect(PersistentStatChangeEffect);
@@ -1280,4 +1106,12 @@ static function XComGameState BuildDartGameState(XComGameStateContext Context)
     }
 
     return NewGameState;
+}
+
+static function X2AbilityTemplate AddExeuntAbility()
+{
+    local X2AbilityTemplate Template;
+    Template = PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height");
+    // Implemented by UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
+    return Template;
 }
