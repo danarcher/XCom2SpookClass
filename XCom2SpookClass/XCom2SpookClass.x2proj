@@ -43,6 +43,7 @@
     <Content Include="Media\Grenade_Distract_DIF.TGA" />
     <Content Include="Media\Grenade_Distract_RGB.png" />
     <Content Include="Media\Grenade_Flashbang_DIF.png" />
+    <Content Include="Media\Obj_SmashNGrab_LW.umap" />
     <Content Include="Media\SpookSilencedPistol.wav" />
     <Content Include="Media\SpookSilencedPistolMono.wav" />
     <Content Include="Media\SpookSilencedPistolMonoDelay.wav" />
@@ -53,11 +54,13 @@
     <Content Include="Src\XCom2SpookClass\Classes\ActorComponent_SpookSavedMaterials.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookDetectionManager.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookHelpers.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\SpookLootManager.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookRedAlertVisualizer.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIChooseClass_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIStrategyMap_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UITacticalHUD_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Ability_SpookAbilitySet.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\X2Ability_SpookOperatorAbilitySet.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Action_SpookPlayAkEvent.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Action_SpookSetMaterial.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2AIBT_SpookActions.uc" />
@@ -73,6 +76,7 @@
     <Content Include="Src\XCom2SpookClass\Classes\X2Item_SpookDamageTypes.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2Item_SpookWeapons.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\X2StrategyElement_SpookPointsOfInterest.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\XComConfig_LW_Overhaul.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\XComGameState_Effect_SpookTemporaryItem.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\XComGameState_SpookDistractEffect.uc" />
   </ItemGroup>

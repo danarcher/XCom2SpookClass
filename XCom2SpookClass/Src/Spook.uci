@@ -10,6 +10,7 @@
 `define FindUnitState(id, newgamestate, history) class'SpookHelpers'.static.FindUnitState(`id, `newgamestate, `history)
 `define FindOrAddUnitState(id, newgamestate) class'SpookHelpers'.static.FindOrAddUnitState(`id, `newgamestate);
 `define FindAbilityState(id, newgamestate, history) class'SpookHelpers'.static.FindAbilityState(`id, `newgamestate, `history);
+`define FindItemState(id, newgamestate, history) class'SpookHelpers'.static.FindItemState(`id, `newgamestate, `history);
 
 `define CreateChangeState(desc) class'XComGameStateContext_ChangeContainer'.static.CreateChangeState(`desc)
 

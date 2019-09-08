@@ -65,3 +65,25 @@ static function XComGameState_Ability FindAbilityState(int ObjectID, optional XC
     }
     return Ability;
 }
+
+static function XComGameState_Item FindItemState(int ObjectID, optional XComGameState NewGameState, optional XComGameStateHistory History)
+{
+    local XComGameState_Item Item;
+    if (ObjectID == 0)
+    {
+        return none;
+    }
+    if (NewGameState != none)
+    {
+        Item = XComGameState_Item(NewGameState.GetGameStateForObjectID(ObjectID));
+    }
+    if (Item == none)
+    {
+        if (History == none)
+        {
+            History = `XCOMHISTORY;
+        }
+        Item = XComGameState_Item(History.GetGameStateForObjectID(ObjectID));
+    }
+    return Item;
+}
