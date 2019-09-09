@@ -16,7 +16,7 @@ function bool PostAbilityCostPaid(XComGameState_Effect EffectState, XComGameStat
     {
         if (!SourceUnit.GetUnitValue('SpookBonusMovesTaken', MovesThisTurn))
         {
-            `SPOOKLOG("Adding action points");
+            `SPOOKLOG("Adding bonus move action points");
             SourceUnit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.MoveActionPoint);
             SourceUnit.SetUnitFloatValue('SpookBonusMovesTaken', 1, eCleanup_BeginTurn);
             return true;

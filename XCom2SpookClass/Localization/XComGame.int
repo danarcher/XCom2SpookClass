@@ -63,6 +63,9 @@ LocLongDescription="Retain concealment next to high cover and objectives."
 LocHelpText="Retain concealment next to high cover and objectives."
 LocPromotionPopupText="<Bullet/> When in high cover, or next to chests and similar objectives, your concealment cannot be broken from any angle, even by enemies in close proximity."
 
+[Spook_MeldTrigger X2AbilityTemplate]
+LocFriendlyName="Meld"
+
 [Spook_Eclipse X2AbilityTemplate]
 LocFriendlyName="Eclipse"
 LocLongDescription="Render an adjacent ally (soldier or civilian) unconscious and carryable. Does not break concealment."

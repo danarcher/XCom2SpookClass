@@ -1,7 +1,6 @@
 [X2Ability_SpookAbilitySet]
 WiredNotRevealedByClassesFriendlyName="Scrambled"
 WiredNotRevealedByClassesHelpText="Unable to detect some concealed soldiers."
-MeldFriendlyName="Meld";
 
 [XComGameState_SpookDistractEffect]
 DistractedFriendlyName="Distracted"

@@ -18,6 +18,8 @@
 
 `define IsHumanPlayer(player) (`TACTICALRULES.GetLocalClientPlayerObjectID() == `player.ObjectID)
 
+`define InsertTrackAction(t, i, sc, c) class'SpookHelpers'.static.InsertTrackAction(`t, `i, `sc, `c)
+
 `define TILESTOMETERS(n) (`UNITSTOMETERS(`TILESTOUNITS(`n)))
 
 `define XABILITYMANAGER class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager()

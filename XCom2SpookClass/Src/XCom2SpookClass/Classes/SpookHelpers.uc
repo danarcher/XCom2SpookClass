@@ -78,3 +78,12 @@ static function XComGameState_BaseObject FindHistoricObjectState(int ObjectID, o
     }
     return Obj;
 }
+
+static function X2Action InsertTrackAction(out VisualizationTrack Track, int Index, class<X2Action> SpawnClass, XComGameStateContext Context)
+{
+    local X2Action Action;
+    Action = SpawnClass.static.AddToVisualizationTrack(Track, Context);
+    Track.TrackActions.RemoveItem(Action);
+    Track.TrackActions.InsertItem(Index, Action);
+    return Action;
+}

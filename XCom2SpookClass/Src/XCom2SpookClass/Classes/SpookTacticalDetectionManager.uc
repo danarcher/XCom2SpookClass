@@ -18,7 +18,6 @@ enum EConcealBreakReason
     eCBR_UnitMoveIntoDetectionRange,
     eCBR_EnemyMoveIntoDetectionRange,
     eCBR_BrokenWindow,
-    eCBR_EndTurn,
 };
 
 enum ECoverHandling
@@ -129,9 +128,11 @@ function EventListenerReturn OnPlayerTurnEnded(Object EventData, Object EventSou
     Player = XComGameState_Player(EventSource);
     `SPOOKLOG("OnPlayerTurnEnded: " $ (`IsHumanPlayer(Player) ? "Human" : "AI"));
 
+    // Find each of this player's units which can Meld, by finding each Meld
+    // ability and walking back to its owning unit and their controlling player.
     foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_Ability', Ability)
     {
-        if (Ability.GetMyTemplateName() != 'Spook_Meld')
+        if (Ability.GetMyTemplateName() != class'X2Ability_SpookAbilitySet'.const.MeldAbilityName)
         {
             continue;
         }
@@ -139,7 +140,8 @@ function EventListenerReturn OnPlayerTurnEnded(Object EventData, Object EventSou
         Unit = `FindUnitState(Ability.OwnerStateObject.ObjectID);
         if (Unit != none && Unit.ControllingPlayer.ObjectID == Player.ObjectID)
         {
-            HandleMeldAbilityOnPlayerTurnEnd(Unit, Ability, GameState);
+            // If you can Meld, Meld.
+            HandleMeldAbilityOnPlayerTurnEnd(Unit, GameState);
         }
     }
     return ELR_NoInterrupt;
@@ -396,6 +398,25 @@ function bool IsUnitConcealmentUnbreakable(XComGameState GameState, XComGameStat
 
 function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TTile Tile, EConcealBreakReason Reason)
 {
+    if (Reason == eCBR_UnitMoveIntoDetectionRange)
+    {
+        // If we move into detection range, our tile won't protect us.
+        // (We're doing this because it means we don't have to replace default concealment tile handling!)
+        return false;
+    }
+
+    if (CanUnitMeldHere(Unit, Tile))
+    {
+        // If the unit *can* Meld here, they are unbreakably concealed.
+        // It is not necessary for them to have Melded (inducing Shade).
+        return true;
+    }
+
+    return false;
+}
+
+function bool CanUnitMeldHere(XComGameState_Unit Unit, out TTile Tile)
+{
     local XComWorldData World;
     local vector Position;
     local XComCoverPoint Cover;
@@ -404,16 +425,9 @@ function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TT
     local XComGameState_InteractiveObject InteractiveObject;
     local int i;
 
-    if (Reason == eCBR_UnitMoveIntoDetectionRange)
+    if (Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldAbilityName).ObjectID == 0)
     {
-        // If we move into detection range, our tile won't protect us.
-        // (We're doing this because it means we don't have to replace default concealment tile handling!)
-        return false;
-    }
-
-    if (!Unit.IsUnitAffectedByEffectName('Spook_Meld'))
-    {
-        // Only units who can meld get special treatment.
+        // Only units who can Meld, can Meld.
         return false;
     }
 
@@ -811,7 +825,7 @@ function HandleWiredAbilityOnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     }
 }
 
-function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState_Ability Ability, XComGameState GameState)
+function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState GameState)
 {
     local XComGameState_Ability MeldTrigger;
     local TTile Tile;
@@ -819,18 +833,19 @@ function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState
     `SPOOKLOG("HandleMeldAbilityOnPlayerTurnEnd");
 
     // Note: This could easily have caused flicker in/out conflicts given:
-    //       i) Unit vanishes (which triggers meld until turn end), and moves
+    //       i) Unit Vanishes (which triggers Shade until turn end), and moves
     //          into high cover with their free vanish move; then
-    //       ii) At that same turn end in high cover, the unit auto-melds
+    //       ii) At that same turn end in high cover, the unit's Meld kicks in,
+    //           inducing Shade.
     //
-    // However, fortuitously it seems we activate meld 2 before meld 1 expires,
-    // i.e. this very function is called just before the previous effect hits
-    // its turn end tick. Since the meld visualizer checks the effect count
-    // before deciding what to do, this works out nicely.
+    // However, fortuitously it seems we activate Shade 2 before Shade 1
+    // expires, i.e. this very function is called just before the previous
+    // effect hits its turn end tick. Since the shade visualizer checks the
+    // effect count before deciding what to do, this works out nicely.
     GetOwnTile(Unit, Tile);
-    if (Unit.IsConcealed() && IsTileUnbreakablyConcealingForUnit(Unit, Tile, eCBR_EndTurn))
+    if (Unit.IsConcealed() && CanUnitMeldHere(Unit, Tile))
     {
-        MeldTrigger = `FindAbilityState(Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldTriggerName).ObjectID, GameState);
+        MeldTrigger = `FindAbilityState(Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldTriggerAbilityName).ObjectID, GameState);
         if (MeldTrigger != none)
         {
             `SPOOKLOG("Triggering " $ MeldTrigger.GetMyTemplateName());
