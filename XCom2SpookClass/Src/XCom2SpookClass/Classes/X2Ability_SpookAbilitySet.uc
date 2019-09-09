@@ -356,7 +356,6 @@ static function X2AbilityTemplate AddMeldTriggerAbility()
     local X2AbilityTemplate             Template;
     local array<name>                   SkipExclusions;
     local X2Condition_UnitProperty      ConcealedShooterCondition;
-    local X2Effect_Persistent           MeldEffect;
     local X2AbilityCost_ActionPoints    ActionPointCost;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, MeldTriggerName);
@@ -394,65 +393,95 @@ static function X2AbilityTemplate AddMeldTriggerAbility()
     ConcealedShooterCondition.IsConcealed = true;
     Template.AbilityShooterConditions.AddItem(ConcealedShooterCondition);
 
-    MeldEffect = new class'X2Effect_Persistent';
-    MeldEffect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(1));
-    MeldEffect.DuplicateResponse = eDupe_Ignore;
-    MeldEffect.EffectName = MeldTriggerName;
-    MeldEffect.EffectRemovedVisualizationFn = VisualizeMeldEffectRemoved;
-    MeldEffect.CleansedVisualizationFn = VisualizeMeldEffectRemoved;
-    Template.AddTargetEffect(MeldEffect);
+    Template.AddTargetEffect(CreateMeldEffect(true));
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-    Template.BuildVisualizationFn = BuildMeldVisualization;
+    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 
     return Template;
 }
 
-static function BuildMeldVisualization(XComGameState VisualizeGameState, out array<VisualizationTrack> OutVisualizationTracks)
+static function X2Effect_Persistent CreateMeldEffect(bool bUntilNextTurn)
 {
-    local XComGameStateHistory History;
-    local XComGameStateContext_Ability Context;
-    local XComGameState_Ability AbilityState;
-    local X2AbilityTemplate AbilityStateTemplate;
-    local VisualizationTrack Track;
-    local X2Action_PlaySoundAndFlyover SoundAndFlyOver;
-    local X2Action_SpookPlayAkEvent PlayAkEvent;
-
-    History = `XCOMHISTORY;
-    Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
-    AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID));
-    AbilityStateTemplate = AbilityState.GetMyTemplate();
-
-    class'SpookRedAlertVisualizer'.static.FindAndRemoveOrCreateTrackFor(Context.InputContext.SourceObject.ObjectID, AbilityStateTemplate, VisualizeGameState, History, OutVisualizationTracks, Track);
-
-    // Announce the exit.
-    SoundAndFlyOver = X2Action_PlaySoundAndFlyover(InsertTrackAction(Track, 0, class'X2Action_PlaySoundAndFlyover', Context));
-    SoundAndFlyOver.SetSoundAndFlyOverParameters(None, default.MeldFriendlyName, '', eColor_Good);
-
-    // Master track cloaks.
-    InsertTrackAction(Track, 1, class'X2Action_SpookSetMaterial', Context);
-    if (default.MELD_SOUND_EFFECTS)
+    local X2Effect_Persistent Effect;
+    Effect = new class'X2Effect_Persistent';
+    if (bUntilNextTurn)
     {
-        PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 2, class'X2Action_SpookPlayAkEvent', Context));
-        PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+        Effect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(1));
     }
-
-    // Add the master track now we've made all local changes.
-    OutVisualizationTracks.AddItem(Track);
+    else
+    {
+        Effect.BuildPersistentEffect(`BPE_TickAtEndOfNUnitTurns(1));
+    }
+    Effect.DuplicateResponse = eDupe_Allow; // In case of overlapping effects for different reasons.
+    Effect.EffectName = MeldTriggerName;
+    Effect.VisualizationFn = BuildMeldVisualization;
+    Effect.EffectRemovedVisualizationFn = VisualizeMeldEffectRemoved;
+    Effect.CleansedVisualizationFn = VisualizeMeldEffectRemoved;
+    return Effect;
 }
 
-static function VisualizeMeldEffectRemoved(XComGameState VisualizeGameState, out VisualizationTrack BuildTrack, const name EffectApplyResult)
+static function int GetMeldCount(int ObjectID, XComGameState GameState)
+{
+    local XComGameState_Unit Unit;
+    local StateObjectReference EffectRef;
+    local XComGameState_Effect Effect;
+    local int Count;
+
+    Unit = `FindUnitState(ObjectID, GameState);
+    foreach Unit.AffectedByEffects(EffectRef)
+    {
+        Effect = `FindEffectState(EffectRef.ObjectID, GameState);
+        if (Effect.GetX2Effect().EffectName == MeldTriggerName)
+        {
+            Count += 1;
+        }
+    }
+    return Count;
+}
+
+static function BuildMeldVisualization(XComGameState VisualizeGameState, out VisualizationTrack Track, const name EffectApplyResult)
+{
+    local XComGameStateContext Context;
+    local X2Action_PlaySoundAndFlyover SoundAndFlyOver;
+    local X2Action_SpookPlayAkEvent PlayAkEvent;
+    local int MeldCount;
+
+    Context = VisualizeGameState.GetContext();
+
+    MeldCount = GetMeldCount(Track.StateObject_NewState.ObjectID, VisualizeGameState);
+    if (MeldCount == 1)
+    {
+        SoundAndFlyOver = X2Action_PlaySoundAndFlyover(InsertTrackAction(Track, 0, class'X2Action_PlaySoundAndFlyover', Context));
+        SoundAndFlyOver.SetSoundAndFlyOverParameters(None, default.MeldFriendlyName, '', eColor_Good);
+
+        InsertTrackAction(Track, 1, class'X2Action_SpookSetMaterial', Context);
+
+        if (default.MELD_SOUND_EFFECTS)
+        {
+            PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 2, class'X2Action_SpookPlayAkEvent', Context));
+            PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconActivate';
+        }
+    }
+}
+
+static function VisualizeMeldEffectRemoved(XComGameState VisualizeGameState, out VisualizationTrack Track, const name EffectApplyResult)
 {
     local X2Action_SpookSetMaterial SetMaterial;
     local X2Action_SpookPlayAkEvent PlayAkEvent;
+    local int MeldCount;
 
-    SetMaterial = X2Action_SpookSetMaterial(InsertTrackAction(BuildTrack, 0, class'X2Action_SpookSetMaterial', VisualizeGameState.GetContext()));
-    SetMaterial.bResetMaterial = true;
-
-    if (default.MELD_SOUND_EFFECTS)
+    MeldCount = GetMeldCount(Track.StateObject_NewState.ObjectID, VisualizeGameState);
+    if (MeldCount == 0)
     {
-        PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(BuildTrack, 1, class'X2Action_SpookPlayAkEvent', VisualizeGameState.GetContext()));
-        PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconDeactivate';
+        SetMaterial = X2Action_SpookSetMaterial(InsertTrackAction(Track, 0, class'X2Action_SpookSetMaterial', VisualizeGameState.GetContext()));
+        SetMaterial.bResetMaterial = true;
+
+        if (default.MELD_SOUND_EFFECTS)
+        {
+            PlayAkEvent = X2Action_SpookPlayAkEvent(InsertTrackAction(Track, 1, class'X2Action_SpookPlayAkEvent', VisualizeGameState.GetContext()));
+            PlayAkEvent.EventToPlay = AkEvent'SoundX2CharacterFX.MimicBeaconDeactivate';
+        }
     }
 }
 
@@ -524,6 +553,8 @@ static function X2AbilityTemplate AddVanishAbility()
     StealthEffect.bRemoveWhenTargetConcealmentBroken = true;
     Template.AddTargetEffect(StealthEffect);
     Template.AddTargetEffect(class'X2Effect_Spotted'.static.CreateUnspottedEffect());
+
+    Template.AddTargetEffect(CreateMeldEffect(false));
 
     // Bonus Move Effect
     BonusMoveEffect = new class'X2Effect_SpookBonusMove';

@@ -10,6 +10,7 @@
 `define FindUnitState(id, newgamestate, history) XComGameState_Unit(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
 `define FindOrAddUnitState(id, newgamestate, history) XComGameState_Unit(class'SpookHelpers'.static.FindOrAddObjectState(class'XComGameState_Unit', `id, `newgamestate))
 `define FindAbilityState(id, newgamestate, history) XComGameState_Ability(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
+`define FindEffectState(id, newgamestate, history) XComGameState_Effect(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
 `define FindItemState(id, newgamestate, history) XComGameState_Item(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
 `define FindHistoricItemState(id, newgamestate, history) XComGameState_Item(class'SpookHelpers'.static.FindObjectState(`id, `newgamestate, `history))
 

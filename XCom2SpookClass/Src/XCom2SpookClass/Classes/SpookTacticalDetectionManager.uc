@@ -818,6 +818,15 @@ function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState
 
     `SPOOKLOG("HandleMeldAbilityOnPlayerTurnEnd");
 
+    // Note: This could easily have caused flicker in/out conflicts given:
+    //       i) Unit vanishes (which triggers meld until turn end), and moves
+    //          into high cover with their free vanish move; then
+    //       ii) At that same turn end in high cover, the unit auto-melds
+    //
+    // However, fortuitously it seems we activate meld 2 before meld 1 expires,
+    // i.e. this very function is called just before the previous effect hits
+    // its turn end tick. Since the meld visualizer checks the effect count
+    // before deciding what to do, this works out nicely.
     GetOwnTile(Unit, Tile);
     if (Unit.IsConcealed() && IsTileUnbreakablyConcealingForUnit(Unit, Tile, eCBR_EndTurn))
     {
