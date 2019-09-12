@@ -22,7 +22,7 @@ static function X2AbilityTemplate AddOperatorAbility()
 {
     local X2AbilityTemplate Template;
     // Implemented by X2Ability_SpookOperatorAbilitySet().
-    Template = PurePassive(OperatorAbilityName, "img:///UILibrary_PerkIcons.UIPerk_psychosis");
+    Template = PurePassive(OperatorAbilityName, "img:///Spook.UIPerk_operator");
     return Template;
 }
 

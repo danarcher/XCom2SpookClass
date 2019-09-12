@@ -199,7 +199,7 @@ static function X2AbilityTemplate AddVeilAbility()
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Veil');
     Template.AbilitySourceName = 'eAbilitySource_Perk';
-    Template.IconImage = "img:///UILibrary_LW_PerkPack.LW_AbilityCovert";
+    Template.IconImage = "img:///Spook.UIPerk_veil";
     Template.Hostility = eHostility_Neutral;
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
     Template.AbilityToHitCalc = default.DeadEye;
@@ -234,7 +234,7 @@ static function X2AbilityTemplate AddDistractAbility()
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Distract');
 
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_groundzero";
+    Template.IconImage = "img:///Spook.UIPerk_distract_grenade";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
     Template.Hostility = eHostility_Neutral;
@@ -273,7 +273,7 @@ static function X2AbilityTemplate AddDistractThrowGrenadeAbility()
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'SpookThrowDistractGrenade');
 
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_groundzero";
+    Template.IconImage = "img:///Spook.UIPerk_distract_grenade";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
     Template.Hostility = eHostility_Neutral;
@@ -346,7 +346,7 @@ static function X2AbilityTemplate AddMeldAbility()
 {
     local X2AbilityTemplate Template;
     // This is a PurePassive so we get a "we can meld" status icon.
-    Template = PurePassive(MeldAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height");
+    Template = PurePassive(MeldAbilityName, "img:///Spook.UIPerk_meld");
     Template.AdditionalAbilities.AddItem(MeldTriggerAbilityName);
     return Template;
 }
@@ -414,7 +414,7 @@ static function X2AbilityTemplate AddVanishAbility()
     local array<name>                       SkipExclusions;
 
     `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Vanish');
-    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_item_wraith";
+    Template.IconImage = "img:///Spook.UIPerk_vanish";
     Template.AbilitySourceName = 'eAbilitySource_Perk';
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.Hostility = eHostility_Neutral;
@@ -488,12 +488,12 @@ static function X2AbilityTemplate AddVanishAbility()
 
 static function X2AbilityTemplate AddExfilAbility()
 {
-    return BuildExfilAbility('Spook_Exfil', "img:///UILibrary_PerkIcons.UIPerk_launch", default.EXFIL_RADIUS);
+    return BuildExfilAbility('Spook_Exfil', "img:///Spook.UIPerk_exfil", default.EXFIL_RADIUS);
 }
 
 static function X2AbilityTemplate AddExodusAbility()
 {
-    return BuildExfilAbility('Spook_Exodus', "img:///UILibrary_PerkIcons.UIPerk_flight", default.EXODUS_RADIUS);
+    return BuildExfilAbility('Spook_Exodus', "img:///Spook.UIPerk_exodus", default.EXODUS_RADIUS);
 }
 
 static function X2AbilityTemplate BuildExfilAbility(name AbilityName, string IconImage, float SmokeRadius)
@@ -1048,7 +1048,7 @@ static function XComGameState BuildDartGameState(XComGameStateContext Context)
 static function X2AbilityTemplate AddExeuntAbility()
 {
     local X2AbilityTemplate Template;
-    Template = PurePassive(ExeuntAbilityName, "img:///UILibrary_PerkIcons.UIPerk_height");
+    Template = PurePassive(ExeuntAbilityName, "img:///Spook.UIPerk_exeunt");
     // Implemented by UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
     return Template;
 }
