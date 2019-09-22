@@ -102,9 +102,39 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 **Fleche** (CPL) (Per Long War 2)
 
-![Icon](XCom2SpookClass/Media/Docs/UIPerk_swordSlash.png)
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
 
 *"Attack any enemy within movement range with your combat knife."*
+
+**Cutthroat** (SGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Your melee attacks against biological enemies ignore their armor, have a +15 critical chance, and do +2 critical damage."*
+
+**Bladestorm** (SSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Free melee attacks on any enemies that enter or attack from melee range."*
+
+**Surgeon** (TSGT)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_momentum.png)
+
+*"Your combat knife attacks do +3 additional damage and have +10 bonus aim."*
+
+**Whirlwind** (GSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"If you hit with a melee attack during your turn, gain a bonus move."*
+
+**Coup de Grâce** (MSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Melee attacks against unconscious, stunned, panicked or disoriented enemies have +50 aim, +50 crit and deal two points of additional base damage."*
 
 ## Perks: Diplomat
 
