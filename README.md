@@ -24,12 +24,12 @@ All content is subject to future balance tweaks and other changes without notice
 
 In the unlikely event that the Spook wishes to engage in combat, the Spook Pistol is extremely accurate at close range, even versus enemies in cover. It is quick to fire, encouraging mobility. It is also deeply inaccurate at longer ranges, and lacks significant upgrades at higher weapon tiers.
 
-**Conventional** 4 damage, +2 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Conventional** 2-3 damage, +2 on a crit, short sound range, unlimited ammo. 1 action to fire.
 
-**Magnetic** 6 damage, +3 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Magnetic** 4-5 damage, +3 on a crit, short sound range, unlimited ammo. 1 action to fire.
 
 
-### Combat Knife 
+### Combat Knife
 
 ![Spook Pistol](XCom2SpookClass/Media/Docs/CombatKnife.jpg)
 
@@ -62,25 +62,25 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 *"Distract nearby enemies toward a target location. Does not break concealment."* 2 charges per mission.
 
 
-**Meld** (SSGT) 
+**Meld** (SSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_meld.png)
 
 *"Retain concealment next to high cover and objectives."* Passively triggered when in a suitable location.
 
-**Vanish** (TSGT) 
+**Vanish** (TSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_vanish.png)
 
-*"Release a smoke cloud, gain concealment and a free concealed move action."* Free to activate, with 2 charges per mission. 
+*"Release a smoke cloud, gain concealment and a free concealed move action."* Free to activate, with 2 charges per mission.
 
-**Exfil** (GSGT) 
+**Exfil** (GSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_exfil.png)
 
-*"Release a smoke cloud and immediately exit the AO."* 
+*"Release a smoke cloud and immediately exit the AO."*
 
-**Exodus** (MSGT) 
+**Exodus** (MSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_exodus.png)
 
@@ -108,7 +108,7 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 ## Perks: Diplomat
 
-**Eclipse** (SQ) 
+**Eclipse** (SQ)
 
 ![Icon](XCom2SpookClass/Media/Docs/UIPerk_coupdegrace.png)
 
@@ -124,7 +124,7 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 ## Perks: GTS
 
-**Exeunt** (CPL) 
+**Exeunt** (CPL)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_exeunt.png)
 
@@ -132,7 +132,7 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 Costs 15 Supplies, then available to all Spooks.
 
-**Operator** (SSGT) 
+**Operator** (SSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_operator.png)
 

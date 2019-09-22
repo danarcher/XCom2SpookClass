@@ -79,6 +79,28 @@ static function XComGameState_BaseObject FindHistoricObjectState(int ObjectID, o
     return Obj;
 }
 
+static function bool GetOwnTile(XComGameState_BaseObject Obj, out TTile Tile)
+{
+    local XComGameState_Unit Unit;
+    local XComGameState_InteractiveObject InteractiveObject;
+
+    Unit = XComGameState_Unit(Obj);
+    if (Unit != none)
+    {
+        Unit.GetKeystoneVisibilityLocation(Tile);
+        return true;
+    }
+
+    InteractiveObject = XComGameState_InteractiveObject(Obj);
+    if (InteractiveObject != none)
+    {
+        Tile = InteractiveObject.TileLocation;
+        return true;
+    }
+
+    return false;
+}
+
 static function X2Action InsertTrackAction(out VisualizationTrack Track, int Index, class<X2Action> SpawnClass, XComGameStateContext Context)
 {
     local X2Action Action;

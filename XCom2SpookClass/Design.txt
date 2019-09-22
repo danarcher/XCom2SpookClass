@@ -38,11 +38,11 @@ TREE: (Middle) - knives, or booms?
   SQ Knife Fighter
 LCPL Combatives
  CPL Fleche
- SGT ??
+ SGT Cutthroat
 SSGT Bladestorm
-TSGT ??
-GSGT ??
-MSGT ??
+TSGT Surgeon
+GSGT Whirlwind
+MSGT Coup de Grâce
 
 TREE: Diplomat
   SQ Eclipse
@@ -76,6 +76,7 @@ Eclipse (>|) - Render an adjacent ally (soldier or civilian) unconscious (and ca
 
 QUITE NICE
 Eidolon (Free) - Self and all Phantom allies gain concealment. Charges = 1.
+Surgeon - Your combat knife attacks do +3 damage and have +10 aim.
 
 DIPLOMATIC
 Rorschach (Passive) - When advisor, shows an icon in haven if there are faceless infiltrators on base.

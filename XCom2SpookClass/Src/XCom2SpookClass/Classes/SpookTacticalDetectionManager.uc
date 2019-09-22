@@ -11,6 +11,10 @@ var config array<name> WIRED_NOT_REVEALED_BY_CLASSES;
 var config array<name> UNITS_NOT_REVEALED_ABILITIES;
 var config array<name> UNITS_NOT_REVEALED_EFFECTS;
 
+var config bool MELD_HIGH_COVER;
+var config bool MELD_HACKABLE;
+var config array<name> MELD_INTERACTABLE;
+
 enum EConcealBreakReason
 {
     eCBR_EnemyTookDamage,
@@ -46,65 +50,23 @@ event OnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
     HandleWiredAbilityOnActiveUnitChanged(NewActiveUnit);
 }
 
-function float GetUnitDetectionModifier(XComGameState_Unit Unit)
+static function OnPostTemplatesCreated()
 {
-    return Unit.GetCurrentStat(eStat_DetectionModifier);
-}
+    // ChangeForm, BurrowedAttack, UnburrowSawEnemy, ChangeFormSawEnemy
+    UpdateRevealAbilityTemplate('ChangeForm');
+    UpdateRevealAbilityTemplate('ChangeFormSawEnemy');
+    UpdateRevealAbilityTemplate('BurrowedAttack');
+    UpdateRevealAbilityTemplate('UnburrowSawEnemy');
 
-function float GetConcealmentDetectionDistanceMeters(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
-{
-    local XComGameState_Unit Enemy;
-    local XComGameState_InteractiveObject Tower;
-    local float DetectionRadius;
-    local float SightRadius;
-
-    Enemy = XComGameState_Unit(Detector);
-    if (Enemy != none)
+    if (class'X2Ability_SpookAbilitySet'.default.DISTRACT_EXCLUDE_RED_ALERT)
     {
-        SightRadius = Enemy.GetVisibilityRadius();
-        DetectionRadius = FMax(Enemy.GetCurrentStat(eStat_DetectionRadius), 0.0);
-        DetectionRadius = DetectionRadius * FMax(1.0 - GetUnitDetectionModifier(Victim), 0.0);
-        DetectionRadius = FMin(SightRadius, DetectionRadius);
-        return DetectionRadius;
+        `SPOOKSLOG("Distract excludes red alert and hence is cancelled by it");
+        RedAlertCancelsDistract();
     }
-
-    Tower = XComGameState_InteractiveObject(Detector);
-    if (Tower != none)
+    else
     {
-        DetectionRadius = `UNITSTOMETERS(Tower.DetectionRange);
-        return DetectionRadius;
+        `SPOOKSLOG("Distract does NOT exclude red alert");
     }
-
-    return 0;
-}
-
-function float GetConcealmentDetectionDistanceUnits(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
-{
-    return `METERSTOUNITS(GetConcealmentDetectionDistanceMeters(Detector, Victim));
-}
-
-function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, EConcealBreakReason Reason)
-{
-    local XComGameState_Unit Enemy;
-    local XComGameState_InteractiveObject Tower;
-
-    Enemy = XComGameState_Unit(Detector);
-    if (Enemy != none)
-    {
-        if (Victim.IsUnitAffectedByEffectName(class'X2Ability_SpookAbilitySet'.const.WiredAbilityName) && default.WIRED_NOT_REVEALED_BY_CLASSES.Find(Enemy.GetMyTemplateName()) >= 0)
-        {
-            return false;
-        }
-        return Victim.IsAlive() && Enemy.IsAlive() && Victim.UnitBreaksConcealment(Enemy);
-    }
-
-    Tower = XComGameState_InteractiveObject(Detector);
-    if (Tower != none)
-    {
-        return Tower.Health > 0 && Tower.DetectionRange > 0.0 && !Tower.bHasBeenHacked;
-    }
-
-    return false;
 }
 
 function EventListenerReturn OnPlayerTurnBegun(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
@@ -199,7 +161,6 @@ function ReplaceEventListeners()
     //EventMgr.RegisterForEvent(This, 'UnitMoveFinished', OnUnitMoveFinished, ELD_OnStateSubmitted);
 
     EventMgr.RegisterForEvent(This, 'UnitTakeEffectDamage', OnUnitTakeEffectDamage, ELD_OnStateSubmitted);
-    EventMgr.RegisterForEvent(This, 'UnitDied', OnUnitDied, ELD_OnStateSubmitted);
 }
 
 function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
@@ -209,6 +170,120 @@ function EventListenerReturn OnObjectVisibilityChanged(Object EventData, Object 
     Detector = XComGameState_BaseObject(EventSource);
     Victim = XComGameState_Unit(EventData);
     TryDetectorSeeingVictim(Detector, Victim, GameState, eCBR_UnitVisibilityChange, eCH_SafeInCover);
+    return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local XComGameState_Unit Mover, Bystander;
+    local XComGameState_InteractiveObject InteractiveObject;
+    local XComGameStateHistory History;
+    local XComGameStateContext_Ability AbilityContext;
+    local XComGameState_AIGroup AIGroup;
+
+    History = `XCOMHISTORY;
+
+    Mover = XComGameState_Unit(EventData);
+    Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
+    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+
+    CleanseBurningIfInWater(Mover);
+
+    if (AbilityContext != None)
+    {
+        // Breaking windows breaks concealment. Ignore tile since we broke a window to get to it.
+        if (AbilityContext.ResultContext.bPathCausesDestruction &&
+            Mover.IsConcealed() &&
+            !IsUnitConcealmentUnbreakableIgnoringTile(GameState, Mover, eCBR_BrokenWindow))
+        {
+            Mover.BreakConcealment();
+            Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
+        }
+    }
+
+    if (AbilityContext != none)
+    {
+        // Check if this unit is a member of a group waiting on this unit's movement to complete,
+        // or at least reach the interruption step where the movement should complete.
+        AIGroup = Mover.GetGroupMembership();
+        if (AIGroup != None &&
+            AIGroup.IsWaitingOnUnitForReveal(Mover) &&
+            (AbilityContext.InterruptionStatus != eInterruptionStatus_Interrupt ||
+             (AIGroup.FinalVisibilityMovementStep > INDEX_NONE &&
+              AIGroup.FinalVisibilityMovementStep <= AbilityContext.ResultContext.InterruptionStep)))
+        {
+            AIGroup.StopWaitingOnUnitForReveal(Mover);
+        }
+    }
+
+    foreach History.IterateByClassType(class'XComGameState_InteractiveObject', InteractiveObject)
+    {
+        Mover = TryDetectorSeeingVictim(InteractiveObject, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
+    }
+
+    foreach History.IterateByClassType(class'XComGameState_Unit', Bystander)
+    {
+        Mover = TryDetectorSeeingVictim(Bystander, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
+        Bystander = TryDetectorSeeingVictim(Mover, Bystander, GameState, eCBR_EnemyMoveIntoDetectionRange, eCH_SafeInCover);
+    }
+
+    return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
+{
+    local XComGameStateHistory History;
+    local XComGameStateContext_Ability AbilityContext;
+    local XComGameState_Unit Damagee, Damager;
+
+    History = `XCOMHISTORY;
+
+    `SPOOKLOG("OnUnitTakeEffectDamage");
+
+    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+    if( AbilityContext != None )
+    {
+        Damager = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
+        `SPOOKLOG("Damager is " @ Damager.ObjectID);
+    }
+    else
+    {
+        `SPOOKLOG("No ability context, no damager");
+    }
+    Damagee = XComGameState_Unit(EventSource);
+
+    if (Damager != None)
+    {
+        if (IsUnitConcealmentUnbreakableIgnoringTile(GameState, Damager, eCBR_EnemyTookDamage))
+        {
+            `SPOOKLOG("Damager stays concealed, no reaction");
+            `SPOOKLOG("OnUnitTakeEffectDamage ends");
+            return ELR_NoInterrupt;
+        }
+        `SPOOKLOG("Damager does not stay concealed");
+    }
+
+    if (Damagee != None)
+    {
+        if (Damager == None)
+        {
+            if (Damagee.IsUnitAffectedByEffectName(class'X2Effect_SpookBleeding'.const.BleedEffectName))
+            {
+                `SPOOKLOG("No damager, and damagee suffering from SpookBleeding. Sweeping assumption: no reaction");
+                `SPOOKLOG("OnUnitTakeEffectDamage ends");
+                return ELR_NoInterrupt;
+            }
+        }
+
+        `SPOOKLOG("Damagee reacting to damage");
+        return Damagee.OnUnitTookDamage(EventData, EventSource, GameState, EventID);
+    }
+    else
+    {
+        `SPOOKLOG("No damagee");
+    }
+
+    `SPOOKLOG("OnUnitTakeEffectDamage ends");
     return ELR_NoInterrupt;
 }
 
@@ -281,8 +356,8 @@ function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detecto
 
     if (BreaksConcealment(Detector, Victim, Reason))
     {
-        GetOwnTile(Detector, DetectorTile);
-        GetOwnTile(Victim, VictimTile);
+        `GetOwnTile(Detector, DetectorTile);
+        `GetOwnTile(Victim, VictimTile);
 
         World = `XWORLD;
         DetectorPosition = World.GetPositionFromTileCoordinates(DetectorTile);
@@ -309,89 +384,10 @@ function XComGameState_Unit TryBreakConcealment(XComGameState_BaseObject Detecto
     return Victim;
 }
 
-function EventListenerReturn OnUnitEnteredTile(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
-{
-    local XComGameState_Unit Mover, Bystander;
-    local XComGameState_InteractiveObject Tower;
-    local XComGameStateHistory History;
-    local XComGameStateContext_Ability AbilityContext;
-    local XComGameState_AIGroup AIGroup;
-
-    History = `XCOMHISTORY;
-
-    Mover = XComGameState_Unit(EventData);
-    Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
-    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-
-    CleanseBurningIfInWater(Mover);
-
-    if (AbilityContext != None)
-    {
-        // Breaking windows breaks concealment. Ignore tile since we broke a window to get to it.
-        if (AbilityContext.ResultContext.bPathCausesDestruction &&
-            Mover.IsConcealed() &&
-            !IsUnitConcealmentUnbreakableIgnoringTile(GameState, Mover, eCBR_BrokenWindow))
-        {
-            Mover.BreakConcealment();
-            Mover = XComGameState_Unit(History.GetGameStateForObjectID(Mover.ObjectID));
-        }
-    }
-
-    if (AbilityContext != none)
-    {
-        // Check if this unit is a member of a group waiting on this unit's movement to complete,
-        // or at least reach the interruption step where the movement should complete.
-        AIGroup = Mover.GetGroupMembership();
-        if (AIGroup != None &&
-            AIGroup.IsWaitingOnUnitForReveal(Mover) &&
-            (AbilityContext.InterruptionStatus != eInterruptionStatus_Interrupt ||
-             (AIGroup.FinalVisibilityMovementStep > INDEX_NONE &&
-              AIGroup.FinalVisibilityMovementStep <= AbilityContext.ResultContext.InterruptionStep)))
-        {
-            AIGroup.StopWaitingOnUnitForReveal(Mover);
-        }
-    }
-
-    foreach History.IterateByClassType(class'XComGameState_InteractiveObject', Tower)
-    {
-        Mover = TryDetectorSeeingVictim(Tower, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
-    }
-
-    foreach History.IterateByClassType(class'XComGameState_Unit', Bystander)
-    {
-        Mover = TryDetectorSeeingVictim(Bystander, Mover, GameState, eCBR_UnitMoveIntoDetectionRange, eCH_IgnoreCover);
-        Bystander = TryDetectorSeeingVictim(Mover, Bystander, GameState, eCBR_EnemyMoveIntoDetectionRange, eCH_SafeInCover);
-    }
-
-    return ELR_NoInterrupt;
-}
-
-function bool GetOwnTile(XComGameState_BaseObject Obj, out TTile Tile)
-{
-    local XComGameState_Unit Unit;
-    local XComGameState_InteractiveObject Tower;
-
-    Unit = XComGameState_Unit(Obj);
-    if (Unit != none)
-    {
-        Unit.GetKeystoneVisibilityLocation(Tile);
-        return true;
-    }
-
-    Tower = XComGameState_InteractiveObject(Obj);
-    if (Tower != none)
-    {
-        Tile = Tower.TileLocation;
-        return true;
-    }
-
-    return false;
-}
-
 function bool IsUnitConcealmentUnbreakable(XComGameState GameState, XComGameState_Unit Unit, EConcealBreakReason Reason)
 {
     local TTile Tile;
-    GetOwnTile(Unit, Tile);
+    `GetOwnTile(Unit, Tile);
     return IsTileUnbreakablyConcealingForUnit(Unit, Tile, Reason) ||
            IsUnitConcealmentUnbreakableIgnoringTile(GameState, Unit, Reason);
 }
@@ -415,6 +411,59 @@ function bool IsTileUnbreakablyConcealingForUnit(XComGameState_Unit Unit, out TT
     return false;
 }
 
+function bool BreaksConcealment(XComGameState_BaseObject Detector, XComGameState_Unit Victim, EConcealBreakReason Reason)
+{
+    local XComGameState_Unit Enemy;
+    local XComGameState_InteractiveObject InteractiveObject;
+
+    Enemy = XComGameState_Unit(Detector);
+    if (Enemy != none)
+    {
+        if (Victim.IsUnitAffectedByEffectName(class'X2Ability_SpookAbilitySet'.const.WiredAbilityName) && default.WIRED_NOT_REVEALED_BY_CLASSES.Find(Enemy.GetMyTemplateName()) >= 0)
+        {
+            return false;
+        }
+        return Victim.IsAlive() && Enemy.IsAlive() && Victim.UnitBreaksConcealment(Enemy);
+    }
+
+    InteractiveObject = XComGameState_InteractiveObject(Detector);
+    if (InteractiveObject != none)
+    {
+        // Likely an ADVENT tower.
+        return InteractiveObject.Health > 0 &&
+               InteractiveObject.DetectionRange > 0.0 &&
+               !InteractiveObject.bHasBeenHacked;
+    }
+
+    return false;
+}
+
+function float GetConcealmentDetectionDistanceUnits(XComGameState_BaseObject Detector, XComGameState_Unit Victim)
+{
+    local XComGameState_Unit Enemy;
+    local XComGameState_InteractiveObject InteractiveObject;
+    local float DetectionRadius;
+    local float SightRadius;
+
+    Enemy = XComGameState_Unit(Detector);
+    if (Enemy != none)
+    {
+        SightRadius = Enemy.GetVisibilityRadius();
+        DetectionRadius = FMax(Enemy.GetCurrentStat(eStat_DetectionRadius), 0.0);
+        DetectionRadius = DetectionRadius * FMax(1.0 - Victim.GetCurrentStat(eStat_DetectionModifier), 0.0);
+        DetectionRadius = FMin(SightRadius, DetectionRadius);
+        return `METERSTOUNITS(DetectionRadius);
+    }
+
+    InteractiveObject = XComGameState_InteractiveObject(Detector);
+    if (InteractiveObject != none)
+    {
+        return DetectionRadius;
+    }
+
+    return 0;
+}
+
 function bool CanUnitMeldHere(XComGameState_Unit Unit, out TTile Tile)
 {
     local XComWorldData World;
@@ -427,14 +476,13 @@ function bool CanUnitMeldHere(XComGameState_Unit Unit, out TTile Tile)
 
     if (Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldAbilityName).ObjectID == 0)
     {
-        // Only units who can Meld, can Meld.
         return false;
     }
 
     World = `XWORLD;
     Position = World.GetPositionFromTileCoordinates(Tile);
     World.GetCoverPointAtFloor(Position, Cover);
-    if (`HAS_HIGH_COVER(Cover))
+    if (`HAS_HIGH_COVER(Cover) && default.MELD_HIGH_COVER)
     {
         return true;
     }
@@ -448,11 +496,8 @@ function bool CanUnitMeldHere(XComGameState_Unit Unit, out TTile Tile)
             InteractiveObject = InteractiveActor.GetInteractiveState();
             if (InteractiveObject != none)
             {
-                if (InteractiveObject.MustBeHacked() ||
-                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_OpenChest' ||
-                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_TakeVial' ||
-                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_StasisTube' ||
-                    InteractiveActor.InteractionAbilityTemplateName == 'Interact_PlantBomb')
+                if ((InteractiveObject.MustBeHacked() && default.MELD_HACKABLE) ||
+                    default.MELD_INTERACTABLE.Find(InteractiveActor.InteractionAbilityTemplateName) >= 0)
                 {
                     return true;
                 }
@@ -476,6 +521,7 @@ function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, 
     if (!Victim.IsConcealed())
     {
         `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: not concealed ergo false");
+        return false;
     }
 
     // Certain abilities, whilst being executed, prevent concealment from breaking.
@@ -501,281 +547,6 @@ function bool IsUnitConcealmentUnbreakableIgnoringTile(XComGameState GameState, 
 
     `SPOOKLOG("IsUnitConcealmentUnbreakableIgnoringTile: " $ Victim.GetFullName() $ " not staying concealed");
     return false;
-}
-
-function EventListenerReturn OnUnitTakeEffectDamage(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
-{
-    local XComGameStateHistory History;
-    local XComGameStateContext_Ability AbilityContext;
-    local XComGameState_Unit Damagee, Damager;
-
-    History = `XCOMHISTORY;
-
-    `SPOOKLOG("OnUnitTakeEffectDamage");
-
-    AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-    if( AbilityContext != None )
-    {
-        Damager = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
-        `SPOOKLOG("Damager is " @ Damager.ObjectID);
-    }
-    else
-    {
-        `SPOOKLOG("No ability context, no damager");
-    }
-    Damagee = XComGameState_Unit(EventSource);
-
-    if (Damager != None)
-    {
-        if (IsUnitConcealmentUnbreakableIgnoringTile(GameState, Damager, eCBR_EnemyTookDamage))
-        {
-            `SPOOKLOG("Damager stays concealed, no reaction");
-            `SPOOKLOG("OnUnitTakeEffectDamage ends");
-            return ELR_NoInterrupt;
-        }
-        `SPOOKLOG("Damager does not stay concealed");
-    }
-
-    if (Damagee != None)
-    {
-        if (Damager == None)
-        {
-            if (Damagee.IsUnitAffectedByEffectName('SpookBleeding'))
-            {
-                `SPOOKLOG("No damager, and damagee suffering from SpookBleeding. Sweeping assumption: no reaction");
-                `SPOOKLOG("OnUnitTakeEffectDamage ends");
-                return ELR_NoInterrupt;
-            }
-        }
-
-        `SPOOKLOG("Damagee reacting to damage(r)");
-        return Damagee.OnUnitTookDamage(EventData, EventSource, GameState, EventID);
-    }
-    else
-    {
-        `SPOOKLOG("No damagee");
-    }
-
-    `SPOOKLOG("OnUnitTakeEffectDamage ends");
-    return ELR_NoInterrupt;
-}
-
-function UnitASeesUnitB(XComGameState_Unit UnitA, XComGameState_Unit UnitB, XComGameState GameState)
-{
-    local XComGameState_AIGroup AIGroup;
-
-    if (UnitB.IsDead() && !UnitA.HasSeenCorpse(UnitB.ObjectID) && IsCorpseStealthKill(UnitB))
-    {
-        `SPOOKLOG("UnitASeesUnitB filter marking stealth killed corpse " @ UnitB.ObjectID @ " seen by " @ UnitA.ObjectID);
-        UnitA.MarkCorpseSeen(UnitB.ObjectID);
-    }
-
-    // Don't register an alert if this unit is about to reflex.
-    AIGroup = UnitA.GetGroupMembership();
-    if (AIGroup == none || AIGroup.EverSightedByEnemy)
-    {
-        class'XComGameState_Unit'.static.UnitASeesUnitB(UnitA, UnitB, GameState);
-    }
-}
-
-static function bool IsCorpseStealthKill(XComGameState_Unit Corpse)
-{
-    return false; // Corpse.KilledByDamageTypes.Find(class'X2Item_SpookDamageTypes'.const.StealthBleedDamageTypeName) >= 0;
-}
-
-function EventListenerReturn OnUnitDied(Object EventData, Object EventSource, XComGameState GameState, Name EventID)
-{
-    local XComGameState_Unit Unit;
-    local XComGameState NewGameState;
-
-    `SPOOKLOG("OnUnitDied");
-
-    Unit = XComGameState_Unit(EventSource);
-    if (Unit.IsDead() && IsCorpseStealthKill(Unit) && Unit.KilledByDamageTypes.Find('SpookStealthKillMarker') < 0)
-    {
-        // This creates a cool possibility - limited time fulton, or limited time until the unit's death is detected, during which time you have
-        // to go and pick up the body and move them so that they're not spotted....then we could unmark such corpses as seen if not gotten,
-        // triggering alerts and badness. And/or we remove the corpse at time expiry too, and remove the loot unless you hide/fulton the corpse.
-        // With changes to detection mechanics (new vis, actual unit LOS being a factor so front fire arc vis, etc.) this could be nice.
-        // Also TODO: elevaysheeyon should prevent detection if we're going all Dishonored. So higher up = they can't see you. Nobody looks up, after all.
-        // There'd still be roof drones to worry about. Maybe roof drones get instasmurdered, the askholes.
-        `SPOOKLOG("Detected a stealth kill");
-        NewGameState = `CreateChangeState("Marking Spook Stealth Kill");
-        Unit = XComGameState_Unit(NewGameState.CreateStateObject(class'XComGameState_Unit', Unit.ObjectID));
-        Unit.KilledByDamageTypes.AddItem('SpookStealthKillMarker');
-        NewGameState.AddStateObject(Unit);
-        NewGameState.GetContext().PostBuildVisualizationFn.AddItem(BuildSimpleVisualizationForStealthKill);
-        `TACTICALRULES.SubmitGameState(NewGameState);
-    }
-
-    `SPOOKLOG("OnUnitDied ends");
-    return ELR_NoInterrupt;
-}
-
-static function BuildSimpleVisualizationForStealthKill(XComGameState GameState, out array<VisualizationTrack> OutVisualizationTracks)
-{
-    local XComGameStateHistory          History;
-    local XComGameState_Unit            Prospect, Unit;
-    local Actor                         UnitVisualizer;
-
-    local VisualizationTrack            Track;
-    local X2Action_PlaySoundAndFlyOver  SoundAndFlyOver;
-
-    History = `XCOMHISTORY;
-
-    foreach GameState.IterateByClassType(class'XComGameState_Unit', Prospect)
-    {
-        Unit = Prospect;
-    }
-
-    UnitVisualizer = History.GetVisualizer(Unit.ObjectID);
-    Track.StateObject_OldState = History.GetGameStateForObjectID(Unit.ObjectID, eReturnType_Reference, GameState.HistoryIndex - 1);
-    Track.StateObject_NewState = Unit;
-    Track.TrackActor = UnitVisualizer;
-
-    SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTrack(Track, GameState.GetContext()));
-    SoundAndFlyOver.SetSoundAndFlyOverParameters(none, default.StealthKilledFriendlyName, '', eColor_Good,, 0, false);
-
-    OutVisualizationTracks.AddItem(Track);
-}
-
-function CleanseBurningIfInWater(XComGameState_Unit Unit)
-{
-    local TTile Tile;
-    local XComGameState_Effect EffectState;
-    local X2Effect_Persistent PersistentEffect;
-    local XComGameStateContext_EffectRemoved Context;
-    local XComGameState NewGameState;
-    local XComGameStateHistory History;
-
-    GetOwnTile(Unit, Tile);
-    if (Unit.IsBurning() && `XWORLD.IsWaterTile(Tile))
-    {
-        History = `XCOMHISTORY;
-        foreach History.IterateByClassType(class'XComGameState_Effect', EffectState)
-        {
-            if (EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID == Unit.ObjectID)
-            {
-                PersistentEffect = EffectState.GetX2Effect();
-                if (PersistentEffect.EffectName == class'X2StatusEffects'.default.BurningName)
-                {
-                    Context = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);
-                    NewGameState = History.CreateNewGameState(true, Context);
-                    EffectState.RemoveEffect(NewGameState, NewGameState, true);
-                    `TACTICALRULES.SubmitGameState(NewGameState);
-                }
-            }
-        }
-    }
-}
-
-static function OnPostTemplatesCreated()
-{
-    // ChangeForm, BurrowedAttack, UnburrowSawEnemy, ChangeFormSawEnemy
-    UpdateRevealAbilityTemplate('ChangeForm');
-    UpdateRevealAbilityTemplate('ChangeFormSawEnemy');
-    UpdateRevealAbilityTemplate('BurrowedAttack');
-    UpdateRevealAbilityTemplate('UnburrowSawEnemy');
-
-    if (class'X2Ability_SpookAbilitySet'.default.DISTRACT_EXCLUDE_RED_ALERT)
-    {
-        `SPOOKSLOG("Distract excludes red alert and hence is cancelled by it");
-        RedAlertCancelsDistract();
-    }
-    else
-    {
-        `SPOOKSLOG("Distract does NOT exclude red alert");
-    }
-}
-
-static function UpdateRevealAbilityTemplate(name AbilityName)
-{
-    local X2AbilityTemplate Template;
-    local X2Condition_UnitProperty UnitPropertyCondition;
-
-    Template = `XABILITYMANAGER.FindAbilityTemplate(AbilityName);
-    if (Template == none)
-    {
-        return;
-    }
-
-    // Concealed units cannot be targeted for e.g. concealment removal, nor can
-    // concealed movement set off alarms.
-    //
-    //  i) Prevent X2Effect_BreakUnitConcealment from being applied as a
-    //     multi-target effect via this template.
-    //
-    // ii) Prevents CheckForVisibleMovementIn[..]Radius_Self from counting
-    //     concealed units, since that function delegates back to the ability's
-    //     multi-target conditions to check target suitability.
-    //
-    UnitPropertyCondition = new class'X2Condition_UnitProperty';
-    UnitPropertyCondition.ExcludeConcealed = true;
-    Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
-    `SPOOKSLOG("Updated " $ Template.DataName $ " to exclude concealed units");
-}
-
-static function RedAlertCancelsDistract()
-{
-    local X2DataTemplate DataTemplate;
-    local X2AbilityTemplate Template;
-    local SpookRedAlertVisualizer Visualizer;
-    local bool bModified;
-    foreach `XABILITYMANAGER.IterateTemplates(DataTemplate, none)
-    {
-        Template = X2AbilityTemplate(DataTemplate);
-        if (Template == none)
-        {
-            continue;
-        }
-
-        bModified = false;
-        if (RedAlertCancelsDistractHere(Template, Template.AbilityShooterEffects))
-        {
-            Template.AddShooterEffect(CreateDistractRemover(Template, "AbilityShooterEffects"));
-            bModified = true;
-        }
-        if (RedAlertCancelsDistractHere(Template, Template.AbilityTargetEffects))
-        {
-            Template.AddTargetEffect(CreateDistractRemover(Template, "AbilityTargetEffects"));
-            bModified = true;
-        }
-        if (RedAlertCancelsDistractHere(Template, Template.AbilityMultiTargetEffects))
-        {
-            Template.AddMultiTargetEffect(CreateDistractRemover(Template, "AbilityMultiTargetEffects"));
-            bModified = true;
-        }
-        if (bModified)
-        {
-            Visualizer = new class'SpookRedAlertVisualizer';
-            Visualizer.AttachTo(Template);
-        }
-    }
-}
-
-static function bool RedAlertCancelsDistractHere(X2AbilityTemplate Template, out const array<X2Effect> Effects)
-{
-    local X2Effect Effect;
-    local X2Effect_RedAlert RedAlert;
-
-    foreach Effects(Effect)
-    {
-        RedAlert = X2Effect_RedAlert(Effect);
-        if (RedAlert != none)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-static function X2Effect CreateDistractRemover(X2AbilityTemplate Template, string ListName)
-{
-    local X2Effect_SpookRemoveEffects Effect;
-    Effect = new class'X2Effect_SpookRemoveEffects';
-    Effect.EffectNamesToRemove.AddItem(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
-    `SPOOKSLOG("Modifying ability " $ Template.DataName $ " to cancel Distract when it adds Red Alert via " $ ListName);
-    return Effect;
 }
 
 function HandleWiredAbilityOnActiveUnitChanged(XComGameState_Unit NewActiveUnit)
@@ -842,7 +613,7 @@ function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState
     // expires, i.e. this very function is called just before the previous
     // effect hits its turn end tick. Since the shade visualizer checks the
     // effect count before deciding what to do, this works out nicely.
-    GetOwnTile(Unit, Tile);
+    `GetOwnTile(Unit, Tile);
     if (Unit.IsConcealed() && CanUnitMeldHere(Unit, Tile))
     {
         MeldTrigger = `FindAbilityState(Unit.FindAbility(class'X2Ability_SpookAbilitySet'.const.MeldTriggerAbilityName).ObjectID, GameState);
@@ -852,4 +623,137 @@ function HandleMeldAbilityOnPlayerTurnEnd(XComGameState_Unit Unit, XComGameState
             MeldTrigger.AbilityTriggerAgainstSingleTarget(MeldTrigger.OwnerStateObject, false);
         }
     }
+}
+
+function UnitASeesUnitB(XComGameState_Unit UnitA, XComGameState_Unit UnitB, XComGameState GameState)
+{
+    local XComGameState_AIGroup AIGroup;
+
+    // Don't register an alert if this unit is about to reflex.
+    AIGroup = UnitA.GetGroupMembership();
+    if (AIGroup == none || AIGroup.EverSightedByEnemy)
+    {
+        class'XComGameState_Unit'.static.UnitASeesUnitB(UnitA, UnitB, GameState);
+    }
+}
+
+function CleanseBurningIfInWater(XComGameState_Unit Unit)
+{
+    local TTile Tile;
+    local XComGameState_Effect EffectState;
+    local X2Effect_Persistent PersistentEffect;
+    local XComGameStateContext_EffectRemoved Context;
+    local XComGameState NewGameState;
+    local XComGameStateHistory History;
+
+    `GetOwnTile(Unit, Tile);
+    if (Unit.IsBurning() && `XWORLD.IsWaterTile(Tile))
+    {
+        History = `XCOMHISTORY;
+        foreach History.IterateByClassType(class'XComGameState_Effect', EffectState)
+        {
+            if (EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID == Unit.ObjectID)
+            {
+                PersistentEffect = EffectState.GetX2Effect();
+                if (PersistentEffect.EffectName == class'X2StatusEffects'.default.BurningName)
+                {
+                    Context = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(EffectState);
+                    NewGameState = History.CreateNewGameState(true, Context);
+                    EffectState.RemoveEffect(NewGameState, NewGameState, true);
+                    `TACTICALRULES.SubmitGameState(NewGameState);
+                }
+            }
+        }
+    }
+}
+
+static function UpdateRevealAbilityTemplate(name AbilityName)
+{
+    local X2AbilityTemplate Template;
+    local X2Condition_UnitProperty UnitPropertyCondition;
+
+    Template = `XABILITYMANAGER.FindAbilityTemplate(AbilityName);
+    if (Template == none)
+    {
+        return;
+    }
+
+    // Concealed units cannot be targeted for e.g. concealment removal, nor can
+    // concealed movement set off alarms.
+    //
+    //  i) Prevent X2Effect_BreakUnitConcealment from being applied as a
+    //     multi-target effect via this template.
+    //
+    // ii) Prevents CheckForVisibleMovementIn[..]Radius_Self from counting
+    //     concealed units, since that function delegates back to the ability's
+    //     multi-target conditions to check target suitability.
+    //
+    UnitPropertyCondition = new class'X2Condition_UnitProperty';
+    UnitPropertyCondition.ExcludeConcealed = true;
+    Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
+    `SPOOKSLOG("Updated " $ Template.DataName $ " to exclude concealed units");
+}
+
+static function RedAlertCancelsDistract()
+{
+    local X2DataTemplate DataTemplate;
+    local X2AbilityTemplate Template;
+    local SpookRedAlertVisualizer Visualizer;
+    local bool bModified;
+
+    foreach `XABILITYMANAGER.IterateTemplates(DataTemplate, none)
+    {
+        Template = X2AbilityTemplate(DataTemplate);
+        if (Template == none)
+        {
+            continue;
+        }
+
+        bModified = false;
+        if (ContainsRedAlertEffect(Template.AbilityShooterEffects))
+        {
+            Template.AddShooterEffect(CreateDistractRemover(Template, "AbilityShooterEffects"));
+            bModified = true;
+        }
+        if (ContainsRedAlertEffect(Template.AbilityTargetEffects))
+        {
+            Template.AddTargetEffect(CreateDistractRemover(Template, "AbilityTargetEffects"));
+            bModified = true;
+        }
+        if (ContainsRedAlertEffect(Template.AbilityMultiTargetEffects))
+        {
+            Template.AddMultiTargetEffect(CreateDistractRemover(Template, "AbilityMultiTargetEffects"));
+            bModified = true;
+        }
+        if (bModified)
+        {
+            Visualizer = new class'SpookRedAlertVisualizer';
+            Visualizer.AttachTo(Template);
+        }
+    }
+}
+
+static function bool ContainsRedAlertEffect(out const array<X2Effect> Effects)
+{
+    local X2Effect Effect;
+    local X2Effect_RedAlert RedAlert;
+
+    foreach Effects(Effect)
+    {
+        RedAlert = X2Effect_RedAlert(Effect);
+        if (RedAlert != none)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+static function X2Effect CreateDistractRemover(X2AbilityTemplate Template, string ListName)
+{
+    local X2Effect_SpookRemoveEffects Effect;
+    Effect = new class'X2Effect_SpookRemoveEffects';
+    Effect.EffectNamesToRemove.AddItem(class'XComGameState_SpookDistractEffect'.const.DistractedEffectName);
+    `SPOOKSLOG("Modifying ability " $ Template.DataName $ " to cancel Distract when it adds Red Alert via " $ ListName);
+    return Effect;
 }

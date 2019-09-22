@@ -101,6 +101,13 @@ LocHelpText="Release a smoke cloud, gain concealment and a free concealed move a
 LocFlyOverText="Vanish"
 LocPromotionPopupText="<Bullet/> During the concealed bonus move, the soldier cannot be detected by any means.<br/><Bullet/> 2 uses per mission."
 
+[Spook_Surgeon X2AbilityTemplate]
+LocFriendlyName="Surgeon"
+LocLongDescription="Your combat knife attacks do additional damage and have bonus aim."
+LocHelpText="Your combat knife attacks do additional damage and have bonus aim."
+LocFlyOverText="Surgeon"
+LocPromotionPopupText="<Bullet/> Applies only to combat knife attacks."
+
 [Spook_Dummy0 X2AbilityTemplate]
 LocFriendlyName="Unknown"
 LocFlyOverText="Unknown"

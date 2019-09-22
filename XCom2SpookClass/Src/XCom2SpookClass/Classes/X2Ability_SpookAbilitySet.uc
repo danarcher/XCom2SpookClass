@@ -43,6 +43,9 @@ var config int DART_BLEED_DAMAGE_PER_TICK;
 var config int DART_BLEED_DAMAGE_SPREAD_PER_TICK;
 var config int DART_BLEED_DAMAGE_PLUSONE_PER_TICK;
 
+var config int SURGEON_DAMAGE;
+var config int SURGEON_AIM;
+
 var localized string WiredNotRevealedByClassesFriendlyName;
 var localized string WiredNotRevealedByClassesHelpText;
 
@@ -75,6 +78,8 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddEclipseAbility());
 
     Templates.AddItem(AddExeuntAbility());
+
+    Templates.AddItem(AddSurgeonAbility());
 
     Templates.AddItem(PurePassive('Spook_Dummy0', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
     Templates.AddItem(PurePassive('Spook_Dummy1', "img:///UILibrary_PerkIcons.UIPerk_unknown"));
@@ -1050,5 +1055,39 @@ static function X2AbilityTemplate AddExeuntAbility()
     local X2AbilityTemplate Template;
     Template = PurePassive(ExeuntAbilityName, "img:///Spook.UIPerk_exeunt");
     // Implemented by UIScreenListener_TacticalHUD_Spook.OnGetEvacPlacementDelay().
+    return Template;
+}
+
+static function X2AbilityTemplate AddSurgeonAbility()
+{
+    local X2AbilityTemplate                     Template;
+    local X2Effect_BonusWeaponDamage            DamageEffect;
+    local X2Effect_ToHitModifier                HitModEffect;
+
+    `CREATE_X2ABILITY_TEMPLATE(Template, 'Spook_Surgeon');
+    Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_momentum";
+
+    Template.AbilitySourceName = 'eAbilitySource_Perk';
+    Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+    Template.Hostility = eHostility_Neutral;
+
+    Template.AbilityToHitCalc = default.DeadEye;
+    Template.AbilityTargetStyle = default.SelfTarget;
+    Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+
+    DamageEffect = new class'X2Effect_BonusWeaponDamage';
+    DamageEffect.BonusDmg = default.SURGEON_DAMAGE;
+    DamageEffect.BuildPersistentEffect(1, true, false, false);
+    DamageEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, true,, Template.AbilitySourceName);
+    Template.AddTargetEffect(DamageEffect);
+
+    HitModEffect = new class'X2Effect_ToHitModifier';
+    HitModEffect.AddEffectHitModifier(eHit_Success, default.SURGEON_AIM, Template.LocFriendlyName, , true, false, true, true);
+    HitModEffect.BuildPersistentEffect(1, true, false, false);
+    HitModEffect.EffectName = 'SurgeonAim';
+    Template.AddTargetEffect(HitModEffect);
+
+    Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
     return Template;
 }

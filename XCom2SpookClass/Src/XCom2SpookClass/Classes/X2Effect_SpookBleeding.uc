@@ -10,13 +10,14 @@ var localized string BleedingEffectAcquired;
 var localized string BleedingEffectTicked;
 var localized string BleedingEffectLost;
 
+const BleedEffectName = 'SpookBleeding';
 
 static function X2Effect_SpookBleeding CreateBleedingStatusEffect(name DamageTypeName, int BleedingTurns, int DamagePerTick, int DamageSpreadPerTick, int PlusOnePerTick)
 {
     local X2Effect_SpookBleeding Effect;
 
     Effect = new class'X2Effect_SpookBleeding';
-    Effect.EffectName = 'SpookBleeding';
+    Effect.EffectName = BleedEffectName;
     Effect.BuildPersistentEffect(`BPE_TickAtStartOfNUnitTurns(BleedingTurns));
     Effect.SetDisplayInfo(ePerkBuff_Penalty, default.BleedingFriendlyName, default.BleedingHelpText, "img:///UILibrary_PerkIcons.UIPerk_bloodcall");
     Effect.SetBleedDamage(DamagePerTick, DamageSpreadPerTick, PlusOnePerTick, DamageTypeName);
