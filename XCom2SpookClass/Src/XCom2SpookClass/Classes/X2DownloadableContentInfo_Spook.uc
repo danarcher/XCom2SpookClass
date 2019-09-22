@@ -45,6 +45,11 @@ static function bool CanAddItemToInventory(out int bCanAddItem, const EInventory
     return GetDLC().OperatorAbilitySet.CanAddItemToInventory(bCanAddItem, Slot, ItemTemplate, Quantity, Unit, CheckGameState);
 }
 
+static function OnPostMission()
+{
+    class'SpookPostMissionTraining'.static.OnPostMission();
+}
+
 exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)
 {
     class'SpookDebug'.static.LevelUpSoldier(UnitName, Ranks);
