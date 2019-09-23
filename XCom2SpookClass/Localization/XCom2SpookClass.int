@@ -18,3 +18,7 @@ BleedingHelpText="Bleeding units take damage over time."
 BleedingEffectAcquired="<XGParam:StrValue0/!UnitName/> is bleeding."
 BleedingEffectTicked="<XGParam:StrValue0/!UnitName/> is still bleeding."
 BleedingEffectLost="<XGParam:StrValue0/!UnitName/> is no longer bleeding."
+
+[XComGameState_HeadquartersProjectSpookTraining]
+ProjectDisplayName="POST-MISSION"
+ProjectTrainingDisplayName="POST-MISSION TRAINING"

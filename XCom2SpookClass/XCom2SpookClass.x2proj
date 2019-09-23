@@ -17,6 +17,7 @@
     <Folder Include="Src" />
     <Folder Include="Src\LW_Tuple\Classes" />
     <Folder Include="Src\XCom2SpookClass\Classes" />
+    <Folder Include="Src\XComGame\Classes" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Config\XComAI.ini" />
@@ -90,10 +91,10 @@
     <Content Include="Src\XCom2SpookClass\Classes\SpookDebug.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookEventListener.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookHelpers.uc" />
-    <Content Include="Src\XCom2SpookClass\Classes\SpookPostMissionTraining.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookRedAlertVisualizer.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookTacticalDetectionManager.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\SpookTacticalLootManager.uc" />
+    <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIAvengerHUD_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIChooseClass_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UIStrategyMap_Spook.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\UIScreenListener_UITacticalHUD_Spook.uc" />
@@ -119,6 +120,7 @@
     <Content Include="Src\XCom2SpookClass\Classes\XComGameState_Effect_SpookTemporaryItem.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\XComGameState_HeadquartersProjectSpookTraining.uc" />
     <Content Include="Src\XCom2SpookClass\Classes\XComGameState_SpookDistractEffect.uc" />
+    <Content Include="Src\XComGame\Classes\XComLWTuple.uc" />
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>

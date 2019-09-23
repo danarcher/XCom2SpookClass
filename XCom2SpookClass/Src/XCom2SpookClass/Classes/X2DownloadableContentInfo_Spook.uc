@@ -47,7 +47,7 @@ static function bool CanAddItemToInventory(out int bCanAddItem, const EInventory
 
 static function OnPostMission()
 {
-    class'SpookPostMissionTraining'.static.OnPostMission();
+    class'XComGameState_HeadquartersProjectSpookTraining'.static.OnPostMission();
 }
 
 exec function SpookLevelUpSoldier(string UnitName, optional int Ranks = 1)
