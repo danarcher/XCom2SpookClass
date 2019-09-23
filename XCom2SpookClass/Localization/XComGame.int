@@ -68,8 +68,8 @@ LocFriendlyName="Meld"
 
 [Spook_Eclipse X2AbilityTemplate]
 LocFriendlyName="Eclipse"
-LocLongDescription="Render an adjacent ally (soldier or civilian) unconscious and carryable. Does not break concealment."
-LocHelpText="Render an adjacent ally (soldier or civilian) unconscious and carryable. Does not break concealment."
+LocLongDescription="Render an adjacent ally (soldier or civilian) unconscious and carryable."
+LocHelpText="Render an adjacent ally (soldier or civilian) unconscious and carryable."
 LocFlyOverText="Eclipse"
 LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include scientists and engineers, as well as potential and former soldiers."
 

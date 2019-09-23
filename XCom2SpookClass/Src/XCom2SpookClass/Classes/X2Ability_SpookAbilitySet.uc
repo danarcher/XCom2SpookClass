@@ -813,6 +813,7 @@ static function X2AbilityTemplate AddEclipseAbility()
     Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_ShowIfAvailable;
     Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_coupdegrace";
     Template.Hostility = eHostility_Neutral;
+    Template.ConcealmentRule = eConceal_Never; // Operator will override this.
     Template.bLimitTargetIcons = true;
 
     Template.AbilityToHitCalc = default.DeadEye;

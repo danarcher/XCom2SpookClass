@@ -10,11 +10,15 @@ The Spook is a new soldier class for vanilla XCOM 2, for use with Long War 2.
 
 Spooks are not a combat-oriented class. They are best deployed solo, where they can readily complete certain classes of mission alone or in small groups with other Spooks, especially once reaching a high rank.
 
+Spooks require, and automatically undertake, special training between missions to maintain their abilities (see post-mission training, below). This encourages their occasional use on missions to which they are particularly suited.
+
 This mod is not compatible with War of the Chosen, nor LWOTC. It is also incompatible with other mods which make equally substantial changes to concealment mechanics, such as Peek from Concealment.
 
 All content is subject to future balance tweaks and other changes without notice.
 
 ## Weapons
+
+Spooks are lightly armed, since they rely on stealth rather than martial force to complete objectives.
 
 ### Spook Pistol
 
@@ -31,7 +35,7 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 ### Combat Knife
 
-![Spook Pistol](XCom2SpookClass/Media/Docs/CombatKnife.jpg)
+![Combat Knife](XCom2SpookClass/Media/Docs/CombatKnife.jpg)
 
 *"A lightweight secondary melee weapon. A knife attack requires one action and does not end your turn."*
 
@@ -55,24 +59,32 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
  *"Enemies' detection range is reduced, depending on your rank."*
 
+Enemies have a reduced detection range against you, depending on your rank, as denoted by red tiles surrounding enemies who are not alerted to your presence. The detection range reduction does not apply to ADVENT security towers.
+
 **Distract** (SGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_grenade_distract.png)
 
 *"Distract nearby enemies toward a target location. Does not break concealment."* 2 charges per mission.
 
+Lasts for several turns, at which time enemies return to their previous behavior. Enemies already engaged in combat are unaffected.
 
 **Meld** (SSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_meld.png)
 
-*"Retain concealment next to high cover and objectives."* Passively triggered when in a suitable location.
+*"Retain concealment next to high cover and objectives."*
+
+When in high cover, or next to chests and similar objectives, your concealment cannot be broken from any angle, even by enemies in close proximity.
 
 **Vanish** (TSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_vanish.png)
 
-*"Release a smoke cloud, gain concealment and a free concealed move action."* Free to activate, with 2 charges per mission.
+*"Release a smoke cloud, gain concealment and a free concealed move action."*
+
+During the concealed bonus move, the soldier cannot be detected by any means.
+2 charges per mission.
 
 **Exfil** (GSGT)
 
@@ -80,11 +92,15 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 *"Release a smoke cloud and immediately exit the AO."*
 
+The soldier returns to the Avenger without requiring an Evac.
+
 **Exodus** (MSGT)
 
 ![Icon](XCom2SpookClass/Media/UIPerk_exodus.png)
 
 *"Release a smoke cloud. All allies within this area immediately exit the AO."*
+
+The targets return to the Avenger without requiring an Evac.
 
 ## Perks: (Middle Tree)
 
@@ -142,7 +158,9 @@ In the unlikely event that the Spook wishes to engage in combat, the Spook Pisto
 
 ![Icon](XCom2SpookClass/Media/Docs/UIPerk_coupdegrace.png)
 
-*"Render an adjacent ally (soldier or civilian) unconscious and carryable. Does not break concealment."*
+*"Render an adjacent ally (soldier or civilian) unconscious and carryable."*
+
+Civilian allies affected by Eclipse include scientists and engineers, as well as potential and former soldiers.
 
 ## Perks: Spook Pistol
 
@@ -168,7 +186,7 @@ Costs 15 Supplies, then available to all Spooks.
 
 *"Interacting with objects and objectives, knocking people out, and picking up and putting down bodies are free actions and will not end your turn."*
 
-Costs 25 Supplies, then available to all Spooks.
+Costs 25 Supplies, then available to all Spooks. Operator interactions will not break concealment unless they are part of a critical mission objective.
 
 ## Acquiring Spooks
 
@@ -177,6 +195,12 @@ Rookies do not automatically become Spooks after ranking up.
 One Spook can be obtained from a new Point of Interest on the Geoscape, immediately upon starting  a new game.
 
 Further Spooks can be trained in the GTS.
+
+## Post-Mission Training
+
+After each mission in which they participate and are not injured, Spooks are unavailable for several days as they undergo post-mission training to maintain their abilities. This does not grant them new abilities or rank, but limits their continuous field deployment, encouraging the commander to rotate through other troops. It befits their occasional use as situational specialists.
+
+Spooks serving as Haven advisors forgo their post-mission training, since this requires their full attention and prevents their deployment on other missions in any case.
 
 ## New/Unusual Mechanics
 
@@ -192,8 +216,10 @@ Further Spooks can be trained in the GTS.
 
 * **Operator** grants Spooks unique variations of standard perks with reduced cost and which do not break concealment. The mod achieves this through pre-mission ability template substitutions for Spooks with the Operator perk, rather global modifications to the base game ability templates at startup. Further, Operator permits Spooks to carry more than one loot item during Long War 2 Smash'N'Grab missions, and to collect them all without breaking concealment. As well as overriding the standard quest item pickup rules for the mission, the mod has to employ custom evac handling to ensure that bonus loot is awarded for each extra quest item the Spook is carrying, since mssion Kismet only awards one loot item per soldier upon evac. Since the number of maps for Smash'N'Grab is quite limited, and resources are critical in Long War 2, this is intended as a rebalancing mechanic.
 
-* **Eclipse** allows Spooks to knock out VIPs, including during VIP extraction missions. This does mean that high ranking Spooks complete these missions rather easily, on turn one (punch out the VIP, pick them up, and immediately exit the AO). This is intended to allow players to focus on more interesting missions in the late game.
+* **Eclipse** allows Spooks to knock out VIPs, including during VIP extraction missions. This does mean that high ranking Spooks can complete these missions trivially, on turn one, by punching out the VIP, picking them up, and immediately exitting the AO without evac. Mid-ranking Spooks with Phantom and Operator can also complete these missions with minimal risk, since with Operator, Eclipse does not break the concealment granted by Phantom. This allows the commander to focus their time on other missions in the mid-late game.
 
 * **Exfil** and **Exodus** both permit units to exit the AO without evac, but with all the usual effects of evac intact.
 
 * The mod's various concealment-retaining mechanics are achieved by completely supplanting the base game's handling of unit sight of other units and the breaking of concealment, in order to introduce exceptions.
+
+* Post-mission training is implemented rather like Long War 2 officer training, though it is triggered automatically after each mission and does not occupy a staff slot in a facility.
