@@ -50,7 +50,7 @@ function SaveMaterials(Actor TheActor)
             Item.ElementIndex = ElementIndex;
             Item.Mat = MeshComp.GetMaterial(ElementIndex);
             Items.AddItem(Item);
-            `SPOOKLOG("Saving component " $ Item.MeshComp $ " element " $ Item.ElementIndex $ " material " $ Item.Mat);
+            //`SPOOKLOG("Saving component " $ Item.MeshComp $ " element " $ Item.ElementIndex $ " material " $ Item.Mat);
         }
     }
 }
@@ -74,7 +74,7 @@ function ResetMaterials()
     local MeshComponentMaterial Item;
     foreach Items(Item)
     {
-        `SPOOKLOG("Restoring component " $ Item.MeshComp $ " element " $ Item.ElementIndex $ " material " $ Item.Mat);
+        //`SPOOKLOG("Restoring component " $ Item.MeshComp $ " element " $ Item.ElementIndex $ " material " $ Item.Mat);
         Item.MeshComp.SetMaterial(Item.ElementIndex, Item.Mat);
     }
 }

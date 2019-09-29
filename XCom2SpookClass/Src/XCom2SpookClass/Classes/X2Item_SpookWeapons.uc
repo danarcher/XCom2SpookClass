@@ -94,7 +94,7 @@ static function X2WeaponTemplate CreatePistolBase(name TemplateName, int Tier)
     Template.fKnockbackDamageRadius = 0.0f;
     Template.DamageTypeTemplateName = class'X2Item_SpookDamageTypes'.const.PrecisionProjectileDamageTypeName;
 
-    Template.Abilities.AddItem('StandardShot_NoEnd');
+    Template.Abilities.AddItem('Spook_PistolShot');
     Template.Abilities.AddItem('Overwatch');
     Template.Abilities.AddItem('OverwatchShot');
     Template.Abilities.AddItem('Reload');

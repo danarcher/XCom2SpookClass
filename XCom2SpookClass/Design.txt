@@ -1,12 +1,7 @@
-
-
 SILENCED SPOOK PISTOL GRANTS
-Shoot - Short range, serious accuracy bonus/penalty. Rifle damage. Very quiet.
-Dart (1) - Short range. Bleed. Can use while concealed. Stealth. Ungroup on death. No robots. Charges = rank, 1-8. Not 3-10 after all.
+Shoot - Short range, serious accuracy bonus/penalty. Pistol damage. Very quiet.
+Dart (1) - Short range. Bleed. Can use while concealed. Stealth. Ungroup on death. No robots. Charges = 3.
 Infinite ammo.
-
-COMBAT KNIFE GRANTS
-Being pointy.
 
 STARTING PERKS
 See tree below, squaddie grants all three, LW style.
@@ -23,7 +18,7 @@ TSGT 6
 GSGT 7
 MSGT 8
 
-TREE: Footpad
+TREE: Ghost
 
   SQ Wired
 LCPL Phantom
@@ -34,7 +29,7 @@ TGST Vanish
 GSGT Exfil
 MSGT Exodus
 
-TREE: (Middle) - knives, or booms?
+TREE: (Middle)
   SQ Knife Fighter
 LCPL Combatives
  CPL Fleche
@@ -44,19 +39,19 @@ TSGT Surgeon
 GSGT Whirlwind
 MSGT Coup de Grâce
 
-TREE: Diplomat
+TREE: Agent
   SQ Eclipse
-LCPL Rorschach
- CPL Diplomatic Training
- SGT Negotiator
-SSGT Embassy
-TSGT Asylum
-GSGT Ambassador
-MSGT Diplomatic Bag
+LCPL Quickdraw
+ CPL Return Fire
+ SGT Lightning Hands
+SSGT Gunslinger
+TSGT Face Off
+GSGT Clutch Shot
+MSGT Fan Fire
 
 GTS PERKS
 CPL Exeunt
-SSGT Operator (grants special: CarryUnit and PutDownUnit, Hack, Objective Fiddle, Plant X4, ...)
+SSGT Operator
 
 -------------------------
 

@@ -161,14 +161,14 @@ static function EventListenerReturn OnOverrideGetPersonnelStatusSeparate(Object 
     local XComGameState_HeadquartersProjectSpookTraining Project;
     local int iHours, iDays;
 
-    `SPOOKSLOG("OnOverrideGetPersonnelStatusSeparate");
+    //`SPOOKSLOG("OnOverrideGetPersonnelStatusSeparate");
 
     Tuple = XComLWTuple(EventData);
     Unit = XComGameState_Unit(EventSource);
 
     if (Tuple == none || Unit == none)
     {
-        `SPOOKSLOG("Bad tuple/unit!");
+        `SPOOKSLOG("OnOverrideGetPersonnelStatusSeparate found bad tuple/unit!");
         return ELR_NoInterrupt;
     }
 
@@ -178,7 +178,7 @@ static function EventListenerReturn OnOverrideGetPersonnelStatusSeparate(Object 
         {
             iHours = Project.GetCurrentNumHoursRemaining();
             iDays = iHours / 24;
-            `SPOOKSLOG("Project found for unit " $ Unit.GetFullName() $ ", " $ iHours $ " hours (" $ iDays $ " days) remaining");
+            //`SPOOKSLOG("Project found for unit " $ Unit.GetFullName() $ ", " $ iHours $ " hours (" $ iDays $ " days) remaining");
 
             if (iHours % 24 > 0)
             {

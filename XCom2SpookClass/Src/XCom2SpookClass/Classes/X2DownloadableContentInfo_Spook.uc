@@ -4,8 +4,6 @@ class X2DownloadableContentInfo_Spook
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var X2Ability_SpookOperatorAbilitySet OperatorAbilitySet;
-
 static function X2DownloadableContentInfo_Spook GetDLC()
 {
     local array<X2DownloadableContentInfo> DLCInfos;
@@ -26,23 +24,15 @@ static function X2DownloadableContentInfo_Spook GetDLC()
 
 static event OnPostTemplatesCreated()
 {
-    local X2DownloadableContentInfo_Spook DLC;
     class'SpookTacticalDetectionManager'.static.OnPostTemplatesCreated();
     class'X2StrategyElement_SpookAcademyUnlocks'.static.OnPostTemplatesCreated();
-    DLC = GetDLC();
-    DLC.OperatorAbilitySet = new class'X2Ability_SpookOperatorAbilitySet';
-    DLC.OperatorAbilitySet.OnPostTemplatesCreated();
-}
-
-static function FinalizeUnitAbilitiesForInit(XComGameState_Unit Unit, out array<AbilitySetupData> SetupData, optional XComGameState StartState, optional XComGameState_Player PlayerState, optional bool bMultiplayerDisplay)
-{
-    GetDLC().OperatorAbilitySet.FinalizeUnitAbilitiesForInit(Unit, SetupData, StartState, PlayerState, bMultiplayerDisplay);
+    class'X2Ability_SpookOperatorAbilitySet'.static.OnPostTemplatesCreated();
 }
 
 // This function is only called by LW.
 static function bool CanAddItemToInventory(out int bCanAddItem, const EInventorySlot Slot, const X2ItemTemplate ItemTemplate, int Quantity, XComGameState_Unit Unit, XComGameState CheckGameState)
 {
-    return GetDLC().OperatorAbilitySet.CanAddItemToInventory(bCanAddItem, Slot, ItemTemplate, Quantity, Unit, CheckGameState);
+    return class'X2Ability_SpookOperatorAbilitySet'.static.CanAddItemToInventory(bCanAddItem, Slot, ItemTemplate, Quantity, Unit, CheckGameState);
 }
 
 static function OnPostMission()

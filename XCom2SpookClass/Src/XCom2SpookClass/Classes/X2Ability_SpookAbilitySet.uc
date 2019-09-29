@@ -72,6 +72,7 @@ static function array<X2DataTemplate> CreateTemplates()
     Templates.AddItem(AddExfilAbility());
     Templates.AddItem(AddExodusAbility());
 
+    Templates.AddItem(AddPistolShotAbility());
     Templates.AddItem(AddDartAbility());
     Templates.AddItem(AddPistolStatBonusAbility());
 
@@ -854,8 +855,8 @@ static function X2AbilityTemplate AddEclipseAbility()
     Template.bShowActivation = true;
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-    Template.BuildVisualizationFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildVisualization;
-    Template.BuildAffectedVisualizationSyncFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildAffectedVisualizationSync;
+    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;//class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildVisualization;
+    //Template.BuildAffectedVisualizationSyncFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildAffectedVisualizationSync;
 
     return Template;
 }
@@ -886,6 +887,28 @@ static function X2AbilityTemplate AddPistolStatBonusAbility()
     Template.AddTargetEffect(PersistentStatChangeEffect);
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+    return Template;
+}
+
+static function X2AbilityTemplate AddPistolShotAbility()
+{
+    local X2AbilityTemplate                        Template;
+    local X2AbilityCost_SpookQuickdrawActionPoints ActionPoints;
+    local X2AbilityCost_Ammo                       AmmoCost;
+
+    Template = class'X2Ability_WeaponCommon'.static.Add_StandardShot('Spook_PistolShot');
+
+    Template.AbilityCosts.Length = 0;
+    ActionPoints = new class'X2AbilityCost_SpookQuickdrawActionPoints';
+    ActionPoints.iNumPoints = 1;
+    ActionPoints.bConsumeAllPoints = true;
+    Template.AbilityCosts.AddItem(ActionPoints);
+
+    AmmoCost = new class'X2AbilityCost_Ammo';
+    AmmoCost.iAmmo = 1;
+    Template.AbilityCosts.AddItem(AmmoCost);
+    Template.bAllowAmmoEffects = true;
 
     return Template;
 }

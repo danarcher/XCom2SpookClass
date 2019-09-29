@@ -458,7 +458,7 @@ function float GetConcealmentDetectionDistanceUnits(XComGameState_BaseObject Det
     InteractiveObject = XComGameState_InteractiveObject(Detector);
     if (InteractiveObject != none)
     {
-        return DetectionRadius;
+        return InteractiveObject.DetectionRange;
     }
 
     return 0;

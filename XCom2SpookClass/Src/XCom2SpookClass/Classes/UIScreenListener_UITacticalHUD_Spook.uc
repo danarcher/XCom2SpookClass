@@ -13,6 +13,8 @@ event OnInit(UIScreen Screen)
 
     This = self;
     `XEVENTMGR.RegisterForEvent(This, 'GetEvacPlacementDelay', OnGetEvacPlacementDelay, ELD_Immediate);
+    `XEVENTMGR.RegisterForEvent(This, 'OverrideAbilityIconColor', OnOverrideAbilityIconColor, ELD_Immediate, 25); // Priority override.
+    `XEVENTMGR.RegisterForEvent(tHIS, 'OverrideObjectiveAbilityIconColor', OnOverrideAbilityIconColor, ELD_Immediate, 25); // Priority override.
 
     DetectionManager = new class'SpookTacticalDetectionManager';
     DetectionManager.OnInit();
@@ -97,6 +99,11 @@ function EventListenerReturn OnGetEvacPlacementDelay(Object EventData, Object Ev
     }
 
     return ELR_NoInterrupt;
+}
+
+function EventListenerReturn OnOverrideAbilityIconColor(Object EventData, Object EventSource, XComGameState NewGameState, Name EventID)
+{
+    return class'X2Ability_SpookOperatorAbilitySet'.static.OnOverrideAbilityIconColor(EventData, EventSource, NewGameState, EventID);
 }
 
 defaultProperties

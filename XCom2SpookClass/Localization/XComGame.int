@@ -14,6 +14,12 @@ LocFriendlyName=Put Down Unit (Spook)
 LocHelpText="Place the unit you are carrying at your feet."
 LocFlyOverText=Put Down Unit
 
+[Spook_PistolShot X2AbilityTemplate]
+LocFriendlyName="Fire Weapon"
+LocLongDescription="Fire a shot at the target."
+LocHelpText="Fire a shot at the target."
+LocPromotionPopupText=""
+
 [Spook_Dart X2AbilityTemplate]
 LocFriendlyName="Dart"
 LocLongDescription="Fire a dart which causes bleeding. Does not break concealment."

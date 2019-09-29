@@ -26,11 +26,11 @@ Spooks are lightly armed, since they rely on stealth rather than martial force t
 
 *"A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons."*
 
-In the unlikely event that the Spook wishes to engage in combat, the Spook Pistol is extremely accurate at close range, even versus enemies in cover. It is quick to fire, encouraging mobility. It is also deeply inaccurate at longer ranges, and lacks significant upgrades at higher weapon tiers.
+The Spook Pistol is extremely accurate at close range. It is deeply inaccurate at longer ranges, and lacks significant upgrades at higher weapon tiers.
 
-**Conventional** 2-3 damage, +2 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Conventional** 3-4 damage, +2 on a crit, short sound range, unlimited ammo. 1 action to fire.
 
-**Magnetic** 4-5 damage, +3 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Magnetic** 5-6 damage, +3 on a crit, short sound range, unlimited ammo. 1 action to fire.
 
 
 ### Combat Knife

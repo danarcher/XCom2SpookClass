@@ -4,8 +4,7 @@ class X2Ability_SpookOperatorAbilitySet
 
 `include(XCom2SpookClass\Src\Spook.uci)
 
-var array<X2AbilityTemplate> SpecialTemplates;
-
+var config bool OVERRIDE_OPERATOR_ABILITY_ICON_COLORS;
 var config string ICON_COLOR_OBJECTIVE;
 var config string ICON_COLOR_FREE;
 
@@ -26,12 +25,18 @@ static function X2AbilityTemplate AddOperatorAbility()
     return Template;
 }
 
-function OnPostTemplatesCreated()
+static function OnPostTemplatesCreated()
 {
     local array<X2DataTemplate> DataTemplates;
     local X2CharacterTemplate CharacterTemplate;
     local X2DataTemplate DataTemplate;
-    local X2AbilityTemplate ExistingTemplate, NewTemplate;
+    local X2AbilityTemplate ExistingTemplate;
+    local int iItem, iName;
+    local X2AbilityCost_ActionPoints ActionPoints;
+    local X2AbilityCost_SpookOperatorActionPoints OperatorActionPoints;
+    local bool bBreaksConcealment;
+    local X2Effect_BreakUnitConcealmentUnlessSpookOperator BreakConcealment;
+    local X2Effect_SpookOperatorSentinel Sentinel;
 
     // Rebels can be carried.
     `XCHARACTERMANAGER.FindDataTemplateAllDifficulties('Rebel', DataTemplates);
@@ -49,71 +54,92 @@ function OnPostTemplatesCreated()
     foreach `XABILITYMANAGER.IterateTemplates(DataTemplate, none)
     {
         ExistingTemplate = X2AbilityTemplate(DataTemplate);
-        NewTemplate = none;
         switch (ExistingTemplate.DataName)
         {
             case 'Interact':
             case 'Interact_OpenDoor':
             case 'Interact_OpenChest':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddInteractAbility(ExistingTemplate.DataName);
-                break;
             case 'Interact_PlantBomb':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddPlantBombAbility();
-                break;
             case 'Interact_TakeVial':
             case 'Interact_StasisTube':
             case 'Interact_SmashNGrab': // Deliberately bypass LW amendments (item count checks).
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddObjectiveInteractAbility(ExistingTemplate.DataName);
-                break;
             case 'Hack':
             case 'Hack_Chest':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddHackAbility(ExistingTemplate.DataName);
-                break;
             case 'Hack_Workstation':
             case 'Hack_ObjectiveChest':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddObjectiveHackAbility(ExistingTemplate.DataName);
-                break;
             case 'FinalizeHack':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.FinalizeHack();
-                break;
             case 'GatherEvidence':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddGatherEvidenceAbility();
-                break;
             case 'PlantExplosiveMissionDevice':
-                NewTemplate = class'X2Ability_DefaultAbilitySet'.static.AddPlantExplosiveMissionDeviceAbility();
-                break;
             case 'Knockout':
-                NewTemplate = X2AbilityTemplate(class'X2Ability_DefaultAbilitySet'.static.AddKnockoutAbility());
-                break;
             case 'Spook_Eclipse':
-                NewTemplate = class'X2Ability_SpookAbilitySet'.static.AddEclipseAbility();
-                break;
             case 'CarryUnit':
-                NewTemplate = class'X2Ability_CarryUnit'.static.CarryUnit();
-                break;
             case 'PutDownUnit':
-                NewTemplate = X2AbilityTemplate(class'X2Ability_CarryUnit'.static.PutDownUnit());
+                for (iItem = 0; iItem < ExistingTemplate.AbilityCosts.Length; ++iItem)
+                {
+                    ActionPoints = X2AbilityCost_ActionPoints(ExistingTemplate.AbilityCosts[iItem]);
+                    if (ActionPoints != none)
+                    {
+                        `SPOOKSLOG("Overriding action point cost for Operators using " $ ExistingTemplate.DataName);
+                        OperatorActionPoints = new class'X2AbilityCost_SpookOperatorActionPoints';
+
+                        OperatorActionPoints.bFreeCost = ActionPoints.bFreeCost;
+                        OperatorActionPoints.iNumPoints = ActionPoints.iNumPoints;
+                        OperatorActionPoints.bAddWeaponTypicalCost = ActionPoints.bAddWeaponTypicalCost;
+                        OperatorActionPoints.bConsumeAllPoints = ActionPoints.bConsumeAllPoints;
+                        OperatorActionPoints.bMoveCost = ActionPoints.bMoveCost;
+
+                        for (iName = 0; iName < ActionPoints.AllowedTypes.Length; ++iName)
+                        {
+                            OperatorActionPoints.AllowedTypes.AddItem(ActionPoints.AllowedTypes[iName]);
+                        }
+                        for (iName = 0; iName < ActionPoints.DoNotConsumeAllEffects.Length; ++iName)
+                        {
+                            OperatorActionPoints.DoNotConsumeAllEffects.AddItem(ActionPoints.DoNotConsumeAllEffects[iName]);
+                        }
+                        for (iName = 0; iName < ActionPoints.DoNotConsumeAllSoldierAbilities.Length; ++iName)
+                        {
+                            OperatorActionPoints.DoNotConsumeAllSoldierAbilities.AddItem(ActionPoints.DoNotConsumeAllSoldierAbilities[iName]);
+                        }
+
+                        ExistingTemplate.AbilityCosts[iItem] = OperatorActionPoints;
+                    }
+                }
+
+                if (ExistingTemplate.Hostility == eHostility_Offensive || ExistingTemplate.ConcealmentRule == eConceal_Never)
+                {
+                    bBreaksConcealment = true;
+                }
+
+                if (bBreaksConcealment)
+                {
+                    `SPOOKSLOG("Overriding concealment break for Operators using " $ ExistingTemplate.DataName);
+                    ExistingTemplate.Hostility = eHostility_Neutral;
+                    ExistingTemplate.ConcealmentRule = eConceal_Always;
+                    BreakConcealment = new class'X2Effect_BreakUnitConcealmentUnlessSpookOperator';
+                    ExistingTemplate.AddShooterEffect(BreakConcealment);
+                }
+
+                // Flag as Operator-sensitive
+                `SPOOKSLOG("Flagging potential Operator ability " $ ExistingTemplate.DataName);
+                Sentinel = new class'X2Effect_SpookOperatorSentinel';
+                switch (ExistingTemplate.DataName)
+                {
+                    case 'Interact_PlantBomb':
+                    case 'Interact_TakeVial':
+                    case 'Interact_StasisTube':
+                    case 'Interact_SmashNGrab': // Deliberately bypass LW amendments (item count checks).
+                    case 'Hack_Workstation':
+                    case 'Hack_ObjectiveChest':
+                    case 'GatherEvidence':
+                    case 'PlantExplosiveMissionDevice':
+                        Sentinel.bObjective = true;
+                        break;
+                }
+                ExistingTemplate.AddShooterEffect(Sentinel);
+
+                ExistingTemplate.AbilityIconColor = "Variable"; // LW2 feature
                 break;
         }
-
-        if (NewTemplate == none)
-        {
-            continue;
-        }
-
-        // The ability is free to operators (no action points nor charges).
-        NewTemplate.AbilityCosts.Remove(0, NewTemplate.AbilityCosts.Length);
-
-        // LW won't fix the color for us since it can't see this template.
-        NewTemplate.AbilityIconColor = (NewTemplate.ShotHUDPriority == class'UIUtilities_Tactical'.const.OBJECTIVE_INTERACT_PRIORITY) ? default.ICON_COLOR_OBJECTIVE : default.ICON_COLOR_FREE;
-
-        // Just in case, this isn't offensive from an operator.
-        NewTemplate.Hostility = eHostility_Neutral;
-
-        // Kismet notwithstanding, retain operator concealment.
-        NewTemplate.ConcealmentRule = eConceal_Always;
-
-        SpecialTemplates.AddItem(NewTemplate);
     }
 }
 
@@ -122,43 +148,7 @@ static function bool IsOperator(XComGameState_Unit Unit)
     return Unit != none && Unit.FindAbility(OperatorAbilityName).ObjectID != 0;
 }
 
-function FinalizeUnitAbilitiesForInit(XComGameState_Unit Unit, out array<AbilitySetupData> SetupData, optional XComGameState StartState, optional XComGameState_Player PlayerState, optional bool bMultiplayerDisplay)
-{
-    local int SetupIndex, TemplateIndex;
-    local AbilitySetupData Entry;
-    local X2AbilityTemplate OperatorTemplate;
-    local bool bModified;
-
-    if (!IsOperator(Unit))
-    {
-        return;
-    }
-
-    // Replace Operators' abilities with special versions where necessary.
-    for (SetupIndex = 0; SetupIndex < SetupData.Length; ++SetupIndex)
-    {
-        Entry = SetupData[SetupIndex];
-        bModified = false;
-
-        for (TemplateIndex = 0; TemplateIndex < SpecialTemplates.Length; ++TemplateIndex)
-        {
-            OperatorTemplate = SpecialTemplates[TemplateIndex];
-            if (OperatorTemplate.DataName == Entry.TemplateName)
-            {
-                `SPOOKLOG("Replacing " $ Entry.TemplateName $ "with Operator equivalent for " $ Unit.GetFullName());
-                Entry.Template = OperatorTemplate;
-                bModified = true;
-            }
-        }
-
-        if (bModified)
-        {
-            SetupData[SetupIndex] = Entry;
-        }
-    }
-}
-
-function bool CanAddItemToInventory(out int bCanAddItem, const EInventorySlot Slot, const X2ItemTemplate ItemTemplate, int Quantity, XComGameState_Unit Unit, XComGameState CheckGameState)
+static function bool CanAddItemToInventory(out int bCanAddItem, const EInventorySlot Slot, const X2ItemTemplate ItemTemplate, int Quantity, XComGameState_Unit Unit, XComGameState CheckGameState)
 {
     // Allow Spooks with Operator to ignore the eSlot_Mission limit of 1 item.
     // We could modify the item template to eSlot_Backpack, but then we'd have to disallow other units instead.
@@ -169,4 +159,58 @@ function bool CanAddItemToInventory(out int bCanAddItem, const EInventorySlot Sl
         return true;
     }
     return false;
+}
+
+static function EventListenerReturn OnOverrideAbilityIconColor(Object EventData, Object EventSource, XComGameState NewGameState, Name EventID)
+{
+    local XComLWTuple                    OverrideTuple;
+    local XComGameState_Ability          AbilityState;
+    local X2AbilityTemplate              AbilityTemplate;
+    local XComGameState_Unit             Unit;
+    local int                            iEffect;
+    local X2Effect_SpookOperatorSentinel Sentinel;
+
+    OverrideTuple = XComLWTuple(EventData);
+    if(OverrideTuple == none)
+    {
+        `SPOOKSLOG("OnOverrideAbilityIconColor event triggered with invalid event data.");
+        return ELR_NoInterrupt;
+    }
+
+    AbilityState = XComGameState_Ability (EventSource);
+    if (AbilityState == none)
+    {
+        `SPOOKSLOG("No ability state fed to OnOverrideAbilityIconColor");
+        return ELR_NoInterrupt;
+    }
+
+    if (!default.OVERRIDE_OPERATOR_ABILITY_ICON_COLORS)
+    {
+        `SPOOKSLOG("Ability icon color overrides disabled");
+        return ELR_NoInterrupt;
+    }
+
+    AbilityTemplate = AbilityState.GetMyTemplate();
+    Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(AbilityState.OwnerStateObject.ObjectID));
+
+    for (iEffect = 0; iEffect < AbilityTemplate.AbilityShooterEffects.Length; ++iEffect)
+    {
+        Sentinel = X2Effect_SpookOperatorSentinel(AbilityTemplate.AbilityShooterEffects[iEffect]);
+        if (Sentinel != none && IsOperator(Unit))
+        {
+            `SPOOKSLOG("Overriding icon color for " $ AbilityTemplate.DataName);
+            if (EventID == 'OverrideObjectiveAbilityIconColor')
+            {
+                OverrideTuple.Data[0].b = true;
+                OverrideTuple.Data[1].s = default.ICON_COLOR_OBJECTIVE;
+            }
+            else
+            {
+                OverrideTuple.Data[0].s = default.ICON_COLOR_FREE;
+            }
+            return ELR_NoInterrupt;
+        }
+    }
+
+    return ELR_NoInterrupt;
 }
