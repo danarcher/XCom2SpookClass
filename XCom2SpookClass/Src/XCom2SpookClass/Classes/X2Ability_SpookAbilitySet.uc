@@ -762,44 +762,6 @@ function BuildExfilVisualization(XComGameState VisualizeGameState, out array<Vis
     }
 }
 
-static function X2Effect_Persistent CreateEclipsedStatusEffect()
-{
-    local X2Effect_Persistent PersistentEffect;
-    PersistentEffect = new class'X2Effect_Persistent';
-    PersistentEffect.EffectName = class'X2StatusEffects'.default.UnconsciousName;
-    PersistentEffect.DuplicateResponse = 2;
-    PersistentEffect.BuildPersistentEffect(1, true, false);
-    PersistentEffect.bRemoveWhenTargetDies = true;
-    PersistentEffect.bIsImpairing = true;
-    PersistentEffect.SetDisplayInfo(2, class'X2StatusEffects'.default.UnconsciousFriendlyName, class'X2StatusEffects'.default.UnconsciousFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun", true, "img:///UILibrary_Common.status_unconscious");
-    PersistentEffect.EffectAddedFn = class'X2StatusEffects'.static.UnconsciousEffectAdded;
-    PersistentEffect.EffectRemovedFn = class'X2StatusEffects'.static.UnconsciousEffectRemoved;
-    PersistentEffect.VisualizationFn = EclipsedVisualization;
-    PersistentEffect.EffectTickedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationTicked;
-    PersistentEffect.EffectRemovedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationRemoved;
-    PersistentEffect.CleansedVisualizationFn =class'X2StatusEffects'.static.UnconsciousCleansedVisualization;
-    PersistentEffect.EffectHierarchyValue = class'X2StatusEffects'.default.UNCONCIOUS_HIERARCHY_VALUE;
-    PersistentEffect.DamageTypes.AddItem('Unconscious');
-    return PersistentEffect;
-}
-
-static function EclipsedVisualization(XComGameState VisualizeGameState, out VisualizationTrack BuildTrack, const name EffectApplyResult)
-{
-    if(EffectApplyResult != 'AA_Success')
-    {
-        return;
-    }
-
-    if(XComGameState_Unit(BuildTrack.StateObject_NewState) == none)
-    {
-        return;
-    }
-
-    //AddEffectSoundAndFlyOverToTrack(BuildTrack, VisualizeGameState.GetContext(), default.UnconsciousFriendlyName, 'None', 4, "img:///UILibrary_Common.status_unconscious");
-    class'X2StatusEffects'.static.AddEffectMessageToTrack(BuildTrack, class'X2StatusEffects'.default.UnconsciousEffectAcquiredString, VisualizeGameState.GetContext());
-    class'X2StatusEffects'.static.UpdateUnitFlag(BuildTrack, VisualizeGameState.GetContext());
-}
-
 static function X2AbilityTemplate AddEclipseAbility()
 {
     local X2AbilityTemplate                     Template;
@@ -827,7 +789,7 @@ static function X2AbilityTemplate AddEclipseAbility()
     Template.AddShooterEffectExclusions();
 
     ActionPointCost = new class'X2AbilityCost_ActionPoints';
-    ActionPointCost.iNumPoints = 1; // 1 = require an action point left, 0 = anytime, like Evac.
+    ActionPointCost.iNumPoints = 1;
     Template.AbilityCosts.AddItem(ActionPointCost);
 
     SingleTarget = new class'X2AbilityTarget_Single';
@@ -849,16 +811,104 @@ static function X2AbilityTemplate AddEclipseAbility()
     TargetSpecialCondition.bRequireNotBleedingOut = true;
     Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
 
-    Template.AddTargetEffect(CreateEclipsedStatusEffect());
-
-    Template.ActivationSpeech = 'StabilizingAlly';
+    Template.AddTargetEffect(CreateEclipsedEffect());
     Template.bShowActivation = true;
 
     Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-    Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;//class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildVisualization;
-    //Template.BuildAffectedVisualizationSyncFn = class'X2Ability_DefaultAbilitySet'.static.Knockout_BuildAffectedVisualizationSync;
+    //Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+    Template.BuildVisualizationFn = BuildEclipseVisualization;
 
     return Template;
+}
+
+static function X2Effect_Persistent CreateEclipsedEffect()
+{
+    local X2Effect_Persistent PersistentEffect;
+    PersistentEffect = new class'X2Effect_Persistent';
+    PersistentEffect.EffectName = class'X2StatusEffects'.default.UnconsciousName;
+    PersistentEffect.DuplicateResponse = 2;
+    PersistentEffect.BuildPersistentEffect(1, true, false);
+    PersistentEffect.bRemoveWhenTargetDies = true;
+    PersistentEffect.bIsImpairing = true;
+    PersistentEffect.SetDisplayInfo(2, class'X2StatusEffects'.default.UnconsciousFriendlyName, class'X2StatusEffects'.default.UnconsciousFriendlyDesc, "img:///UILibrary_PerkIcons.UIPerk_stun", true, "img:///UILibrary_Common.status_unconscious");
+    PersistentEffect.EffectAddedFn = class'X2StatusEffects'.static.UnconsciousEffectAdded;
+    PersistentEffect.EffectRemovedFn = class'X2StatusEffects'.static.UnconsciousEffectRemoved;
+    PersistentEffect.VisualizationFn = EclipsedEffectVisualization;
+    PersistentEffect.EffectTickedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationTicked;
+    PersistentEffect.EffectRemovedVisualizationFn = class'X2StatusEffects'.static.UnconsciousVisualizationRemoved;
+    PersistentEffect.CleansedVisualizationFn =class'X2StatusEffects'.static.UnconsciousCleansedVisualization;
+    PersistentEffect.EffectHierarchyValue = class'X2StatusEffects'.default.UNCONCIOUS_HIERARCHY_VALUE;
+    PersistentEffect.DamageTypes.AddItem('Unconscious');
+    return PersistentEffect;
+}
+
+static function EclipsedEffectVisualization(XComGameState VisualizeGameState, out VisualizationTrack BuildTrack, const name EffectApplyResult)
+{
+    if (EffectApplyResult != 'AA_Success' || XComGameState_Unit(BuildTrack.StateObject_NewState) == none)
+    {
+        return;
+    }
+
+    class'X2StatusEffects'.static.AddEffectMessageToTrack(BuildTrack, class'X2StatusEffects'.default.UnconsciousEffectAcquiredString, VisualizeGameState.GetContext());
+    class'X2StatusEffects'.static.UpdateUnitFlag(BuildTrack, VisualizeGameState.GetContext());
+}
+
+static simulated function BuildEclipseVisualization(XComGameState VisualizeGameState, out array<VisualizationTrack> OutVisualizationTracks)
+{
+    local XComGameStateHistory          History;
+    local XComGameStateContext_Ability  Context;
+    local StateObjectReference          InteractingUnitRef;
+    local StateObjectReference          TargetUnitRef;
+    local XComGameState_Ability         Ability;
+
+    local VisualizationTrack            EmptyTrack;
+    local VisualizationTrack            BuildTrack;
+
+    local X2Action_PlaySoundAndFlyOver  SoundAndFlyOver;
+    local int                           EffectIndex;
+    local X2AbilityTemplate             AbilityTemplate;
+
+    History = `XCOMHISTORY;
+
+    Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
+    InteractingUnitRef = Context.InputContext.SourceObject;
+    TargetUnitRef = Context.InputContext.PrimaryTarget;
+    AbilityTemplate = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate(Context.InputContext.AbilityTemplateName);
+
+    // Shooter
+    BuildTrack = EmptyTrack;
+    BuildTrack.StateObject_OldState = History.GetGameStateForObjectID(InteractingUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
+    BuildTrack.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(InteractingUnitRef.ObjectID);
+    BuildTrack.TrackActor = History.GetVisualizer(InteractingUnitRef.ObjectID);
+
+    Ability = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1));
+    SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTrack(BuildTrack, Context));
+    SoundAndFlyOver.SetSoundAndFlyOverParameters(None, Ability.GetMyTemplate().LocFlyOverText, '', eColor_Good);
+
+    class'X2Action_ExitCover'.static.AddToVisualizationTrack(BuildTrack, Context);
+    class'X2Action_SpookEclipse'.static.AddToVisualizationTrack(BuildTrack, Context);
+    class'X2Action_EnterCover'.static.AddToVisualizationTrack(BuildTrack, Context);
+
+    for( EffectIndex = 0; EffectIndex < AbilityTemplate.AbilityShooterEffects.Length; ++EffectIndex )
+    {
+        AbilityTemplate.AbilityShooterEffects[EffectIndex].AddX2ActionsForVisualization(VisualizeGameState, BuildTrack, Context.FindShooterEffectApplyResult(AbilityTemplate.AbilityShooterEffects[EffectIndex]));
+    }
+
+    OutVisualizationTracks.AddItem(BuildTrack);
+
+    // Target
+    BuildTrack = EmptyTrack;
+    BuildTrack.StateObject_OldState = History.GetGameStateForObjectID(TargetUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
+    BuildTrack.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(TargetUnitRef.ObjectID);
+    BuildTrack.TrackActor = History.GetVisualizer(TargetUnitRef.ObjectID);
+
+    class'X2Action_SpookEclipsed'.static.AddToVisualizationTrack(BuildTrack, Context);
+    for( EffectIndex = 0; EffectIndex < AbilityTemplate.AbilityTargetEffects.Length; ++EffectIndex )
+    {
+        AbilityTemplate.AbilityTargetEffects[EffectIndex].AddX2ActionsForVisualization(VisualizeGameState, BuildTrack, Context.FindTargetEffectApplyResult(AbilityTemplate.AbilityTargetEffects[EffectIndex]));
+    }
+
+    OutVisualizationTracks.AddItem(BuildTrack);
 }
 
 static function X2AbilityTemplate AddPistolStatBonusAbility()

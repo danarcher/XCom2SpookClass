@@ -186,7 +186,7 @@ static function EventListenerReturn OnOverrideAbilityIconColor(Object EventData,
 
     if (!default.OVERRIDE_OPERATOR_ABILITY_ICON_COLORS)
     {
-        `SPOOKSLOG("Ability icon color overrides disabled");
+        //`SPOOKSLOG("Ability icon color overrides disabled");
         return ELR_NoInterrupt;
     }
 
@@ -198,7 +198,7 @@ static function EventListenerReturn OnOverrideAbilityIconColor(Object EventData,
         Sentinel = X2Effect_SpookOperatorSentinel(AbilityTemplate.AbilityShooterEffects[iEffect]);
         if (Sentinel != none && IsOperator(Unit))
         {
-            `SPOOKSLOG("Overriding icon color for " $ AbilityTemplate.DataName);
+            //`SPOOKSLOG("Overriding icon color for " $ AbilityTemplate.DataName);
             if (EventID == 'OverrideObjectiveAbilityIconColor')
             {
                 OverrideTuple.Data[0].b = true;
