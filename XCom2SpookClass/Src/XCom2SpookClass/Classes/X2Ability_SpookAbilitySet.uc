@@ -801,7 +801,6 @@ static function X2AbilityTemplate AddEclipseAbility()
     TargetPropertyCondition.ExcludeDead = true;
     TargetPropertyCondition.ExcludeAlien = true;
     TargetPropertyCondition.ExcludeRobotic = true;
-    TargetPropertyCondition.ExcludeHostileToSource = true;
     TargetPropertyCondition.RequireWithinRange = true;
     TargetPropertyCondition.WithinRange = 144; // 1 tile
     Template.AbilityTargetConditions.AddItem(TargetPropertyCondition);
@@ -809,6 +808,7 @@ static function X2AbilityTemplate AddEclipseAbility()
     TargetSpecialCondition = new class'X2Condition_Spook';
     TargetSpecialCondition.bRequireConscious = true;
     TargetSpecialCondition.bRequireNotBleedingOut = true;
+    TargetSpecialCondition.bRequirePreviousFriendly = true;
     Template.AbilityTargetConditions.AddItem(TargetSpecialCondition);
 
     Template.AddTargetEffect(CreateEclipsedEffect());

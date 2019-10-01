@@ -6,6 +6,7 @@ class X2Condition_Spook
 var bool bRequireSelfTarget;
 var bool bRequireConscious;
 var bool bRequireNotBleedingOut;
+var bool bRequirePreviousFriendly;
 var bool bRequireCannotRevealWiredSource;
 var bool bRequireCredulousAI;
 
@@ -19,17 +20,22 @@ event name CallMeetsConditionWithSource(XComGameState_BaseObject kTarget, XComGa
 
     if (bRequireSelfTarget && kTarget.ObjectID != kSource.ObjectID)
     {
-        return 'AA_NotSelfTarget';
+        return 'AA_AbilityUnavailable';
     }
 
     if (bRequireConscious && (TargetUnit == none || TargetUnit.IsUnconscious()))
     {
-        return 'AA_NotConscious';
+        return 'AA_UnitIsImpaired';
     }
 
     if (bRequireNotBleedingOut && (TargetUnit == none || TargetUnit.IsBleedingOut()))
     {
-        return 'AA_BleedingOut';
+        return 'AA_UnitIsImpaired';
+    }
+
+    if (bRequirePreviousFriendly && SourceUnit.GetPreviousTeam() != TargetUnit.GetPreviousTeam())
+    {
+        return 'AA_UnitIsHostile';
     }
 
     if (bRequireCannotRevealWiredSource)
@@ -50,9 +56,9 @@ event name CallMeetsConditionWithSource(XComGameState_BaseObject kTarget, XComGa
         {
             if (TargetUnit != none)
             {
-                `SPOOKLOG("AA_Incredulous for " $ (TargetUnit.ControllingPlayerIsAI() ? "AI" : "non-AI") $ " unit " $ TargetUnit.GetMyTemplateName() $ " alert level " $ TargetUnit.GetCurrentStat(eStat_AlertLevel));
+                `SPOOKLOG("AA_AlertStatusInvalid for " $ (TargetUnit.ControllingPlayerIsAI() ? "AI" : "non-AI") $ " unit " $ TargetUnit.GetMyTemplateName() $ " alert level " $ TargetUnit.GetCurrentStat(eStat_AlertLevel));
             }
-            return 'AA_Incredulous';
+            return 'AA_AlertStatusInvalid';
         }
     }
 
