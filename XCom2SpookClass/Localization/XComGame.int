@@ -77,7 +77,7 @@ LocFriendlyName="Eclipse"
 LocLongDescription="Render an adjacent ally (soldier or civilian) unconscious and carryable."
 LocHelpText="Render an adjacent ally (soldier or civilian) unconscious and carryable."
 LocFlyOverText="Eclipse"
-LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include scientists and engineers, as well as potential and former soldiers."
+LocPromotionPopupText="<Bullet/> Civilian allies affected by Eclipse include scientists and engineers and potential recruits.<br/><Bullet/> Eclipse may be used to subdue mind-controlled former allies, but not mind-controlled former enemies."
 
 [Spook_Operator X2AbilityTemplate]
 LocFriendlyName="Operator"
