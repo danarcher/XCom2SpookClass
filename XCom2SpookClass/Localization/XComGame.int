@@ -272,31 +272,16 @@ UnknownUtilityCategory="Pistol"
 BriefSummary="A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons."
 TacticalText="<Bullet/> A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons.\n<Bullet/> Pistols lose accuracy at long ranges."
 
-[SpookPistol_LS X2WeaponTemplate]
-FriendlyName="Laser Spook Pistol"
-FriendlyNamePlural="Laser Spook Pistols"
-UnknownUtilityCategory="Pistol"
-BriefSummary="Based on the advances in beam weapons tech we've achieved, this new pistol boasts a substantial improvement in power over our conventional pistol."
-TacticalText="<Bullet/> Laser pistols are substantially more effective and accurate than their conventional precursors.\n<Bullet/> Pistols lose accuracy at long ranges."
-
 [SpookPistol_MG X2WeaponTemplate]
-FriendlyName="Mag Spook Pistol"
-FriendlyNamePlural="Mag Spook Pistols"
+FriendlyName="Spook Mag Pistol"
+FriendlyNamePlural="Spook Mag Pistols"
 UnknownUtilityCategory="Pistol"
 BriefSummary="Based on the advances in magnetic weapons tech we've achieved, this new pistol boasts a substantial improvement in power over our conventional pistol."
 TacticalText="<Bullet/> Magnetic pistols do more damage than conventional or laser pistols.\n<Bullet/> Pistols lose accuracy at long ranges."
 
-[SpookPistol_CG X2WeaponTemplate]
-FriendlyName="Gauss Spook Pistol"
-FriendlyNamePlural="Gauss Spook Pistols"
-UnknownUtilityCategory="Pistol"
-BriefSummary="A powerful, coil-tech sidearm that can punch through enemy armor."
-TacticalText="<Bullet/> Coil weapons automatically pierce 1 enemy armor.\n<Bullet/> Pistols lose accuracy at long ranges."
-AbilityDescName="pistol"
-
 [SpookPistol_BM X2WeaponTemplate]
-FriendlyName="Plasma Spook Pistol"
-FriendlyNamePlural="Plasma Spook Pistols"
+FriendlyName="Spook Plasma Pistol"
+FriendlyNamePlural="Spook Plasma Pistols"
 UnknownUtilityCategory="Pistol"
 BriefSummary="The ultimate sidearm, this pistol integrates the aliens' plasma weapons technology to powerful effect."
 TacticalText="<Bullet/> Plasma pistols are the most powerful handguns on Earth.\n<Bullet/> Pistols lose accuracy at long ranges.<br/><Bullet/> Plasma weapons also cause targets to take 1 additional damage on future hits."

@@ -19,15 +19,6 @@ var config int PISTOL_CONVENTIONAL_ISUPPLIES;
 var config int PISTOL_CONVENTIONAL_TRADINGPOSTVALUE;
 var config int PISTOL_CONVENTIONAL_IPOINTS;
 
-var config int PISTOL_LASER_AIM;
-var config int PISTOL_LASER_CRITCHANCE;
-var config int PISTOL_LASER_ICLIPSIZE;
-var config int PISTOL_LASER_ISOUNDRANGE;
-var config int PISTOL_LASER_IENVIRONMENTDAMAGE;
-var config int PISTOL_LASER_ISUPPLIES;
-var config int PISTOL_LASER_TRADINGPOSTVALUE;
-var config int PISTOL_LASER_IPOINTS;
-
 var config int PISTOL_MAGNETIC_AIM;
 var config int PISTOL_MAGNETIC_CRITCHANCE;
 var config int PISTOL_MAGNETIC_ICLIPSIZE;
@@ -36,15 +27,6 @@ var config int PISTOL_MAGNETIC_IENVIRONMENTDAMAGE;
 var config int PISTOL_MAGNETIC_ISUPPLIES;
 var config int PISTOL_MAGNETIC_TRADINGPOSTVALUE;
 var config int PISTOL_MAGNETIC_IPOINTS;
-
-var config int PISTOL_COIL_AIM;
-var config int PISTOL_COIL_CRITCHANCE;
-var config int PISTOL_COIL_ICLIPSIZE;
-var config int PISTOL_COIL_ISOUNDRANGE;
-var config int PISTOL_COIL_IENVIRONMENTDAMAGE;
-var config int PISTOL_COIL_ISUPPLIES;
-var config int PISTOL_COIL_TRADINGPOSTVALUE;
-var config int PISTOL_COIL_IPOINTS;
 
 var config int PISTOL_BEAM_AIM;
 var config int PISTOL_BEAM_CRITCHANCE;
@@ -64,9 +46,7 @@ static function array<X2DataTemplate> CreateTemplates()
 {
     local array<X2DataTemplate> Templates;
     Templates.AddItem(CreatePistolCV());
-    Templates.AddItem(CreatePistolLS());
     Templates.AddItem(CreatePistolMG());
-    Templates.AddItem(CreatePistolCG());
     Templates.AddItem(CreatePistolBM());
     Templates.AddItem(CreateSpookDistractGrenade());
     return Templates;
@@ -131,29 +111,6 @@ static function X2DataTemplate CreatePistolCV()
     return Template;
 }
 
-static function X2DataTemplate CreatePistolLS()
-{
-    local X2WeaponTemplate Template;
-
-    Template = CreatePistolBase('SpookPistol_LS', 2);
-
-    Template.WeaponTech = 'pulse';
-    Template.strImage = "img:///UILibrary_LW_LaserPack.Inv_Laser_Pistol";
-    Template.EquipSound = "Secondary_Weapon_Equip_Magnetic";
-
-    Template.BaseDamage = default.PISTOL_LASER_BASEDAMAGE;
-    Template.Aim = default.PISTOL_LASER_AIM;
-    Template.CritChance = default.PISTOL_LASER_CRITCHANCE;
-    Template.iClipSize = default.PISTOL_LASER_ICLIPSIZE;
-    Template.iSoundRange = default.PISTOL_LASER_ISOUNDRANGE;
-    Template.iEnvironmentDamage = default.PISTOL_LASER_IENVIRONMENTDAMAGE;
-    Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_LASER_DAMAGE);
-
-    Template.GameArchetype = "LWPistol_LS.Archetype.WP_Pistol_LS";
-
-    return Template;
-}
-
 static function X2DataTemplate CreatePistolMG()
 {
     local X2WeaponTemplate Template;
@@ -172,30 +129,7 @@ static function X2DataTemplate CreatePistolMG()
     Template.iEnvironmentDamage = default.PISTOL_MAGNETIC_IENVIRONMENTDAMAGE;
     Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_MAGNETIC_DAMAGE);
 
-    Template.GameArchetype = "WP_Pistol_MG.WP_Pistol_MG";
-
-    return Template;
-}
-
-static function X2DataTemplate CreatePistolCG()
-{
-    local X2WeaponTemplate Template;
-
-    Template = CreatePistolBase('SpookPistol_CG', 4);
-
-    Template.WeaponTech = 'coilgun_lw';
-    Template.strImage = "img:///UILibrary_LW_Overhaul.InventoryArt.Inv_Coil_Pistol";
-    Template.EquipSound = "Secondary_Weapon_Equip_Magnetic";
-
-    Template.BaseDamage = default.PISTOL_COIL_BASEDAMAGE;
-    Template.Aim = default.PISTOL_COIL_AIM;
-    Template.CritChance = default.PISTOL_COIL_CRITCHANCE;
-    Template.iClipSize = default.PISTOL_COIL_ICLIPSIZE;
-    Template.iSoundRange = default.PISTOL_COIL_ISOUNDRANGE;
-    Template.iEnvironmentDamage = default.PISTOL_COIL_IENVIRONMENTDAMAGE;
-    Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_COIL_DAMAGE);
-
-    Template.GameArchetype = "LWPistol_CG.Archetypes.WP_Pistol_CG";
+    Template.GameArchetype = "Spook.WP_SpookPistol_MG";
 
     return Template;
 }
@@ -218,7 +152,7 @@ static function X2DataTemplate CreatePistolBM()
     Template.iEnvironmentDamage = default.PISTOL_BEAM_IENVIRONMENTDAMAGE;
     Template.ExtraDamage.AddItem(class'X2Ability_SpookAbilitySet'.default.DART_BEAM_DAMAGE);
 
-    Template.GameArchetype = "WP_Pistol_BM.WP_Pistol_BM";
+    Template.GameArchetype = "Spook.WP_SpookPistol_BM";
 
     return Template;
 }
