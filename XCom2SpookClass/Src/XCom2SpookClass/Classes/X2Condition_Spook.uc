@@ -9,6 +9,9 @@ var bool bRequireNotBleedingOut;
 var bool bRequirePreviousFriendly;
 var bool bRequireCannotRevealWiredSource;
 var bool bRequireCredulousAI;
+var bool bRequireSourceDoesNotHaveItemOrIsOperator;
+
+var name ItemTemplateName;
 
 event name CallMeetsConditionWithSource(XComGameState_BaseObject kTarget, XComGameState_BaseObject kSource)
 {
@@ -59,6 +62,15 @@ event name CallMeetsConditionWithSource(XComGameState_BaseObject kTarget, XComGa
                 `SPOOKLOG("AA_AlertStatusInvalid for " $ (TargetUnit.ControllingPlayerIsAI() ? "AI" : "non-AI") $ " unit " $ TargetUnit.GetMyTemplateName() $ " alert level " $ TargetUnit.GetCurrentStat(eStat_AlertLevel));
             }
             return 'AA_AlertStatusInvalid';
+        }
+    }
+
+    if (bRequireSourceDoesNotHaveItemOrIsOperator)
+    {
+        if (class'X2Ability_SpookOperatorAbilitySet'.static.IsOperator(SourceUnit) == false &&
+            SourceUnit.HasItemOfTemplateType(ItemTemplateName) == true)
+        {
+            return 'AA_AbilityUnavailable';
         }
     }
 

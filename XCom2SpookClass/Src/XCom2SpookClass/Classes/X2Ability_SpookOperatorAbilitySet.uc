@@ -37,6 +37,8 @@ static function OnPostTemplatesCreated()
     local bool bBreaksConcealment;
     local X2Effect_BreakUnitConcealmentUnlessSpookOperator BreakConcealment;
     local X2Effect_SpookOperatorSentinel Sentinel;
+    local array<name> SkipExclusions;
+    local X2Condition_Spook SpecialCondition;
 
     // Rebels can be carried.
     `XCHARACTERMANAGER.FindDataTemplateAllDifficulties('Rebel', DataTemplates);
@@ -117,6 +119,18 @@ static function OnPostTemplatesCreated()
                     ExistingTemplate.ConcealmentRule = eConceal_Always;
                     BreakConcealment = new class'X2Effect_BreakUnitConcealmentUnlessSpookOperator';
                     ExistingTemplate.AddShooterEffect(BreakConcealment);
+                }
+
+                if (ExistingTemplate.DataName == 'Interact_SmashNGrab')
+                {
+                    `SPOOKSLOG("Overriding pickup condition for Operators using " $ ExistingTemplate.DataName);
+                    ExistingTemplate.AbilityShooterConditions.Remove(0, ExistingTemplate.AbilityShooterConditions.Length);
+                    SkipExclusions.AddItem(class'X2StatusEffects'.default.BurningName);
+                    ExistingTemplate.AddShooterEffectExclusions(SkipExclusions);
+                    SpecialCondition = new class'X2Condition_Spook';
+                    SpecialCondition.bRequireSourceDoesNotHaveItemOrIsOperator = true;
+                    SpecialCondition.ItemTemplateName = 'SmashNGrabQuestItem';
+                    ExistingTemplate.AbilityShooterConditions.AddItem(SpecialCondition);
                 }
 
                 // Flag as Operator-sensitive
