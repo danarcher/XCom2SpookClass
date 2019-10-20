@@ -3,6 +3,39 @@
 ClassSummary="Spooks conduct black bag operations in enemy territory. Experts at stealth, they prefer not to engage enemies directly."
 LeftAbilityTreeTitle="Footpad"
 RightAbilityTreeTitle="Diplomat"
+;ALPHABETICAL ORDER
+RandomNickNames[0]=Artist
+RandomNickNames[1]=Bandit
+RandomNickNames[2]=Beggar
+RandomNickNames[3]=Cadaver
+RandomNickNames[4]=Decker
+RandomNickNames[5]=Dr No
+RandomNickNames[6]=Ecto
+RandomNickNames[7]=Falcon
+RandomNickNames[8]=Goblin
+RandomNickNames[9]=Greymist
+RandomNickNames[10]=Gypsy
+RandomNickNames[11]=Halo
+RandomNickNames[12]=Indigo
+RandomNickNames[13]=Juice
+RandomNickNames[14]=Kojak
+RandomNickNames[15]=Lightspeed
+RandomNickNames[16]=Mandate
+RandomNickNames[17]=No Time
+RandomNickNames[18]=Orbit
+RandomNickNames[19]=Pelican
+RandomNickNames[20]=Quincy
+RandomNickNames[21]=Romeo
+RandomNickNames[22]=Sage
+RandomNickNames[23]=Talker
+RandomNickNames[24]=Taxman
+RandomNickNames[25]=Timeout
+RandomNickNames[26]=Ultraviolet
+RandomNickNames[27]=Victor
+RandomNickNames[28]=Whiteout
+RandomNickNames[29]=Xerox
+RandomNickNames[30]=Yolo
+RandomNickNames[31]=Zarf
 
 [Spook_CarryUnit X2AbilityTemplate]
 LocFriendlyName=Carry Unit (Spook)
