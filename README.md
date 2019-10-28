@@ -26,12 +26,13 @@ Spooks are lightly armed, since they rely on stealth rather than martial force t
 
 *"A sidearm carried exclusively by Spooks, they favour this pistol over larger, more powerful but cumbersome weapons."*
 
-The Spook Pistol is extremely accurate at close range. It is deeply inaccurate at longer ranges, and lacks significant upgrades at higher weapon tiers.
+The Spook Pistol is extremely accurate at close range. It is deeply inaccurate at longer ranges.
 
-**Conventional** 3-4 damage, +2 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Conventional** 3-4 damage, +2 on a crit, short sound range, unlimited ammo.
 
-**Magnetic** 5-6 damage, +3 on a crit, short sound range, unlimited ammo. 1 action to fire.
+**Magnetic** 5-6 damage, +3 on a crit, short sound range, unlimited ammo.
 
+**Plasma** 7-8 damage, +4 on a crit, short sound range, unlimited ammo. Plasma weapons also cause targets to take 1 additional damage on future hits. 
 
 ### Combat Knife
 
@@ -162,6 +163,48 @@ The targets return to the Avenger without requiring an Evac.
 
 Civilian allies affected by Eclipse include scientists and engineers, as well as potential and former soldiers.
 
+**Quickdraw** (LCPL) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Firing your pistol with your first action no longer ends your turn."*
+
+**Return Fire** (CPL) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"When targeted by enemy fire, automatically fire back with your pistol once per turn."*
+
+**Lightning Hands** (SGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Fire your pistol at a target. This attack does not cost an action."* 3 turn cooldown.
+
+**Gunslinger** (SSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Take a reaction shot with your pistol against any enemy that moves or attacks within 12 tiles and a wide cone of fire."*
+
+**Faceoff** (TSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Fire once at every visible enemy with your pistol."*
+
+**Clutch Shot** (GSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Once per mission, fire a pistol shot that cannot miss."*
+
+**Fan Fire** (MSGT) (Per Long War 2)
+
+![Icon](XCom2SpookClass/Media/Docs/UIPerk_unknown.png)
+
+*"Fire the pistol three times at the same target."*
+
 ## Perks: Spook Pistol
 
 **Dart**
@@ -194,7 +237,7 @@ Rookies do not automatically become Spooks after ranking up.
 
 One Spook can be obtained from a new Point of Interest on the Geoscape, immediately upon starting  a new game.
 
-Further Spooks can be trained in the GTS.
+Further Spooks can be trained in the GTS. It is recommended not to have more than three Spooks on your roster in a Long War 2 campaign; though this is not currently enforced as a mechanic, this retains some balance between stealth and combat missions, and ensures your A team will have gained sufficient experience for the endgame.
 
 ## Post-Mission Training
 
